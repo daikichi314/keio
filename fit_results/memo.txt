@@ -1,0 +1,27 @@
+### やっていただきたいこと（使い方）
+
+1.  **ディレクトリの作成**:
+    現在の`analysis_macro`ディレクトリの中に、`fit_results`という新しいディレクトリを作成してください。
+    ```bash
+    mkdir -p ~/hkelec/analysis_macro/fit_results
+    ```
+
+2.  **ファイルの配置**:
+    上で作成した3つのファイル (`gausfit.C`, `peakfinder.C`, `Makefile`) を、今作成した `fit_results` ディレクトリの中に保存してください。
+
+3.  **コンパイル**:
+    `fit_results` ディレクトリに移動してから、`make`コマンドを実行します。
+    ```bash
+    cd ~/hkelec/analysis_macro/fit_results
+    make
+    ```
+    これにより、`gausfit` と `peakfinder` という2つの実行ファイルが作成されます。
+
+4.  **実行**:
+    `_eventhist.root` ファイルを引数として、各プログラムを実行します。
+    ```bash
+    # 高度なフィッティングを実行
+    ./gausfit /path/to/your/data/LDhkelec_HVScan_100pe-001-1500V_eventhist.root
+
+    # シンプルなピーク検出を実行
+    ./peakfinder /path/to/your/data/LDhkelec_HVScan_100pe-001-1500V_eventhist.root

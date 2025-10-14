@@ -2,6 +2,10 @@
     "files.associations": {
         "simplefit.C": "cpp",
         "backup.C": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "eventtree2hist3.1.C": "cpp",
+        "eventtree2hist4.0.C": "cpp",
+        "gausfit.C": "cpp",
+        "peakfinder.C": "cpp"
     }
 }

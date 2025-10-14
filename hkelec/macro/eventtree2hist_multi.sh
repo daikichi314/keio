@@ -1,17 +1,25 @@
 #!/bin/bash
 
-# --- 1. 変数の定義と引数の検証 ---
+# --- 1. 変数の定義 ---
 
-# カスタムライブラリのパス
+# このスクリプトファイル自体の絶対パスを取得し、それを基準に各パスを定義
+# これにより、どこからスクリプトを実行しても正しく動作するようになります
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+echo "スクリプトの場所: ${SCRIPT_DIR}"
+
+# カスタムライブラリのパス（これは絶対パスなので変更不要）
 CUSTOM_LIB_PATH="/home/hkpd/hkelec/DiscreteSoftware/build/lib"
 
-# 実行ファイル名
-EXECUTABLE_NAME="./eventtree2hist"
+# 実行ファイルのフルパスを定義
+EXECUTABLE_PATH="${SCRIPT_DIR}/eventtree2hist"
+
+# --- 2. 引数の検証 ---
 
 # 引数のチェック: 対象ディレクトリ、計1つ必要
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <target_directory>"
     echo "例: $0 /home/hkpd/hkelec/DiscreteSoftware/data/20251009/100pe"
+    echo "例 (相対パス): $0 ../data/20251009/100pe"
     exit 1
 fi
 
@@ -23,30 +31,35 @@ if [ ! -d "$TARGET_DIR" ]; then
     exit 1
 fi
 
-# --- 2. 環境変数の設定 ---
+# --- 3. 環境変数の設定 ---
 
 echo "--- 1. LD_LIBRARY_PATH を設定しています ---"
 # LD_LIBRARY_PATHにカスタムライブラリのパスを追加
 export LD_LIBRARY_PATH=${CUSTOM_LIB_PATH}:$LD_LIBRARY_PATH
 echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
-# --- 3. クリーンとコンパイル ---
+# --- 4. クリーンとコンパイル ---
 
 echo ""
-echo "--- 2. make clean で既存のビルドを削除します ---"
-make clean
+echo "--- 2. make clean を実行します (in ${SCRIPT_DIR}) ---"
+# -C オプションで、Makefileのあるディレクトリを指定してmakeを実行
+if ! make -C "${SCRIPT_DIR}" clean; then
+    echo "警告: 'make clean' に失敗しましたが、処理を続行します。"
+fi
+
 
 echo ""
-echo "--- 3. make で再コンパイルします ---"
-if make; then
+echo "--- 3. make で再コンパイルします (in ${SCRIPT_DIR}) ---"
+# 同様に、-C オプションでディレクトリを指定
+if make -C "${SCRIPT_DIR}"; then
     echo ""
-    echo "✅ コンパイル成功: ${EXECUTABLE_NAME} が生成されました。"
+    echo "✅ コンパイル成功: ${EXECUTABLE_PATH} が生成されました。"
 else
     echo "❌ コンパイル失敗。スクリプトを終了します。"
     exit 1
 fi
 
-# --- 4. 複数ファイルの実行 ---
+# --- 5. 複数ファイルの実行 ---
 
 echo ""
 echo "--- 4. ディレクトリ内の複数ファイルの解析を実行します ---"
@@ -70,8 +83,8 @@ for INPUT_FILE in "$TARGET_DIR"/*eventtree.root; do
     echo "   出力先: $OUTPUT_FILE"
     echo "------------------------------------------------------------"
 
-    # 実行ファイルを実行し、成功/失敗メッセージを表示
-    ${EXECUTABLE_NAME} "$INPUT_FILE" "$OUTPUT_FILE"
+    # 実行ファイルをフルパスで指定して実行
+    "${EXECUTABLE_PATH}" "$INPUT_FILE" "$OUTPUT_FILE"
 
     if [ $? -eq 0 ]; then
         echo "🎉 正常に完了しました。"
