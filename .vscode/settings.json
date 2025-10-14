@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "simplefit.C": "cpp",
+        "backup.C": "cpp",
+        "ostream": "cpp"
+    }
+}

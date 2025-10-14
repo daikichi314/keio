@@ -1,0 +1,16 @@
+#command.txt#
+#commands to edit eventtree2hist and to run#
+
+rm ~/hkelec/DiscreteSoftware/Analysis/macro/eventtree2hist.C 
+vi ~/hkelec/DiscreteSoftware/Analysis/macro/eventtree2hist.C 
+#Paste the editted code
+
+~/hkelec/DiscreteSoftware/Analysis/macro/eventtree2hist_multi.sh ~/hkelec/DiscreteSoftware/data/20251009/100pe #Multi Run
+
+~/hkelec/DiscreteSoftware/Analysis/macro/eventtree2hist.sh ~/hkelec/DiscreteSoftware/data/20251009/100pe/LDhkelec_HVScan_100pe-001-1500V_eventtree.root ~/hkelec/DiscreteSoftware/data/20251009/100pe/test.root #Recompile and Single Run
+
+
+
+
+
+

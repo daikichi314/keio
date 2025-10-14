@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../data/20250809"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"simplefit.C": "cpp"
+		}
+	}
+}

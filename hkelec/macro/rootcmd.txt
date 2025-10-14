@@ -1,0 +1,5 @@
+//root commands
+
+h_hgain_ch0->Draw();
+processed_hits->Draw("hgain>>h1(200, 300, 1600)","ch==1&&time_diff > 1.0e-7&&time_diff < 3.0e-7");
+processed_hits->Draw("time_diff>>h1(2000, 1.5e-7, 3.0e-7)","ch==0");
