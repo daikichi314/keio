@@ -6,6 +6,14 @@
         "eventtree2hist3.1.C": "cpp",
         "eventtree2hist4.0.C": "cpp",
         "gausfit.C": "cpp",
-        "peakfinder.C": "cpp"
+        "peakfinder.C": "cpp",
+        "select_gain.C": "cpp",
+        "fit_pedestal.C": "cpp",
+        "fit_hv_gain.C": "cpp",
+        "ttsfit.C": "cpp",
+        "ttshistofit.C": "cpp",
+        "eventtree2hist1.0.C": "cpp",
+        "eventtree2hist2.0.C": "cpp",
+        "create_ct_plot.C": "cpp"
     }
 }
