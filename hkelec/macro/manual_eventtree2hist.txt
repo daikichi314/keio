@@ -75,12 +75,16 @@ In hkpd@hkdaq
 
 3.5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/data/analyze.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal ## .bin -> hithist.root
 
-4. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/Analysis/macro/eventtree2hist_multi.sh ~/hkelec/DiscreteSoftware/data/2025XXXX  ## eventtree.root -> eventhist.root
+3.6. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ mv 2025XXXX/*LDhkelec* 2025XXXX/100pe
+
+4. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/Analysis/macro/eventtree2hist_multi.sh ~/hkelec/DiscreteSoftware/data/2025XXXX/100pe  ## eventtree.root -> eventhist.root
 
     # どの項目をヒストグラムにするかは要編集
     # ヒットの採用条件やヒストグラムの表示範囲に注意
 
-5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/Analysis/macro$ ~/hkelec/DiscreteSoftware/Analysis/macro/run_gausfit_batch.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX ## fit hist of eventhist.root and make table
+4.1. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ mv 2025XXXX/100pe/*42* 2025XXXX/1pe
+
+5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/Analysis/macro$ ~/hkelec/DiscreteSoftware/Analysis/macro/run_gausfit_batch.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/100pe/ home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX --fit-all --make-ct-plot ## fit hist of eventhist.root and make table
 
 5'. hkpd@hkdaq:~/hkelec/DiscreteSoftware/Analysis/macro$ ~/hkelec/DiscreteSoftware/Analysis/macro/run_peakfinder_batch.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX ## find peak of eventhist.root and make table
 
@@ -91,6 +95,12 @@ In hkpd@hkdaq
 7. hkpd@hkdaq:~$ scp -r /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/ kishita@hep.phys.keio.ac.jp:~/data/  
 
 
+
+How to upload
+# 1. 現在のディレクトリ (macro) の中身すべて(*)を
+# 2. -r (再帰的に)
+# 3. hkpd@hkdaq の指定ディレクトリにコピーする
+daiki@daisukekishita:~/keio/hkelec/macro$ scp -r * hkpd@hkdaq:~/hkelec/DiscreteSoftware/Analysis/macro/
 
 memo
 - eventtree2hist.C

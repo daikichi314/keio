@@ -1,6 +1,7 @@
 /*id: eventtree2hist.C*/
 /*Place: hkpd@hkdaq:~/hkelec/analysis_macro/ */
 /*Last Edit: 2025-10-14 Gemini (two-pass analysis, full histogram block)*/
+/* (修正: 2025-10-27 Gemini (ns単位に変更) ) */
 /*eventtree.root to triggered data TTree and optional histograms*/
 /*コンパイル可能*/
 
@@ -78,14 +79,14 @@ void read_event_tree(TString input_file, TString output_file) {
     int eventID;
     int ch;
     double hgain, lgain, tot;
-    double tdc_diff, time_diff;
+    double tdc_diff, time_diff; // time_diff は ns 単位で保存されるように変更
     new_tree->Branch("eventID", &eventID, "eventID/I");
     new_tree->Branch("ch", &ch, "ch/I");
     new_tree->Branch("hgain", &hgain, "hgain/D");
     new_tree->Branch("lgain", &lgain, "lgain/D");
     new_tree->Branch("tot", &tot, "tot/D");
     new_tree->Branch("tdc_diff", &tdc_diff, "tdc_diff/D");
-    new_tree->Branch("time_diff", &time_diff, "time_diff/D");
+    new_tree->Branch("time_diff", &time_diff, "time_diff/D"); // ブランチ名は gausfit.C のために "time_diff" のままにする
 
     // ==============================================================================
     // --- 5. 2回目のスキャン：決定した時間範囲でヒットを選択し、TTreeを作成 ---
@@ -105,9 +106,9 @@ void read_event_tree(TString input_file, TString output_file) {
         eventID = iEvent;
 
         for (const Hit& hit : *v_hit) {
-            time_diff = hit.time - trigger_time;
+            time_diff = hit.time - trigger_time; // この時点では (s) 単位
 
-            // 1回目のスキャンで決定した動的な時間範囲でヒットを選択
+            // 1回目のスキャンで決定した動的な時間範囲でヒットを選択 (s 単位で比較)
             if (time_diff < time_cut_low || time_diff > time_cut_high) {
                 continue; 
             }
@@ -117,6 +118,9 @@ void read_event_tree(TString input_file, TString output_file) {
             lgain = hit.lgain;
             tot = hit.tot;
             tdc_diff = hit.tdc - trigger_tdc;
+
+            // 1. TTreeに保存する直前に (s) から (ns) へ単位を変換
+            time_diff *= 1e9; 
 
             new_tree->Fill();
             unique_channels.insert(ch);
@@ -188,15 +192,19 @@ void read_event_tree(TString input_file, TString output_file) {
             }
 
             // --- time_diff (自動範囲設定) ---
+            // TTreeの "time_diff" ブランチには (ns) 単位のデータが入っている
             new_tree->Draw("time_diff", selection, "goff");
             n_selected = new_tree->GetSelectedRows();
             if (n_selected > 0) {
                 double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
                 double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
                 double margin = (max_val - min_val) * 0.05;
-                if (margin == 0) margin = 1.0e-9; // time_diffは値が小さいのでマージンも小さくする
+                
+                // 2. マージンのデフォルト値を (ns) 単位に修正
+                if (margin == 0) margin = 1.0; 
 
-                TH1D* h_time_diff = new TH1D(Form("h_time_diff_ch%d", ch_num), Form("Time - Trigger Time (s) Ch %d", ch_num), 400, min_val - margin, max_val + margin);
+                // 3. ヒストグラムのタイトルを (s) から (ns) に修正
+                TH1D* h_time_diff = new TH1D(Form("h_time_diff_ch%d", ch_num), Form("Time - Trigger Time (ns) Ch %d", ch_num), 400, min_val - margin, max_val + margin);
                 new_tree->Draw(Form("time_diff>>%s", h_time_diff->GetName()), selection, "goff");
             }
         }
@@ -222,4 +230,3 @@ int main(int argc, char* argv[]) {
     read_event_tree(argv[1], argv[2]);
     return 0;
 }
-

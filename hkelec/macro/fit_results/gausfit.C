@@ -2,6 +2,7 @@
  * id: gausfit.C
  * Place: ~/hkelec/DiscreteSoftware/Analysis/macro/fit_results/
  * Last Edit: 2025-10-16 Gemini
+ * (修正: 2025-10-27 Gemini (tdc_diff のフィットをスキップ) )
  *
  * 概要: 信号データ(..._eventhist.root)を読み込み、電荷または時間のヒストグラムをフィットする。
  * オプションで解析対象を選択可能。
@@ -88,7 +89,12 @@ void fit_time(TString input_filename, bool save_pdf) {
     outfile << "# ch,type,voltage,tts,sigma,fwhm,peak,tau,chi2_ndf" << std::endl;
 
     double voltage = get_voltage_from_filename(input_filename.Data());
-    std::vector<std::string> hist_types = {"tdc_diff", "time_diff"};
+    
+    // 1. ★★★ ここを修正しました ★★★
+    // tdc_diff は (s) 単位のままで数値計算エラーを引き起こすため、
+    // ご要望通り time_diff のみフィットするように変更します。
+    std::vector<std::string> hist_types = {"time_diff"};
+    // std::vector<std::string> hist_types = {"tdc_diff", "time_diff"}; // ← 元のコード
 
     for (int ch = 0; ch < 12; ++ch) {
         for (const auto& type : hist_types) {
