@@ -48,7 +48,7 @@ In hkpd@hkdaq
                             [start, end, step] of veto width in DAC
     --dryrun              Shows the list of runs to be taken without actually affecting the system
 
-2.5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/DiscreteSoftware/RunManager.py -p -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal -l 40  
+2.5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/DiscreteSoftware/install/bin/RunManager.py -p -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal -l 40  
 
     hkpd@hkdaq:~$ . setup_hkelec.sh
     hkpd@hkdaq:~/hkelec/DiscreteSoftware$ RunManager.py -h

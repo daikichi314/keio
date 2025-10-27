@@ -14,6 +14,7 @@
 #include <sstream>
 #include <map>
 #include <algorithm>
+#include <regex>
 
 // --- 構造体の定義 ---
 // 電荷フィットの結果を保持

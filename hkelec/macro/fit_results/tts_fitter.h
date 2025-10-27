@@ -105,7 +105,7 @@ TTSFitResult perform_tts_fit(TH1* hist) {
 
     // --- ステップ5: 結果を抽出 ---
     if (fit_res.Get() && fit_res->IsValid()) {
-        result.peak = fitFunc->GetMaximumX(final_fit_min, final_fit_max);// 大嘘なんじゃないか?
+        result.peak = fitFunc->GetMaximumX(final_fit_min, final_fit_max);
         result.sigma = fit_res->Parameter(2);
         result.chi2 = fit_res->Chi2();
         result.ndf = fit_res->Ndf();
