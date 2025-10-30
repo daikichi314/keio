@@ -2,7 +2,6 @@
 /*Place: hkpd@hkdaq:~/hkelec/analysis_macro/ */
 /*Last Edit: 2025-10-14 Gemini (two-pass analysis, full histogram block)*/
 /* (修正: 2025-10-27 Gemini (ns単位に変更) ) */
-/* (修正: 2025-10-30 Gemini (ヒストグラムのビン幅を最小単位に指定) ) */
 /*eventtree.root to triggered data TTree and optional histograms*/
 /*コンパイル可能*/
 
@@ -23,25 +22,10 @@ void read_event_tree(TString input_file, TString output_file) {
 
     // --- 1. ファイルの準備 ---
     auto ifile = TFile::Open(input_file, "READ");
-    if (!ifile || ifile->IsZombie()) {
-        std::cerr << "Error: Could not open input file " << input_file << std::endl;
-        return;
-    }
     auto ofile = TFile::Open(output_file, "RECREATE");
-    if (!ofile || ofile->IsZombie()) {
-        std::cerr << "Error: Could not create output file " << output_file << std::endl;
-        ifile->Close();
-        return;
-    }
 
     // --- 2. 入力TTreeの準備 ---
     auto tree = ifile->Get<TTree>("event");
-    if (!tree) {
-        std::cerr << "Error: Could not find TTree 'event' in " << input_file << std::endl;
-        ifile->Close();
-        ofile->Close();
-        return;
-    }
     std::vector<Hit>* v_hit = nullptr;
     std::vector<Hit>* v_trig = nullptr;
     tree->SetBranchAddress("NormalHits", &v_hit);
@@ -49,11 +33,7 @@ void read_event_tree(TString input_file, TString output_file) {
 
     // メタデータを読み込んで表示する
     auto metadata = ifile->Get<MetaData>("metadata");
-    if (metadata) {
-        metadata->Print();
-    } else {
-        std::cout << "Warning: Could not find 'metadata' object in " << input_file << std::endl;
-    }
+    metadata->Print();
     
     long nEvents = tree->GetEntries();
 
@@ -159,7 +139,7 @@ void read_event_tree(TString input_file, TString output_file) {
             TString selection = Form("ch==%d", ch_num);
             Long64_t n_selected = 0;
 
-            // [変更箇所] --- hgain (ビン幅 1.0 で自動範囲設定) ---
+            // --- hgain (自動範囲設定) ---
             new_tree->Draw("hgain", selection, "goff");
             n_selected = new_tree->GetSelectedRows();
             if (n_selected > 0) {
@@ -167,21 +147,12 @@ void read_event_tree(TString input_file, TString output_file) {
                 double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
                 double margin = (max_val - min_val) * 0.05;
                 if (margin == 0) margin = 1;
-
-                // 1. ビン幅を 1.0 (adc) に設定
-                const double bin_width = 1.0;
-                // 2. ビンの境界が整数になるように調整
-                double xlow = TMath::Floor(min_val - margin);
-                double xup = TMath::Ceil(max_val + margin);
-                // 3. ビン数を計算
-                int nbins = TMath::Nint((xup - xlow) / bin_width);
-                if (nbins <= 0) nbins = 1;
                 
-                TH1D* h_hgain = new TH1D(Form("h_hgain_ch%d", ch_num), Form("High Gain ADC Ch %d", ch_num), nbins, xlow, xup);
+                TH1D* h_hgain = new TH1D(Form("h_hgain_ch%d", ch_num), Form("High Gain ADC Ch %d", ch_num), 400, min_val - margin, max_val + margin);
                 new_tree->Draw(Form("hgain>>%s", h_hgain->GetName()), selection, "goff");
             }
 
-            // [変更箇所] --- lgain (ビン幅 1.0 で自動範囲設定) ---
+            // --- lgain (自動範囲設定) ---
             new_tree->Draw("lgain", selection, "goff");
             n_selected = new_tree->GetSelectedRows();
             if (n_selected > 0) {
@@ -190,21 +161,11 @@ void read_event_tree(TString input_file, TString output_file) {
                 double margin = (max_val - min_val) * 0.05;
                 if (margin == 0) margin = 1;
 
-                // 1. ビン幅を 1.0 (adc) に設定
-                const double bin_width = 1.0;
-                // 2. ビンの境界が整数になるように調整
-                double xlow = TMath::Floor(min_val - margin);
-                double xup = TMath::Ceil(max_val + margin);
-                // 3. ビン数を計算
-                int nbins = TMath::Nint((xup - xlow) / bin_width);
-                if (nbins <= 0) nbins = 1;
-
-                TH1D* h_lgain = new TH1D(Form("h_lgain_ch%d", ch_num), Form("Low Gain ADC Ch %d", ch_num), nbins, xlow, xup);
+                TH1D* h_lgain = new TH1D(Form("h_lgain_ch%d", ch_num), Form("Low Gain ADC Ch %d", ch_num), 400, min_val - margin, max_val + margin);
                 new_tree->Draw(Form("lgain>>%s", h_lgain->GetName()), selection, "goff");
             }
 
-            // [変更箇所] --- tot (ビン幅 1.0 で自動範囲設定) ---
-            // (totもTDC値の一種である可能性が高いため、tdc_diffと同様にビン幅1.0に設定します)
+            // --- tot (自動範囲設定) ---
             new_tree->Draw("tot", selection, "goff");
             n_selected = new_tree->GetSelectedRows();
             if (n_selected > 0) {
@@ -213,20 +174,11 @@ void read_event_tree(TString input_file, TString output_file) {
                 double margin = (max_val - min_val) * 0.05;
                 if (margin == 0) margin = 1;
 
-                // 1. ビン幅を 1.0 (tdc) に設定
-                const double bin_width = 1.0;
-                // 2. ビンの境界が整数になるように調整
-                double xlow = TMath::Floor(min_val - margin);
-                double xup = TMath::Ceil(max_val + margin);
-                // 3. ビン数を計算
-                int nbins = TMath::Nint((xup - xlow) / bin_width);
-                if (nbins <= 0) nbins = 1;
-
-                TH1D* h_tot = new TH1D(Form("h_tot_ch%d", ch_num), Form("Time over Threshold Ch %d", ch_num), nbins, xlow, xup);
+                TH1D* h_tot = new TH1D(Form("h_tot_ch%d", ch_num), Form("Time over Threshold Ch %d", ch_num), 400, min_val - margin, max_val + margin);
                 new_tree->Draw(Form("tot>>%s", h_tot->GetName()), selection, "goff");
             }
 
-            // [変更箇所] --- tdc_diff (ビン幅 1.0 で自動範囲設定) ---
+            // --- tdc_diff (自動範囲設定) ---
             new_tree->Draw("tdc_diff", selection, "goff");
             n_selected = new_tree->GetSelectedRows();
             if (n_selected > 0) {
@@ -235,20 +187,11 @@ void read_event_tree(TString input_file, TString output_file) {
                 double margin = (max_val - min_val) * 0.05;
                 if (margin == 0) margin = 1;
                 
-                // 1. ビン幅を 1.0 (tdc) に設定
-                const double bin_width = 1.0;
-                // 2. ビンの境界が整数になるように調整
-                double xlow = TMath::Floor(min_val - margin);
-                double xup = TMath::Ceil(max_val + margin);
-                // 3. ビン数を計算
-                int nbins = TMath::Nint((xup - xlow) / bin_width);
-                if (nbins <= 0) nbins = 1;
-
-                TH1D* h_tdc_diff = new TH1D(Form("h_tdc_diff_ch%d", ch_num), Form("TDC - Trigger TDC Ch %d", ch_num), nbins, xlow, xup);
+                TH1D* h_tdc_diff = new TH1D(Form("h_tdc_diff_ch%d", ch_num), Form("TDC - Trigger TDC Ch %d", ch_num), 400, min_val - margin, max_val + margin);
                 new_tree->Draw(Form("tdc_diff>>%s", h_tdc_diff->GetName()), selection, "goff");
             }
 
-            // [変更箇所] --- time_diff (ビン幅 0.25 ns で自動範囲設定) ---
+            // --- time_diff (自動範囲設定) ---
             // TTreeの "time_diff" ブランチには (ns) 単位のデータが入っている
             new_tree->Draw("time_diff", selection, "goff");
             n_selected = new_tree->GetSelectedRows();
@@ -260,21 +203,8 @@ void read_event_tree(TString input_file, TString output_file) {
                 // 2. マージンのデフォルト値を (ns) 単位に修正
                 if (margin == 0) margin = 1.0; 
 
-                // 1. ビン幅を 0.25 (ns) に設定
-                const double bin_width = 0.25;
-                double xlow_raw = min_val - margin;
-                double xup_raw = max_val + margin;
-
-                // 2. ビンの境界が 0.25 の倍数になるように調整
-                double xlow = TMath::Floor(xlow_raw / bin_width) * bin_width;
-                double xup = TMath::Ceil(xup_raw / bin_width) * bin_width;
-
-                // 3. ビン数を計算
-                int nbins = TMath::Nint((xup - xlow) / bin_width);
-                if (nbins <= 0) nbins = 1;
-
-                // 4. ヒストグラムのタイトルを (s) から (ns) に修正 (これは既に修正済み)
-                TH1D* h_time_diff = new TH1D(Form("h_time_diff_ch%d", ch_num), Form("Time - Trigger Time (ns) Ch %d", ch_num), nbins, xlow, xup);
+                // 3. ヒストグラムのタイトルを (s) から (ns) に修正
+                TH1D* h_time_diff = new TH1D(Form("h_time_diff_ch%d", ch_num), Form("Time - Trigger Time (ns) Ch %d", ch_num), 400, min_val - margin, max_val + margin);
                 new_tree->Draw(Form("time_diff>>%s", h_time_diff->GetName()), selection, "goff");
             }
         }

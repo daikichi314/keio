@@ -15,6 +15,9 @@
         "eventtree2hist1.0.C": "cpp",
         "eventtree2hist2.0.C": "cpp",
         "create_ct_plot.C": "cpp",
-        "eventtree2hist.C": "cpp"
+        "eventtree2hist.C": "cpp",
+        "meanfinder.C": "cpp",
+        "select_gain_mean.C": "cpp",
+        "eventtree2hist3.0.C": "cpp"
     }
 }

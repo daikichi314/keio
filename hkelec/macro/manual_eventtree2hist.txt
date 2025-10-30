@@ -96,11 +96,20 @@ In hkpd@hkdaq
 
 
 
-How to upload
+### How to upload macros from daiki to hkpd ###
 # 1. 現在のディレクトリ (macro) の中身すべて(*)を
 # 2. -r (再帰的に)
 # 3. hkpd@hkdaq の指定ディレクトリにコピーする
 daiki@daisukekishita:~/keio/hkelec/macro$ scp -r * hkpd@hkdaq:~/hkelec/DiscreteSoftware/Analysis/macro/
+
+### hkpd@hkdaq to kishita@hep ###
+# 1. daiki@daisukekishita:~$ ssh -Y hkdaq (_out)
+# 2. hkpd@hkdaq:~$ scp -r ~/hkelec/DiscreteSoftware/data/2025XXXX kishita@hep:/home/kishita/data
+
+### kishita@hep to daiki@daisukekishita ###
+# 1. daiki@daisukekishita:~$ mkdir -p ~/lab/data/2025XXXX/100pe
+# 2. daiki@daisukekishita:~$ scp kishita@hep:/home/kishita/data/2025XXXX/100pe/*eventhist* ~/lab/data/2025XXXX/100pe
+# 3. daiki@daisukekishita:~$ scp kishita@hep:/home/kishita/data/2025XXXX/*hithist* ~/lab/data/2025XXXX
 
 memo
 - eventtree2hist.C

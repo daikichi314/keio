@@ -1,28 +1,81 @@
 /*
  * id: gausfit.C
  * Place: ~/hkelec/DiscreteSoftware/Analysis/macro/fit_results/
- * Last Edit: 2025-10-16 Gemini
- * (修正: 2025-10-27 Gemini (tdc_diff のフィットをスキップ) )
+ * Last Edit: 2025-10-29 Gemini
  *
  * 概要: 信号データ(..._eventhist.root)を読み込み、電荷または時間のヒストグラムをフィットする。
  * オプションで解析対象を選択可能。
- * コンパイル可能
+ * (ttshistofit.C のロジックを統合し、tts_fitter.h を不要にしたバージョン)
+ *
+ * コンパイル:
+ * g++ gausfit.C -o gausfit $(root-config --cflags --glibs)
  */
+
+// 1. ヘッダーファイルのインクルード
 #include <TFile.h>
 #include <TH1D.h>
+#include <TF1.h>
 #include <TCanvas.h>
 #include <TString.h>
 #include <TStyle.h>
+#include <TMath.h>
+#include <TFitResult.h>
+#include <TFitResultPtr.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
 #include <regex>
 #include <algorithm>
-// 1. 新しいヘッダーをインクルード
-#include "tts_fitter.h" 
+// (tts_fitter.h は不要になりました)
 
-// --- (get_voltage_from_filename関数は変更なし) ---
+// --- グローバル設定 (ttshistofit.C より) ---
+// 2. フィット関数をグローバルで選択 (EMGのみを有効化)
+Bool_t IsAsymGaus = kFALSE;
+Bool_t IsEMG = kTRUE;
+Bool_t IsExpGaus = kFALSE;
+
+
+// --- ユーティリティ関数 (ttshistofit.C より) ---
+
+// 3. EMG (Exponentially Modified Gaussian) 関数の定義
+// (ttshistofit.C で定義されていた関数)
+// par[0]: #mu (ガウス中心), par[1]: #gamma (振幅スケール), par[2]: #sigma (ガウス幅), par[3]: #lambda (1/tau)
+Double_t EMG(Double_t *x, Double_t *par)
+{
+    // パラメータが発散しないよう安全対策を追加
+    if (par[2] == 0) return 0; // sigmaが0
+    if (par[3] == 0) return 0; // lambdaが0
+
+    // (ttshistofit.C の定義式)
+    return 0.5*par[3]*exp(0.5*par[3]*(2*par[0]+par[3]*par[2]*par[2]-2.*x[0]))
+           *TMath::Erfc((par[0]+par[3]*par[2]*par[2]-x[0])/(sqrt(2.)*par[2]))*par[1];
+}
+
+// 4. FWHM (半値全幅) を計算する関数 (ttshistofit.C より)
+Double_t GetFWHM(TF1 *f)
+{
+    if (!f) return 0;
+    double peak_pos = f->GetMaximumX();
+    double half_max = f->GetMaximum() * 0.5;
+    double x_min = f->GetXaxis()->GetXmin();
+    double x_max = f->GetXaxis()->GetXmax();
+    
+    // 左右のx座標を見つける
+    double x1 = f->GetX(half_max, x_min, peak_pos);
+    double x2 = f->GetX(half_max, peak_pos, x_max);
+    
+    return x2 - x1;
+}
+
+// 5. ピーク位置を計算する関数 (ttshistofit.C より)
+Double_t GetPeak(TF1 *f)
+{
+    if (!f) return 0;
+    return f->GetMaximumX();
+}
+
+// --- 電圧取得関数 (変更なし) ---
 double get_voltage_from_filename(const std::string& filename) {
     std::regex re("(\\d+)V");
     std::smatch match;
@@ -32,7 +85,7 @@ double get_voltage_from_filename(const std::string& filename) {
     return -1.0;
 }
 
-// 2. 電荷フィットを行う関数 (以前のprocess_file)
+// --- 電荷フィット関数 (変更なし) ---
 void fit_charge(TString input_filename, bool save_pdf) {
     auto infile = TFile::Open(input_filename, "READ");
     if (!infile || infile->IsZombie()) return;
@@ -43,12 +96,11 @@ void fit_charge(TString input_filename, bool save_pdf) {
     outfile << "# ch,type,voltage,peak,peak_err,sigma,sigma_err,chi2_ndf,rough_sigma" << std::endl;
     
     double voltage = get_voltage_from_filename(input_filename.Data());
-    gStyle->SetOptFit(1111);
+    if (save_pdf) gStyle->SetOptFit(1111);
 
     std::vector<std::string> hist_types = {"hgain", "lgain", "tot"};
     for (int ch = 0; ch < 12; ++ch) {
         for (const auto& type : hist_types) {
-            // ... (gausfitのロジックは変更なし)
             TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
             auto hist = infile->Get<TH1D>(hist_name);
             if (!hist || hist->GetEntries() < 200) continue;
@@ -67,8 +119,8 @@ void fit_charge(TString input_filename, bool save_pdf) {
                  outfile << ch << "," << type << "," << voltage << "," << fit_result->Parameter(1) << "," << fit_result->ParError(1) << "," << std::abs(fit_result->Parameter(2)) << "," << fit_result->ParError(2) << "," << fit_result->Chi2() / fit_result->Ndf() << "," << rough_sigma << std::endl;
             }
             if (save_pdf && fit_result.Get() && fit_result->IsValid()) {
-                TCanvas* canvas = new TCanvas("c", "c", 800, 600); hist->Draw(); f_final->Draw("same");
-                TString pdf_name = input_filename; pdf_name.ReplaceAll("_eventhist.root", Form("_%s_fit.pdf", hist_name.Data())); canvas->SaveAs(pdf_name); delete canvas;
+                 TCanvas* canvas = new TCanvas("c", "c", 800, 600); hist->Draw(); f_final->Draw("same");
+                 TString pdf_name = input_filename; pdf_name.ReplaceAll("_eventhist.root", Form("_%s_fit.pdf", hist_name.Data())); canvas->SaveAs(pdf_name); delete canvas;
             }
             delete f_prefit; delete f_final;
         }
@@ -78,7 +130,10 @@ void fit_charge(TString input_filename, bool save_pdf) {
     infile->Close();
 }
 
-// 3. 時間フィットを行う関数 (新規追加)
+
+// --- 時間フィット関数 (ttshistofit.C のロジックに置き換え) ---
+
+// 6. fit_time 関数を ttshistofit.C のロジックで書き換え
 void fit_time(TString input_filename, bool save_pdf) {
     auto infile = TFile::Open(input_filename, "READ");
     if (!infile || infile->IsZombie()) return;
@@ -86,41 +141,124 @@ void fit_time(TString input_filename, bool save_pdf) {
     TString output_txt_filename = input_filename;
     output_txt_filename.ReplaceAll("_eventhist.root", "_timefit.txt");
     std::ofstream outfile(output_txt_filename.Data());
-    outfile << "# ch,type,voltage,tts,sigma,fwhm,peak,tau,chi2_ndf" << std::endl;
+    
+    // 7. 出力ヘッダーを ttshistofit.C のモデルに合わせて変更
+    // (tts = sigma, tau = 1/lambda と定義)
+    outfile << "# ch,type,voltage,tts(sigma),sigma,fwhm(calc),peak(calc),tau(1/lambda),chi2_ndf" << std::endl;
 
     double voltage = get_voltage_from_filename(input_filename.Data());
     
-    // 1. ★★★ ここを修正しました ★★★
-    // tdc_diff は (s) 単位のままで数値計算エラーを引き起こすため、
-    // ご要望通り time_diff のみフィットするように変更します。
+    if (save_pdf) {
+        // ttshistofit.C で設定されていた gStyle
+        gStyle->SetOptStat(0);
+        gStyle->SetOptFit(1);
+    }
+
     std::vector<std::string> hist_types = {"time_diff"};
-    // std::vector<std::string> hist_types = {"tdc_diff", "time_diff"}; // ← 元のコード
 
     for (int ch = 0; ch < 12; ++ch) {
         for (const auto& type : hist_types) {
             TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
             auto hist = infile->Get<TH1D>(hist_name);
-            if (!hist || hist->GetEntries() < 200) continue;
-
-            // tts_fitter.h の関数を呼び出す
-            TTSFitResult result = perform_tts_fit(hist);
-
-            if (result.ndf > 0) {
-                 outfile << ch << "," << type << "," << voltage << ","
-                         << result.tts << "," << result.sigma << "," << result.fwhm << ","
-                         << result.peak << "," << result.tau << "," << result.chi2 / result.ndf << std::endl;
-            }
             
-            if (save_pdf && result.ndf > 0) {
+            // 8. ttshistofit.C と同様のエントリ数チェック
+            if (!hist || hist->GetEntries() < 100) continue;
+
+            // --- 9. ttshistofit.C のフィッティングロジックを移植 ---
+            
+            // ヒストグラムの全範囲を取得
+            double hist_min = hist->GetXaxis()->GetXmin();
+            double hist_max = hist->GetXaxis()->GetXmax();
+
+            // ステップA: ガウス関数によるプレフィット
+            // (ttshistofit.C では範囲を固定していたが、ここではヒストグラム全体を対象)
+            TF1 *fgaus = new TF1("fgaus", "gaus", hist_min, hist_max);
+            fgaus->SetLineColor(kCyan);
+            fgaus->SetLineWidth(1);
+
+            // プレフィットの初期値設定
+            fgaus->SetParameter(1, hist->GetBinCenter(hist->GetMaximumBin()));
+            fgaus->SetParameter(2, hist->GetRMS()); // RMSをシグマの初期値に
+            
+            // "Q" (Quiet) オプションでプレフィット実行
+            hist->Fit(fgaus, "QN", "", hist_min, hist_max);
+
+            // プレフィットの結果を格納 (ttshistofit.C の var[] に相当)
+            double pre_amp = fgaus->GetParameter(0);
+            double pre_mean = fgaus->GetParameter(1);
+            double pre_sigma = TMath::Abs(fgaus->GetParameter(2));
+            if (pre_sigma == 0) { delete fgaus; continue; } // フィット失敗
+
+            // ステップB: EMG関数による本フィット
+            TF1 *emg = nullptr;
+            TFitResultPtr fit_result = nullptr;
+
+            if (IsEMG) {
+                emg = new TF1("emg", EMG, hist_min, hist_max, 4);
+                emg->SetLineColor(kRed);
+                emg->SetLineStyle(2);
+                emg->SetNpx(2000); // Npxを調整
+
+                // ttshistofit.C に倣ったパラメータ名と初期値設定
+                emg->SetParName(0, "#mu");
+                emg->SetParName(1, "#gamma");
+                emg->SetParName(2, "#sigma");
+                emg->SetParName(3, "#lambda");
+                
+                emg->SetParameter(0, pre_mean);               // #mu
+                emg->SetParameter(1, pre_amp * 10.0);         // #gamma (ttshistofit.C では 100. だったが調整)
+                emg->SetParameter(2, pre_sigma * 0.7);        // #sigma
+                emg->SetParameter(3, (pre_sigma > 1e-9) ? (1. / pre_sigma) : 1.0); // #lambda (1/tau)
+
+                // ttshistofit.C に倣ったパラメータ制限
+                emg->SetParLimits(1, 1, 1e9); // gamma (amp)
+                emg->SetParLimits(2, 0.01, 100); // sigma
+                emg->SetParLimits(3, 0.001, 500); // lambda (1/tau)
+
+                // "S" オプションで TFitResultPtr を取得
+                fit_result = hist->Fit(emg, "SQR", "", hist_min, hist_max);
+            }
+            // (IsAsymGaus, IsExpGaus は kFALSE なので省略)
+            
+            // --- 10. 結果の抽出とテキストファイルへの出力 ---
+            if (emg && fit_result.Get() && fit_result->IsValid() && fit_result->Ndf() > 0) {
+                
+                // ttshistofit.C の定義に基づいて値を取得
+                double sigma = emg->GetParameter(2);
+                double lambda = emg->GetParameter(3);
+                double tau = (lambda > 1e-9) ? (1.0 / lambda) : 0.0;
+                double tts = sigma; // (TTSOUT の定義 'fout->GetParameter(2)' に倣う)
+                double fwhm = GetFWHM(emg);
+                double peak = GetPeak(emg);
+                double chi2_ndf = fit_result->Chi2() / fit_result->Ndf();
+
+                // テキストファイルに出力
+                outfile << ch << "," << type << "," << voltage << ","
+                        << tts << "," << sigma << "," << fwhm << ","
+                        << peak << "," << tau << "," << chi2_ndf << std::endl;
+            }
+
+            // --- 11. PDFの保存 ---
+            if (save_pdf && emg && fit_result.Get() && fit_result->IsValid()) {
                 TCanvas* canvas = new TCanvas("c", "c", 800, 600);
+                
+                // ttshistofit.C に倣った描画設定
+                hist->GetXaxis()->SetRangeUser(hist->GetBinCenter(hist->GetMaximumBin())-15, hist->GetBinCenter(hist->GetMaximumBin())+20);
                 hist->Draw();
-                // フィット関数を再描画
-                hist->GetFunction("fitFunc")->Draw("same");
+                emg->Draw("same");
+                
+                // (統計ボックスのカスタマイズは省略)
+
                 TString pdf_name = input_filename;
                 pdf_name.ReplaceAll("_eventhist.root", Form("_%s_fit.pdf", hist_name.Data()));
                 canvas->SaveAs(pdf_name);
                 delete canvas;
             }
+
+            // 12. メモリ解放
+            delete fgaus;
+            if (emg) delete emg;
+            // (fit_result は TFitResultPtr なので自動で解放される)
         }
     }
     std::cout << "Time fit completed. -> " << output_txt_filename << std::endl;
@@ -128,7 +266,7 @@ void fit_time(TString input_filename, bool save_pdf) {
     infile->Close();
 }
 
-// 4. main関数: コマンドライン引数を解釈して適切な関数を呼び出す
+// --- main関数 (変更なし) ---
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "使い方: " << argv[0] << " <input.root> [--fit-charge | --fit-time | --fit-all] [--no-pdf]" << std::endl;

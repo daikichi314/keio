@@ -20,8 +20,8 @@
 #include "TLatex.h"
 
   Bool_t IsAsymGaus = kFALSE;
-  Bool_t IsEMG = kFALSE;
-  Bool_t IsExpGaus = kTRUE;//kFALSE;
+  Bool_t IsEMG = kTRUE;   ////////////////koko
+  Bool_t IsExpGaus = kFALSE;
 
 double FWHM;
 double chi2ndf;
@@ -102,14 +102,16 @@ void ttshistofit(TH1 *h)
      fgaus->FixParameter(1, h->GetBinCenter(h->GetMaximumBin()));
      fgaus->SetParameter(2, 1.5);
 
-     h->Fit(fgaus,"QBN","", h->GetBinCenter(h->GetMaximumBin())-12, h->GetBinCenter(h->GetMaximumBin())+12);
-     //h->Fit(fgaus,"","", h->GetBinCenter(h->GetMaximumBin())-12, h->GetBinCenter(h->GetMaximumBin())+5);
+     //h->Fit(fgaus,"B"/*"QBN"*/,"", h->GetBinCenter(h->GetMaximumBin())-12, h->GetBinCenter(h->GetMaximumBin())+12);
+     h->Fit(fgaus,"B","", h->GetBinCenter(0), h->GetBinCenter(h->GetNbinsX()));
      fgaus->ReleaseParameter(1);
-     h->Fit(fgaus,"N","", h->GetBinCenter(h->GetMaximumBin())-12, h->GetBinCenter(h->GetMaximumBin())+25);
+     //h->Fit(fgaus,"N","", h->GetBinCenter(h->GetMaximumBin())-12, h->GetBinCenter(h->GetMaximumBin())+25);
+     h->Fit(fgaus,"B","", h->GetBinCenter(0), h->GetBinCenter(h->GetNbinsX()));
      for (Int_t ipar = 0; ipar < 3; ipar++) {
         var[ipar]    = fgaus->GetParameter(ipar);
         varerr[ipar] = fgaus->GetParError(ipar);
      }
+     var[2]=TMath::Abs(var[2]);//////////////////
 
   TF1 *fasymgaus = 0;
   if (IsAsymGaus) {
@@ -154,29 +156,35 @@ void ttshistofit(TH1 *h)
   emg->SetLineStyle(2);
   emg->SetNpx(9000);
   emg->SetParName(0, "#mu");
-  emg->SetParName(1, "#lambda");
+  emg->SetParName(1, "#gamma");
   emg->SetParName(2, "#sigma");
-  emg->SetParName(3, "#gamma");
+  emg->SetParName(3, "#lambda");
   emg->SetParameter(0,var[1]);
-  emg->SetParameter(1,var[0]*10.);
+  emg->SetParameter(1,var[0]*100.);
   //emg->SetParameter(1,var[0]);
   emg->SetParameter(2,var[2]*0.7);
-  emg->SetParameter(3,var[2]*0.1);
+//   emg->SetParameter(3,var[2]*0.1);
+//   emg->SetParameter(3,var[2]*0.1);
+  emg->SetParameter(3,1./var[2]);
   //emg->SetParameter(3,var[2]);
-  emg->SetParLimits(0, h->GetBinCenter(h->GetMaximumBin())-3, h->GetBinCenter(h->GetMaximumBin())+3);
+  emg->SetParLimits(0, h->GetBinCenter(0), h->GetBinCenter(h->GetNbinsX()));
+  //emg->FixParameter(0, var[1]);
   emg->SetParLimits(1, 1, 1000000);
   emg->SetParLimits(2, 0.3, 5);
-  emg->SetParLimits(3, 0.1, 5);
+  emg->SetParLimits(3, 0.001, 500);
 
   //h->Fit(emg,"","", h->GetBinCenter(h->GetMaximumBin())-20, h->GetBinCenter(h->GetMaximumBin())+30);
   //h->Fit(emg,"N","", h->GetBinCenter(h->GetMaximumBin())-20, h->GetBinCenter(h->GetMaximumBin())+5);
   //h->Fit(emg,"N","", h->GetBinCenter(h->GetMaximumBin())-20, h->GetBinCenter(h->GetMaximumBin())+5);
-  emg->FixParameter(2,var[2]*0.7);
-  h->Fit(emg,"BN0","", h->GetBinCenter(h->GetMaximumBin())-20, h->GetBinCenter(h->GetMaximumBin())+5);
+  //emg->FixParameter(2,var[2]*0.7);//////////////koko
+  //h->Fit(emg,"BN0","", h->GetBinCenter(h->GetMaximumBin())-20, h->GetBinCenter(h->GetMaximumBin())+5);
+  h->Fit(emg,"B","", h->GetBinCenter(0), h->GetBinCenter(h->GetNbinsX()));
+  //emg->ReleaseParameter(0);
   emg->ReleaseParameter(1);
   emg->ReleaseParameter(2);
   emg->ReleaseParameter(3);
-  h->Fit(emg,"B+","+", h->GetBinCenter(h->GetMaximumBin())-20, h->GetBinCenter(h->GetMaximumBin())+25);
+  //h->Fit(emg,"B+","+", h->GetBinCenter(h->GetMaximumBin())-20, h->GetBinCenter(h->GetMaximumBin())+25);
+  h->Fit(emg,"B+","+", h->GetBinCenter(0), h->GetBinCenter(h->GetNbinsX()));
   }
 
   TF1 *expgaus = 0;
@@ -288,13 +296,13 @@ void ttshistofit(TH1 *h)
 
 }
 
-int ttshistofit(TH1* h)
-{
+// int ttshistofit(TH1* h)
+// {
 
-  FWHM = 0;
-  chi2ndf = 0;
-  ttshistofit(h);
+//   FWHM = 0;
+//   chi2ndf = 0;
+//   ttshistofit(h);
 
-  return 0;
+//   return 0;
 
-}
+// }

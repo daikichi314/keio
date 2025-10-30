@@ -63,7 +63,7 @@ TTSFitResult perform_tts_fit(TH1* hist) {
     double pre_fit_min = std::max(hist_min_x, xmax - 5 * xrms);
     double pre_fit_max = std::min(hist_max_x, xmax + 5 * xrms);
     TF1* f_prefit = new TF1("f_prefit", "gaus", pre_fit_min, pre_fit_max);
-    TFitResultPtr pre_fit_res = hist->Fit(f_prefit, "QNRS");
+    TFitResultPtr pre_fit_res = hist->Fit(f_prefit, "QNRS");/////////////
 
     if (!pre_fit_res->IsValid()) {
         delete f_prefit;
@@ -101,7 +101,7 @@ TTSFitResult perform_tts_fit(TH1* hist) {
     
     if (!fitFunc) { delete f_prefit; return result; }
     
-    TFitResultPtr fit_res = hist->Fit(fitFunc, "SQR");
+    TFitResultPtr fit_res = hist->Fit(fitFunc, "SQR");///////////////////
 
     // --- ステップ5: 結果を抽出 ---
     if (fit_res.Get() && fit_res->IsValid()) {

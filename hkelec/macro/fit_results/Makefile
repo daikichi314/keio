@@ -13,6 +13,8 @@ TARGET3 := select_gain
 TARGET4 := peakfinder
 TARGET5 := fit_hv_gain
 TARGET6 := create_ct_plot
+TARGET7 := meanfinder
+TARGET8 := select_gain_mean
 
 # ソースファイル名
 SRC1 := gausfit.C
@@ -21,6 +23,8 @@ SRC3 := select_gain.C
 SRC4 := peakfinder.C
 SRC5 := fit_hv_gain.C
 SRC6 := create_ct_plot.C
+SRC7 := meanfinder.C
+SRC8 := select_gain_mean.C
 
 # ヘッダーファイル
 HEADER1 := tts_fitter.h
@@ -34,10 +38,10 @@ LDFLAGS := $(ROOTGLIBS)
 .PHONY: all clean
 
 # 'make all' または 'make' で全ての実行ファイルを作成
-all: $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) $(TARGET5) $(TARGET6)
+all: $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) $(TARGET5) $(TARGET6) $(TARGET7) $(TARGET8)
 
-# gausfit: tts_fitter.hにも依存
-$(TARGET1): $(SRC1) $(HEADER1)
+# gausfit: tts_fitter.hにも依存<-no
+$(TARGET1): $(SRC1) #$(HEADER1)
 	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
 # fit_pedestal
@@ -48,8 +52,8 @@ $(TARGET2): $(SRC2)
 $(TARGET3): $(SRC3)
 	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
-# peakfinder: tts_fitter.hにも依存
-$(TARGET4): $(SRC4) $(HEADER1)
+# peakfinder: tts_fitter.hにも依存<-no
+$(TARGET4): $(SRC4) #$(HEADER1)
 	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
 # fit_hv_gain
@@ -60,6 +64,14 @@ $(TARGET5): $(SRC5)
 $(TARGET6): $(SRC6)
 	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
+# meanfinder
+$(TARGET7): $(SRC7)
+	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
+
+# select_gain_mean
+$(TARGET8): $(SRC8)
+	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
+
 clean:
-	rm -f $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) $(TARGET5) $(TARGET6) *.o
+	rm -f $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) $(TARGET5) $(TARGET6) $(TARGET7) $(TARGET8) *.o
 
