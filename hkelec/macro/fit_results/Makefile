@@ -15,6 +15,7 @@ TARGET5 := fit_hv_gain
 TARGET6 := create_ct_plot
 TARGET7 := meanfinder
 TARGET8 := select_gain_mean
+TARGET9 := plot_ct
 
 # ソースファイル名
 SRC1 := gausfit.C
@@ -25,6 +26,7 @@ SRC5 := fit_hv_gain.C
 SRC6 := create_ct_plot.C
 SRC7 := meanfinder.C
 SRC8 := select_gain_mean.C
+SRC9 := plot_ct.C
 
 # ヘッダーファイル
 HEADER1 := tts_fitter.h
@@ -38,7 +40,7 @@ LDFLAGS := $(ROOTGLIBS)
 .PHONY: all clean
 
 # 'make all' または 'make' で全ての実行ファイルを作成
-all: $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) $(TARGET5) $(TARGET6) $(TARGET7) $(TARGET8)
+all: $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) $(TARGET5) $(TARGET6) $(TARGET7) $(TARGET8) $(TARGET9)
 
 # gausfit: tts_fitter.hにも依存<-no
 $(TARGET1): $(SRC1) #$(HEADER1)
@@ -72,6 +74,10 @@ $(TARGET7): $(SRC7)
 $(TARGET8): $(SRC8)
 	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
+# plot_ct
+$(TARGET9): $(SRC9)
+	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
+
 clean:
-	rm -f $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) $(TARGET5) $(TARGET6) $(TARGET7) $(TARGET8) *.o
+	rm -f $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) $(TARGET5) $(TARGET6) $(TARGET7) $(TARGET8) $(TARGET9) *.o
 

@@ -59,11 +59,19 @@ Double_t GetFWHM(TF1 *f)
     return x2 - x1;
 }
 
-// 3c. ピーク位置を計算する関数
+// 3c. EMG関数のピーク位置を解析的に計算する関数
 Double_t GetPeak(TF1 *f)
 {
     if (!f) return 0;
-    return f->GetMaximumX();
+    
+    // EMG関数のパラメータを取得
+    double mu = f->GetParameter(0);     // ガウス中心
+    double sigma = f->GetParameter(2);  // ガウス幅
+    double lambda = f->GetParameter(3); // 1/tau
+    
+    // EMG関数の最大値の位置を解析的に計算
+    // peak = μ + σ²λ
+    return mu + sigma * sigma * lambda;
 }
 
 // --- 4. ファイル名から電圧を抽出する関数 (変更なし) ---
@@ -97,7 +105,7 @@ void find_charge_peaks(TString input_filename) {
             if (!hist || hist->GetEntries() == 0) continue;
             int max_bin = hist->GetMaximumBin();
             double peak_pos = hist->GetXaxis()->GetBinCenter(max_bin);
-            outfile << ch << "," << type << "," << voltage << "," << peak_pos << std::endl;
+            outfile << ch << "," << type << "," << voltage << "," << peak_pos << "," << input_filename.Data() << std::endl;
         }
     }
     std::cout << "電荷ピーク検出完了 -> " << output_txt_filename << std::endl;

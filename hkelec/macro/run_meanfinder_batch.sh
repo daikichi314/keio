@@ -14,7 +14,7 @@ PEDESTAL_FITTER="${BASE_DIR}/fit_results/fit_pedestal"
 # 1. GAUS_FITTER -> MEAN_FINDER
 MEAN_FINDER="${BASE_DIR}/fit_results/meanfinder"
 # 2. GAIN_SELECTOR -> GAIN_SELECTOR_MEAN
-GAIN_SELECTOR_MEAN="${BASE_DIR}/fit_results/select_gain_mean"
+GAIN_SELECTOR_MEAN="${BASE_DIR}/fit_results/select_gain" ###"${BASE_DIR}/fit_results/select_gain_mean"
 CT_PLOT_CREATOR="${BASE_DIR}/fit_results/create_ct_plot"
 PEDESTAL_ROOT_FILE="hkelec_pedestal_hithist.root"
 
@@ -75,14 +75,14 @@ if [[ "$FIT_OPTION" == "--fit-charge" || "$FIT_OPTION" == "--fit-all" ]]; then
     SUMMARY_FILE_CHARGE="$TARGET_DIR/summary_mean_all.txt"
     rm -f "$SUMMARY_FILE_CHARGE"
     # 6. ヘッダーを mean 用に変更
-    echo "# ch,type,voltage,mean,mean_err,rms" > "$SUMMARY_FILE_CHARGE"
+    echo "# ch,type,voltage,mean,mean_err,rms,root_file" > "$SUMMARY_FILE_CHARGE"
     # 7. *_mean.txt を収集
     cat "$TARGET_DIR"/*_mean.txt | grep -v '^#' >> "$SUMMARY_FILE_CHARGE"
     
     echo ""
     echo "--- ステップA-3: HV vs Charge (Mean) グラフファイルを作成しています... ---"
-    # 8. select_gain_mean を呼び出す
-    "$GAIN_SELECTOR_MEAN" "$SUMMARY_FILE_CHARGE" "$PEDESTAL_TXT_PATH" "$TARGET_DIR"
+    # select_gain_mean を呼び出し、HV vs Charge ファイルを生成
+    "$GAIN_SELECTOR_MEAN" "$SUMMARY_FILE_CHARGE" "$PEDESTAL_TXT_PATH" "$TARGET_DIR" 
 fi
 
 # --- 5. ステップB: 時間フィット (★ gausfit から変更) ---
@@ -110,20 +110,29 @@ if [ "$MAKE_CT_PLOT" == "yes" ]; then
     echo ""
     echo "--- 最終ステップ: Charge vs Time グラフ用データを作成しています... ---"
     
-    # 11. 電荷サマリーファイル名を _mean_all.txt に変更
+    # select_gain_mean の出力ファイルを使用
     SUMMARY_FILE_CHARGE_FOR_CT="$TARGET_DIR/summary_HV_vs_Charge_mean.txt"
     
-    # 12. 時間サマリーファイル名 (timefit_all) は変更なし
-    SUMMARY_FILE_TIME_FOR_CT="$TARGET_DIR/summary_timefit_all.txt" 
+    # 時間サマリーファイル名は標準の timefit_all を使用
+    SUMMARY_FILE_TIME_FOR_CT="$TARGET_DIR/summary_timefit_all.txt"
     
     # 13. C-Tグラフ作成 (create_ct_plot を呼び出す)
-    # (入力ファイル名が _mean になっている点に注意)
-    if [ -f "$SUMMARY_FILE_CHARGE_FOR_CT" ] && [ -f "$SUMMARY_FILE_TIME_FOR_CT" ]; then
+    # create_ct_plot は per-channel の HV_vs_ChargeSelected_ch*.txt を見に行けるため
+    # summary_HV_vs_Charge_mean.txt がなくても動作する。ただし時間サマリーは必要なので作成する。
+    SUMMARY_FILE_TIME_FOR_CT="$TARGET_DIR/summary_timefit_all.txt"
+    echo "# ch,type,voltage,tts(sigma),sigma,fwhm(calc),peak(calc),tau(1/lambda),chi2_ndf" > "$SUMMARY_FILE_TIME_FOR_CT"
+    # *_timefit.txt があれば結合して summary_timefit_all.txt を作る
+    for f in "$TARGET_DIR"/*_timefit.txt; do
+        if [ -f "$f" ]; then
+            grep -v '^#' "$f" >> "$SUMMARY_FILE_TIME_FOR_CT"
+        fi
+    done
+
+    # create_ct_plot を呼ぶ（charge summary が無くても、ディレクトリ内の per-channel HV ファイルを利用します）
+    if [ -f "$SUMMARY_FILE_TIME_FOR_CT" ]; then
         "$CT_PLOT_CREATOR" "$SUMMARY_FILE_CHARGE_FOR_CT" "$SUMMARY_FILE_TIME_FOR_CT" "$PEDESTAL_TXT_PATH" "$TARGET_DIR"
     else
-        echo "警告: Charge vs Time グラフ作成に必要なサマリーファイルが見つかりません。"
-        echo "($SUMMARY_FILE_CHARGE_FOR_CT または $SUMMARY_FILE_TIME_FOR_CT)"
-        echo "(--fit-all オプションでスクリプトを再実行してください)"
+        echo "警告: 時間サマリファイル $SUMMARY_FILE_TIME_FOR_CT の作成に失敗しました。"
     fi
 fi
 

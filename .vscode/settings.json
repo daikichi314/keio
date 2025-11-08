@@ -18,6 +18,8 @@
         "eventtree2hist.C": "cpp",
         "meanfinder.C": "cpp",
         "select_gain_mean.C": "cpp",
-        "eventtree2hist3.0.C": "cpp"
+        "eventtree2hist3.0.C": "cpp",
+        "fit_ct.C": "cpp",
+        "plot_ct.C": "cpp"
     }
 }

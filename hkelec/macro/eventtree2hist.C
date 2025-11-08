@@ -274,7 +274,7 @@ void read_event_tree(TString input_file, TString output_file) {
                 if (nbins <= 0) nbins = 1;
 
                 // 4. ヒストグラムのタイトルを (s) から (ns) に修正 (これは既に修正済み)
-                TH1D* h_time_diff = new TH1D(Form("h_time_diff_ch%d", ch_num), Form("Time - Trigger Time (ns) Ch %d", ch_num), nbins, xlow, xup);
+                TH1D* h_time_diff = new TH1D(Form("h_time_diff_ch%d", ch_num), Form("Time - Trigger Time (ns) Ch %d", ch_num), nbins, xlow+0.125, xup+0.125);
                 new_tree->Draw(Form("time_diff>>%s", h_time_diff->GetName()), selection, "goff");
             }
         }

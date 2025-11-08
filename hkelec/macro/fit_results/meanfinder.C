@@ -63,11 +63,19 @@ Double_t GetFWHM(TF1 *f)
     return x2 - x1;
 }
 
-// 3c. ピーク位置を計算する関数
+// 3c. EMG関数のピーク位置を解析的に計算する関数
 Double_t GetPeak(TF1 *f)
 {
     if (!f) return 0;
-    return f->GetMaximumX();
+    
+    // EMG関数のパラメータを取得
+    double mu = f->GetParameter(0);     // ガウス中心
+    double sigma = f->GetParameter(2);  // ガウス幅
+    double lambda = f->GetParameter(3); // 1/tau
+    
+    // EMG関数の最大値の位置を解析的に計算
+    // peak = μ + σ²λ
+    return mu + sigma * sigma * lambda;
 }
 
 // --- 4. 電圧取得関数 (変更なし) ---
@@ -91,65 +99,33 @@ void calculate_charge_mean(TString input_filename) {
     output_txt_filename.ReplaceAll("_eventhist.root", "_mean.txt");
     std::ofstream outfile(output_txt_filename.Data());
     
-    // 2. 出力ヘッダーを変更 (peak, sigma ではなく mean, mean_err)
-    outfile << "# ch,type,voltage,mean,mean_err,rms" << std::endl;
+    // 2. 出力ヘッダーを変更
+    outfile << "# ch,type,voltage,mean,mean_err,rms,root_file" << std::endl;
     
     double voltage = get_voltage_from_filename(input_filename.Data());
     
-    // tot も含めて計算
+    // すべてのタイプ（hgain, lgain, tot）を処理
     std::vector<std::string> hist_types = {"hgain", "lgain", "tot"};
     
     for (int ch = 0; ch < 12; ++ch) {
-        
-        // 3. hgain/lgain の平均値とRMSを先に取得
-        double hgain_mean = 0, hgain_mean_err = 0, hgain_rms = 0;
-        double lgain_mean = 0, lgain_mean_err = 0, lgain_rms = 0;
-        bool hgain_saturated = false;
-
-        auto hist_hgain = infile->Get<TH1D>(Form("h_hgain_ch%d", ch));
-        if (hist_hgain && hist_hgain->GetEntries() > 0) {
-            hgain_mean = hist_hgain->GetMean();
-            hgain_mean_err = hist_hgain->GetMeanError();
-            hgain_rms = hist_hgain->GetRMS();
+        // 各タイプのヒストグラムを処理
+        for (const auto& type : hist_types) {
+            TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
+            auto hist = infile->Get<TH1D>(hist_name);
             
-            // 4. ★★★ hgain 飽和判定ロジック ★★★
-            // （hgainのヒストグラムの一番右端のビンの値が右端から2番目のビンの値の5倍以上）
-            int n_bins = hist_hgain->GetNbinsX();
-            if (n_bins >= 2) {
-                double last_bin_content = hist_hgain->GetBinContent(n_bins);
-                double second_last_bin_content = hist_hgain->GetBinContent(n_bins - 1);
+            if (hist && hist->GetEntries() > 0) {
+                double mean = hist->GetMean();
+                double mean_err = hist->GetMeanError();
+                double rms = hist->GetRMS();
                 
-                // 5. 0除算を避け、5倍の条件を確認
-                if (second_last_bin_content > 1e-9 && (last_bin_content > second_last_bin_content * 5.0)) {
-                    hgain_saturated = true;
-                }
+                // 全てのデータを出力（選択はselect_gain_mean.Cで行う）
+                outfile << ch << "," << type << "," << voltage << ","
+                       << mean << "," << mean_err << "," << rms << ","
+                       << input_filename.Data() << std::endl;
             }
         }
 
-        auto hist_lgain = infile->Get<TH1D>(Form("h_lgain_ch%d", ch));
-        if (hist_lgain && hist_lgain->GetEntries() > 0) {
-            lgain_mean = hist_lgain->GetMean();
-            lgain_mean_err = hist_lgain->GetMeanError();
-            lgain_rms = hist_lgain->GetRMS();
-        }
-
-        // 6. 飽和判定に基づき、"hgain" または "lgain" として出力
-        if (hgain_saturated) {
-            // lgain を採用
-            outfile << ch << ",lgain," << voltage << "," << lgain_mean << "," << lgain_mean_err << "," << lgain_rms << std::endl;
-        } else {
-            // hgain を採用
-            outfile << ch << ",hgain," << voltage << "," << hgain_mean << "," << hgain_mean_err << "," << hgain_rms << std::endl;
-        }
-
-        // 7. tot は個別に処理
-        auto hist_tot = infile->Get<TH1D>(Form("h_tot_ch%d", ch));
-        if (hist_tot && hist_tot->GetEntries() > 0) {
-            outfile << ch << ",tot," << voltage << "," 
-                    << hist_tot->GetMean() << "," 
-                    << hist_tot->GetMeanError() << "," 
-                    << hist_tot->GetRMS() << std::endl;
-        }
+        // tot の処理は上のループ内で済んでいるため、ここでは何もしない
     }
     std::cout << "電荷 平均値計算完了 -> " << output_txt_filename << std::endl;
     outfile.close();
@@ -165,7 +141,7 @@ void fit_time(TString input_filename, bool save_pdf) {
     TString output_txt_filename = input_filename;
     output_txt_filename.ReplaceAll("_eventhist.root", "_timefit.txt");
     std::ofstream outfile(output_txt_filename.Data());
-    outfile << "# ch,type,voltage,tts(sigma),sigma,fwhm(calc),peak(calc),tau(1/lambda),chi2_ndf" << std::endl;
+    outfile << "# ch,type,voltage,tts(sigma),sigma,fwhm(calc),peak(calc),peak_err,tau(1/lambda),chi2_ndf" << std::endl;
 
     double voltage = get_voltage_from_filename(input_filename.Data());
     
@@ -229,9 +205,12 @@ void fit_time(TString input_filename, bool save_pdf) {
                 double peak = GetPeak(emg);
                 double chi2_ndf = fit_result->Chi2() / fit_result->Ndf();
 
+                double peak_err = emg->GetParError(0); // μのエラー
+
                 outfile << ch << "," << type << "," << voltage << ","
                         << tts << "," << sigma << "," << fwhm << ","
-                        << peak << "," << tau << "," << chi2_ndf << std::endl;
+                        << peak << "," << peak_err << "," << tau << ","
+                        << chi2_ndf << std::endl;
             }
 
             if (save_pdf && emg && fit_result.Get() && fit_result->IsValid()) {

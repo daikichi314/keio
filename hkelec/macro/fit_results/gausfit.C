@@ -68,11 +68,19 @@ Double_t GetFWHM(TF1 *f)
     return x2 - x1;
 }
 
-// 5. ピーク位置を計算する関数 (ttshistofit.C より)
+// 5. ピーク位置を計算する関数 (EMG関数の最大値を解析的に計算)
 Double_t GetPeak(TF1 *f)
 {
     if (!f) return 0;
-    return f->GetMaximumX();
+    
+    // EMG関数のパラメータを取得
+    double mu = f->GetParameter(0);     // ガウス中心
+    double sigma = f->GetParameter(2);  // ガウス幅
+    double lambda = f->GetParameter(3); // 1/tau
+    
+    // EMG関数の最大値の位置を解析的に計算
+    // peak = μ + σ²λ
+    return mu + sigma * sigma * lambda;
 }
 
 // --- 電圧取得関数 (変更なし) ---
@@ -116,7 +124,7 @@ void fit_charge(TString input_filename, bool save_pdf) {
             TF1* f_final = new TF1("f_final", "gaus", std::max(hist->GetXaxis()->GetXmin(), r_mean - 2*r_sigma), std::min(hist->GetXaxis()->GetXmax(), r_mean + 2*r_sigma));
             TFitResultPtr fit_result = hist->Fit(f_final, "SQR");
             if (fit_result.Get() && fit_result->IsValid() && fit_result->Ndf() > 0) {
-                 outfile << ch << "," << type << "," << voltage << "," << fit_result->Parameter(1) << "," << fit_result->ParError(1) << "," << std::abs(fit_result->Parameter(2)) << "," << fit_result->ParError(2) << "," << fit_result->Chi2() / fit_result->Ndf() << "," << rough_sigma << std::endl;
+                 outfile << ch << "," << type << "," << voltage << "," << fit_result->Parameter(1) << "," << fit_result->ParError(1) << "," << std::abs(fit_result->Parameter(2)) << "," << fit_result->ParError(2) << "," << fit_result->Chi2() / fit_result->Ndf() << "," << rough_sigma << "," << input_filename.Data() << std::endl;
             }
             if (save_pdf && fit_result.Get() && fit_result->IsValid()) {
                  TCanvas* canvas = new TCanvas("c", "c", 800, 600); hist->Draw(); f_final->Draw("same");
