@@ -154,7 +154,8 @@
                 ch = hit.channel;
                 hgain = hit.hgain;
                 lgain = hit.lgain;
-                tot = hit.tot;
+                to
+                t = hit.tot;
                 tdc_diff = hit.tdc - trigger_tdc;
 
                 // 1. TTreeに保存する直前に (s) から (ns) へ単位を変換

@@ -6,6 +6,7 @@
  * 概要: 指定ディレクトリ内の _mean.txt (電荷) と _timefit.txt (時間) を集計し、
  * Charge vs Time および Charge vs TTS のグラフを作成する。
  * グラフは7次多項式でフィットし、結果をPDFとテキストに出力する。
+ * ★追加: 全データをまとめたCSV (summary_all_data.csv) も出力する。
  *
  * コンパイル:
  * g++ plot_summary.C -o plot_summary $(root-config --cflags --glibs)
@@ -50,20 +51,22 @@ void print_usage(const char* prog_name) {
               << "[概要]\n"
               << "  指定されたディレクトリ内の解析結果ファイル (_mean.txt, _timefit.txt) を読み込み、\n"
               << "  チャンネルごとに以下の処理を行います。\n"
-              << "  1. Charge vs Time および Charge vs TTS のグラフを作成\n"
-              << "  2. 7次多項式 (pol7) でフィッティング\n"
-              << "  3. 結果をPDF画像とテキストファイルに出力\n\n"
+              << "  1. 全データを結合したCSV (summary_all_data.csv) を出力\n"
+              << "  2. Charge vs Time および Charge vs TTS のグラフを作成\n"
+              << "  3. 7次多項式 (pol7) でフィッティング\n"
+              << "  4. 結果をPDF画像とテキストファイルに出力\n\n"
               << "[使い方]\n"
               << "  $ " << prog_name << " <target_dir> [--no-pdf]\n\n"
               << "[入出力ファイルの仕様]\n"
               << "  -----------------------------------------------------------------------------\n"
-              << "  | 区分 | ファイル形式     | 必須 | 内容                                       |\n"
+              << "  | 区分 | ファイル形式        | 必須 | 内容                                    |\n"
               << "  -----------------------------------------------------------------------------\n"
-              << "  | 入力 | *_mean.txt       | 必須 | meanfinderの出力 (電荷情報)                |\n"
-              << "  | 入力 | *_timefit.txt    | 必須 | meanfinderの出力 (時間情報)                |\n"
+              << "  | 入力 | *_mean.txt          | 必須 | meanfinderの出力 (電荷情報)             |\n"
+              << "  | 入力 | *_timefit.txt       | 必須 | meanfinderの出力 (時間情報)             |\n"
               << "  -----------------------------------------------------------------------------\n"
-              << "  | 出力 | Charge_vs_*.pdf  | 自動 | フィット結果のプロット (chごとに生成)      |\n"
-              << "  | 出力 | fit_results.txt  | 自動 | フィットパラメータのまとめ                 |\n"
+              << "  | 出力 | summary_all_data.csv| 自動 | 全データのまとめCSV (Python解析用)      |\n"
+              << "  | 出力 | Charge_vs_*.pdf     | 自動 | フィット結果のプロット (chごとに生成)   |\n"
+              << "  | 出力 | fit_results.txt     | 自動 | フィットパラメータのまとめ              |\n"
               << "  -----------------------------------------------------------------------------\n"
               << "===============================================================================" << std::endl;
 }
@@ -101,6 +104,7 @@ void process_directory(TString target_dir, bool save_pdf) {
     }
 
     const char* entry;
+    // 5-1. ファイル走査とデータ読み込み
     while ((entry = gSystem->GetDirEntry(dirp))) {
         TString filename = entry;
         TString fullpath = target_dir + "/" + filename;
@@ -145,9 +149,7 @@ void process_directory(TString target_dir, bool save_pdf) {
                 // format: ch,peak,peak_err,tts(fwhm),mu,gamma,sigma,lambda,tts_err,chi2,ndf
                 if (cols.size() >= 9) {
                     int ch = std::stoi(cols[0]);
-                    // ファイル名がこの行に含まれていないため、テキストファイル名から推測する必要がある
-                    // meanfinderの実装では1ファイルにつき全チャンネル出力される構造なので、
-                    // このファイル(filename)に対応するROOTキーを使用する。
+                    // ファイル名からキーを生成
                     std::string key = get_root_key(filename.Data());
 
                     double peak = std::stod(cols[1]);
@@ -163,11 +165,17 @@ void process_directory(TString target_dir, bool save_pdf) {
     }
     gSystem->FreeDirectory(dirp);
 
-    // --- グラフ作成とフィッティング ---
+    // 5-2. 出力ファイルの準備 (CSV, Summary Text)
+    TString csv_path = target_dir + "/summary_all_data.csv";
+    std::ofstream csv_outfile(csv_path.Data());
+    // ヘッダー出力 (keyはファイル識別に有用なため追加しました)
+    csv_outfile << "ch,key,charge,charge_err,time,time_err,tts,tts_err" << std::endl;
+
     TString out_txt_path = target_dir + "/fit_results_summary.txt";
     std::ofstream outfile(out_txt_path.Data());
     outfile << "# ch,graph_type,p0,p0_err,p1,p1_err,...,p7,p7_err,chi2,ndf" << std::endl;
 
+    // 5-3. データ結合・出力・グラフ作成ループ
     for (int ch = 0; ch < 12; ++ch) {
         if (charge_map.count(ch) == 0 || time_map.count(ch) == 0) continue;
 
@@ -175,8 +183,11 @@ void process_directory(TString target_dir, bool save_pdf) {
         std::vector<double> x_q, ex_q, y_t, ey_t, y_tts, ey_tts;
         
         for (auto const& [key, c_data] : charge_map[ch]) {
+            // Chargeデータに対応するTimeデータが存在するか確認
             if (time_map[ch].count(key)) {
                 TimeData t_data = time_map[ch][key];
+                
+                // ベクターに追加 (グラフ用)
                 x_q.push_back(c_data.val);
                 ex_q.push_back(c_data.err);
                 
@@ -185,12 +196,18 @@ void process_directory(TString target_dir, bool save_pdf) {
                 
                 y_tts.push_back(t_data.tts_val);
                 ey_tts.push_back(t_data.tts_err);
+
+                // CSVファイルへ書き出し (Python解析用)
+                csv_outfile << ch << "," << key << ","
+                            << c_data.val << "," << c_data.err << ","
+                            << t_data.time_val << "," << t_data.time_err << ","
+                            << t_data.tts_val << "," << t_data.tts_err << std::endl;
             }
         }
 
         if (x_q.empty()) continue;
 
-        // グラフ作成ヘルパー
+        // グラフ作成とフィッティングを行うヘルパーラムダ式
         auto process_graph = [&](const std::string& type_name, std::vector<double>& y, std::vector<double>& ey) {
             TGraphErrors* gr = new TGraphErrors(x_q.size(), x_q.data(), y.data(), ex_q.data(), ey.data());
             gr->SetTitle(Form("Channel %d %s;Charge [pC];%s [ns]", ch, type_name.c_str(), type_name.c_str()));
@@ -198,11 +215,10 @@ void process_directory(TString target_dir, bool save_pdf) {
             gr->SetMarkerSize(1.0);
 
             // 7次関数フィッティング
-            TF1* f7 = new TF1("f7", "pol7", 0, 2000); // 範囲は適宜調整、あるいは自動
-            // 初期パラメータ設定等は省略（自動フィットに任せる）
+            TF1* f7 = new TF1("f7", "pol7", 0, 2000); 
             gr->Fit(f7, "Q");
 
-            // テキスト出力
+            // フィットパラメータ出力
             outfile << ch << "," << type_name;
             for(int i=0; i<8; ++i) {
                 outfile << "," << f7->GetParameter(i) << "," << f7->GetParError(i);
@@ -226,7 +242,12 @@ void process_directory(TString target_dir, bool save_pdf) {
         process_graph("TTS", y_tts, ey_tts);
     }
     
-    std::cout << "Summary processing completed. Results saved in " << target_dir << std::endl;
+    std::cout << "Summary processing completed." << std::endl;
+    std::cout << " - CSV Data  : " << csv_path << std::endl;
+    std::cout << " - Fit Resuls: " << out_txt_path << std::endl;
+    std::cout << " - Plots     : " << target_dir << "/*.pdf" << std::endl;
+    
+    csv_outfile.close();
     outfile.close();
 }
 
