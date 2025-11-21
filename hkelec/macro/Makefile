@@ -40,8 +40,11 @@ CXX := g++
 # CXXFLAGS: ROOTのフラグに加え、上記で設定したカスタムヘッダパスを追加
 CXXFLAGS := -O2 -Wall -fPIC $(ROOTCFLAGS) -I$(CUSTOM_INCLUDE_DIR)
 
-# LDFLAGS: ROOTのライブラリに加え、上記で設定したカスタムライブラリのパスと名前を追加
-LDFLAGS := $(ROOTGLIBS) -L$(CUSTOM_LIB_DIR) $(CUSTOM_LIBS)
+# LDFLAGS: リンク順序とオプションを再修正しました
+# [修正点]
+# 1. -Wl,--no-as-needed: 不要とみなされたライブラリの除外を防ぐ
+# 2. -Wl,--allow-shlib-undefined: 自作ライブラリ内の未解決シンボル(TROOT::SetBatch等)によるエラーを抑制し、実行時解決に委ねる
+LDFLAGS := -Wl,--no-as-needed -Wl,--allow-shlib-undefined -L$(CUSTOM_LIB_DIR) $(CUSTOM_LIBS) $(ROOTGLIBS)
 
 .PHONY: all clean
 
@@ -52,4 +55,3 @@ $(TARGET): $(SRC)
 
 clean:
 	rm -f $(TARGET) *.o
-

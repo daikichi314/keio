@@ -1,0 +1,128 @@
+manual for triggered adc data
+
+In hkpd@hkdaq
+0. hkpd@hkdaq:~$ mkdir /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX
+
+1. hkpd@hkdaq:~$ . ~/setup_hkelec.sh  ## set up
+
+2. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/LDhkelec_xxx -l 20 --trgch 4 ... ## Masurement (make binary file)
+
+    usage: ScanManager.py [-h] [-i RUNID] [-l LENGTH] [--trgch TRGCH] [--dBlist [DBLIST ...]] [--dBstep DBSTEP DBSTEP DBSTEP]
+                        [--HVlist [HVLIST ...]] [--HVstep HVSTEP HVSTEP HVSTEP] [--threlist [THRELIST ...]]
+                        [--threstep THRESTEP THRESTEP THRESTEP] [--threpreset] [--threpreset2] [--threpreset3]
+                        [--gatelist [GATELIST ...]] [--gatestep GATESTEP GATESTEP GATESTEP] [--deadlist [DEADLIST ...]]
+                        [--deadstep DEADSTEP DEADSTEP DEADSTEP] [--dryrun]
+
+    Take series of runs while scanning HV/dB/threshold/gate width/veto width settings. Give the list or start/stop/step of
+    parameters you want to scan.
+
+    options:
+    -h, --help            show this help message and exit
+    -i RUNID, --runid RUNID
+                            Name or identification of this run
+    -l LENGTH, --length LENGTH
+                            Length of the data-taking in second.
+    --trgch TRGCH         Trigger Channel
+    --dBlist [DBLIST ...]
+                            list of attenuation factors (dB)
+    --dBstep DBSTEP DBSTEP DBSTEP
+                            [start, end, step] of attenuation factors (dB)
+    --HVlist [HVLIST ...]
+                            list of HV values (V)
+    --HVstep HVSTEP HVSTEP HVSTEP
+                            [start, end, step] of HV values (V)
+    --threlist [THRELIST ...]
+                            list of threshold values (mV, absolute value)
+    --threstep THRESTEP THRESTEP THRESTEP
+                            [start, end, step] of threshold values (mV)
+    --threpreset          Preset threshold scan values (30 runs)
+    --threpreset2         Preset threshold scan values #2 (20 runs, complementary to #1)
+    --threpreset3         Preset threshold scan values #3, in finer steps. (95 runs, includes #1&2)
+    --gatelist [GATELIST ...]
+                            list of integration gate width in DAC (-> 9*DAC + 33 ns)
+    --gatestep GATESTEP GATESTEP GATESTEP
+                            [start, end, step] of integration gate width in DAC
+    --deadlist [DEADLIST ...]
+                            list of veto width in DAC (-> 10*DAC ns)
+    --deadstep DEADSTEP DEADSTEP DEADSTEP
+                            [start, end, step] of veto width in DAC
+    --dryrun              Shows the list of runs to be taken without actually affecting the system
+
+2.5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/DiscreteSoftware/install/bin/RunManager.py -p -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal -l 40  
+
+    hkpd@hkdaq:~$ . setup_hkelec.sh
+    hkpd@hkdaq:~/hkelec/DiscreteSoftware$ RunManager.py -h
+    usage: RunManager.py [-h] [-p] [-n] [-x] [-c CHS [CHS ...]] [-l LENGTH] [-i RUNID] [—trgch TRGCH] [—dummy]
+
+    Script that manages a single "run", which is a set of the data taken in a costant configuration
+
+    options:
+    -h, —help show this help message and exit
+    -p, —pedestal Enable pedestal mode
+    -n, —normal-run Normal run enabling pedestal 10 Hz
+    -x, —cal Enable calibrator mode
+    -c CHS [CHS ...], —chs CHS [CHS ...]
+    Channels to be acquired. Defautl all channels
+    -l LENGTH, —length LENGTH
+    Length of the data-taking in second. For dummy runs, this is the timeout and 0
+    indicates no timeout
+    -i RUNID, —runid RUNID
+    Name or identification of this run
+    —trgch TRGCH Trigger Channel
+    --dummy Flag to start a dummy run
+
+3. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/data/analyze_multi.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX 1  ## .bin -> eventtree.root 
+
+3.5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/data/analyze.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal ## .bin -> hithist.root
+
+3.6. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ rename 's/eventtree_-2e-6_10e-6\.root$/eventtree.root/' /home/hkpd/hkelec/DiscreteSoftware/data/20251117kishita/no1/*eventtree_-2e-6_10e-6.root ## delete "_-2e-6_10e-6"
+
+4. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/Analysis/macro/eventtree2hist_multi.sh ~/hkelec/DiscreteSoftware/data/2025XXXX/100pe  ## eventtree.root -> eventhist.root
+
+    # どの項目をヒストグラムにするかは要編集
+    # ヒットの採用条件やヒストグラムの表示範囲に注意
+
+4.1. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ mv 2025XXXX/100pe/*42* 2025XXXX/1pe
+
+
+
+
+
+7. hkpd@hkdaq:~$ scp -r /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/ kishita@hep.phys.keio.ac.jp:~/data/  
+
+
+
+### How to upload macros from daiki to hkpd ###
+# 1. 現在のディレクトリ (macro) の中身すべて(*)を
+# 2. -r (再帰的に)
+# 3. hkpd@hkdaq の指定ディレクトリにコピーする
+daiki@daisukekishita:~/keio/hkelec/macro$ scp -r * hkpd@hkdaq:~/hkelec/DiscreteSoftware/Analysis/macro/
+
+### hkpd@hkdaq to kishita@hep ###
+# 1. daiki@daisukekishita:~$ ssh -Y hkdaq (_out)
+# 2. hkpd@hkdaq:~$ scp -r ~/hkelec/DiscreteSoftware/data/2025XXXX kishita@hep:/home/kishita/data
+
+### kishita@hep to daiki@daisukekishita ###
+# 1. daiki@daisukekishita:~$ mkdir -p ~/lab/data/2025XXXX/100pe
+# 2. daiki@daisukekishita:~$ scp kishita@hep:/home/kishita/data/2025XXXX/100pe/*eventhist* ~/lab/data/2025XXXX/100pe
+# 3. daiki@daisukekishita:~$ scp kishita@hep:/home/kishita/data/2025XXXX/*hithist* ~/lab/data/2025XXXX
+
+### dB list for 0pt scan ###
+#3: --dBlist 13.00 15.00 21.00 24.50 33.50 46.00 59.00 
+
+memo
+- eventtree2hist.C
+    #ヒットの採用条件やヒストグラムの範囲に注意
+    #現在はtime_diffのピークの前後50 nsを採用
+
+- manualをAIにまとめさせる．
+
+/home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251118/LDhkelec_0pt_diag_no4 -l 20 --trgch 4 --dBlist 13.00 15.00 21.00 24.50 33.50 46.00 59.00
+
+/home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251118/no2/LDhkelec_0pt_diag_no2 -l 20 --trgch 4 --dBlist 13.00 15.00 21.00 24.50 33.50 46.00 59.00 40 29 23 18 10
+
+/home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251120kishita/LDhkelec_reconst_dBScan -l 20 --trgch 4 --dBlist 0.6 2 3 4.6 6.6 9 12 15 18 21 24 27 30 33 36 39 50
+
+/LDhkelec_0pt_diag_no4-005-33.50dB_eventhist.root # ノイズのせいかトリガーイベント多すぎ
+
+

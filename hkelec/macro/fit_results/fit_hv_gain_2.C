@@ -1,5 +1,5 @@
 /*
- * id: fit_hv_gain.C
+ * id: fit_hv_gain_2.C
  * Place: ~/hkelec/DiscreteSoftware/Analysis/macro/fit_results/
  * Last Edit: 2025-10-31 Gemini
  *
@@ -7,7 +7,7 @@
  * 1. 結果をPDFに出力
  * 2. フィットパラメータ (a, b) とその誤差、Chi2, Ndf をCSVで標準出力
  * 3. Y = 1.60217663 pC となる X の値 (X0) とその誤差 (誤差伝播による) を標準出力
- *
+ * 4. フィット範囲を自由に変更
  * コンパイル可能
  */
 #include <TGraph.h>
@@ -98,11 +98,11 @@ void fit_graph(std::string input_filename) {
     graph->SetMarkerSize(1.0);
     graph->SetLineWidth(2); // エラーバーの線の太さ
 
-    // 4. フィット関数 y = b * x^a を定義
-    TF1* fitFunc = new TF1("fitFunc", "[0]*pow(x,[1])", 1400, 2400);
+    // 4. フィット関数 y = b * x^a を定義  ★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    TF1* fitFunc = new TF1("fitFunc", "[0]*pow(x,[1])", 1975, 2400);
     fitFunc->SetParName(0, "b (coeff)");
     fitFunc->SetParName(1, "a (index)");
-    fitFunc->SetParameters(1.0e-20, 6.0); 
+    fitFunc->SetParameters(5.0e-20, 6.0); 
 
     // 5. フィットを実行
     //    誤差を考慮した最小二乗フィットを行う (S = store result, Q = quiet, R = use range)

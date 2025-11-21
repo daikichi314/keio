@@ -1,0 +1,1497 @@
+このコードを引数なしで実行した際に、現在は使い方が表示されるようになっていると思います。それに追加して、このコードの機能や入力されるべきファイル、内部での処理、出力されるファイルを分かりやすくまとめて表示するようにしてくださいいただきたいです。特に入出力ファイルなどについては表などを用いてわかりやすく説明していただきますようよろしくお願いいたします。
+まずはどのような文を追加で表示するか、その内容をお教え頂けますでしょうか。
+
+
+
+以下はGemini様に書いていただきいコードの仕様書です。
+
+目的
+    Charge vs Timeのグラフと Charge vs ttsのグラフを作成するまでに必要なコードを今後応用がききそうな形で作成したい。
+
+用意されるデータファイル
+    - /home/daiki/lab/data/20251117/hkelec_pedestal_hithist.root  # ディレクトリの位置は変わりうる
+    含まれるヒストグラム
+        root [2] .ls
+        TFile**         no1/hkelec_pedestal_hithist.root
+        TFile*         no1/hkelec_pedestal_hithist.root
+        KEY: MetaData metadata;1
+        KEY: TTree    all;2   all [current cycle]
+        KEY: TTree    all;1   all [backup cycle]
+        KEY: TTree    hit;1   hit
+        KEY: TTree    pedestal;1      pedestal
+        KEY: TH1D     all_ch00_channel;1      all_ch00_channel
+        KEY: TH1D     all_ch00_delta_t;1      all_ch00_delta_t
+        KEY: TH1D     all_ch00_hgain;1        all_ch00_hgain
+        KEY: TH1D     all_ch00_lgain;1        all_ch00_lgain
+        KEY: TH1D     all_ch00_time;1 all_ch00_time
+        KEY: TH1D     all_ch00_time_octant;1  all_ch00_time_octant
+        KEY: TH1D     all_ch00_tot;1  all_ch00_tot
+        KEY: TH1D     all_ch01_channel;1      all_ch01_channel
+        KEY: TH1D     all_ch01_delta_t;1      all_ch01_delta_t
+        KEY: TH1D     all_ch01_hgain;1        all_ch01_hgain
+        KEY: TH1D     all_ch01_lgain;1        all_ch01_lgain
+        KEY: TH1D     all_ch01_time;1 all_ch01_time
+        KEY: TH1D     all_ch01_time_octant;1  all_ch01_time_octant
+        KEY: TH1D     all_ch01_tot;1  all_ch01_tot
+        KEY: TH1D     all_ch02_channel;1      all_ch02_channel
+        KEY: TH1D     all_ch02_delta_t;1      all_ch02_delta_t
+        KEY: TH1D     all_ch02_hgain;1        all_ch02_hgain
+        KEY: TH1D     all_ch02_lgain;1        all_ch02_lgain
+        KEY: TH1D     all_ch02_time;1 all_ch02_time
+        KEY: TH1D     all_ch02_time_octant;1  all_ch02_time_octant
+        KEY: TH1D     all_ch02_tot;1  all_ch02_tot
+        KEY: TH1D     all_ch03_channel;1      all_ch03_channel
+        KEY: TH1D     all_ch03_delta_t;1      all_ch03_delta_t
+        KEY: TH1D     all_ch03_hgain;1        all_ch03_hgain
+        KEY: TH1D     all_ch03_lgain;1        all_ch03_lgain
+        KEY: TH1D     all_ch03_time;1 all_ch03_time
+        KEY: TH1D     all_ch03_time_octant;1  all_ch03_time_octant
+        KEY: TH1D     all_ch03_tot;1  all_ch03_tot
+        KEY: TH1D     all_ch04_channel;1      all_ch04_channel
+        KEY: TH1D     all_ch04_delta_t;1      all_ch04_delta_t
+        KEY: TH1D     all_ch04_hgain;1        all_ch04_hgain
+        KEY: TH1D     all_ch04_lgain;1        all_ch04_lgain
+        KEY: TH1D     all_ch04_time;1 all_ch04_time
+        KEY: TH1D     all_ch04_time_octant;1  all_ch04_time_octant
+        KEY: TH1D     all_ch04_tot;1  all_ch04_tot
+        KEY: TH1D     all_ch05_channel;1      all_ch05_channel
+        KEY: TH1D     all_ch05_delta_t;1      all_ch05_delta_t
+        KEY: TH1D     all_ch05_hgain;1        all_ch05_hgain
+        KEY: TH1D     all_ch05_lgain;1        all_ch05_lgain
+        KEY: TH1D     all_ch05_time;1 all_ch05_time
+        KEY: TH1D     all_ch05_time_octant;1  all_ch05_time_octant
+        KEY: TH1D     all_ch05_tot;1  all_ch05_tot
+        KEY: TH1D     all_ch06_channel;1      all_ch06_channel
+        KEY: TH1D     all_ch06_delta_t;1      all_ch06_delta_t
+        KEY: TH1D     all_ch06_hgain;1        all_ch06_hgain
+        KEY: TH1D     all_ch06_lgain;1        all_ch06_lgain
+        KEY: TH1D     all_ch06_time;1 all_ch06_time
+        KEY: TH1D     all_ch06_time_octant;1  all_ch06_time_octant
+        KEY: TH1D     all_ch06_tot;1  all_ch06_tot
+        KEY: TH1D     all_ch07_channel;1      all_ch07_channel
+        KEY: TH1D     all_ch07_delta_t;1      all_ch07_delta_t
+        KEY: TH1D     all_ch07_hgain;1        all_ch07_hgain
+        KEY: TH1D     all_ch07_lgain;1        all_ch07_lgain
+        KEY: TH1D     all_ch07_time;1 all_ch07_time
+        KEY: TH1D     all_ch07_time_octant;1  all_ch07_time_octant
+        KEY: TH1D     all_ch07_tot;1  all_ch07_tot
+        KEY: TH1D     all_ch08_channel;1      all_ch08_channel
+        KEY: TH1D     all_ch08_delta_t;1      all_ch08_delta_t
+        KEY: TH1D     all_ch08_hgain;1        all_ch08_hgain
+        KEY: TH1D     all_ch08_lgain;1        all_ch08_lgain
+        KEY: TH1D     all_ch08_time;1 all_ch08_time
+        KEY: TH1D     all_ch08_time_octant;1  all_ch08_time_octant
+        KEY: TH1D     all_ch08_tot;1  all_ch08_tot
+        KEY: TH1D     all_ch09_channel;1      all_ch09_channel
+        KEY: TH1D     all_ch09_delta_t;1      all_ch09_delta_t
+        KEY: TH1D     all_ch09_hgain;1        all_ch09_hgain
+        KEY: TH1D     all_ch09_lgain;1        all_ch09_lgain
+        KEY: TH1D     all_ch09_time;1 all_ch09_time
+        KEY: TH1D     all_ch09_time_octant;1  all_ch09_time_octant
+        KEY: TH1D     all_ch09_tot;1  all_ch09_tot
+        KEY: TH1D     all_ch10_channel;1      all_ch10_channel
+        KEY: TH1D     all_ch10_delta_t;1      all_ch10_delta_t
+        KEY: TH1D     all_ch10_hgain;1        all_ch10_hgain
+        KEY: TH1D     all_ch10_lgain;1        all_ch10_lgain
+        KEY: TH1D     all_ch10_time;1 all_ch10_time
+        KEY: TH1D     all_ch10_time_octant;1  all_ch10_time_octant
+        KEY: TH1D     all_ch10_tot;1  all_ch10_tot
+        KEY: TH1D     all_ch11_channel;1      all_ch11_channel
+        KEY: TH1D     all_ch11_delta_t;1      all_ch11_delta_t
+        KEY: TH1D     all_ch11_hgain;1        all_ch11_hgain
+        KEY: TH1D     all_ch11_lgain;1        all_ch11_lgain
+        KEY: TH1D     all_ch11_time;1 all_ch11_time
+        KEY: TH1D     all_ch11_time_octant;1  all_ch11_time_octant
+        KEY: TH1D     all_ch11_tot;1  all_ch11_tot
+        KEY: TH1D     hit_ch00_channel;1      hit_ch00_channel
+        KEY: TH1D     hit_ch00_delta_t;1      hit_ch00_delta_t
+        KEY: TH1D     hit_ch00_hgain;1        hit_ch00_hgain
+        KEY: TH1D     hit_ch00_lgain;1        hit_ch00_lgain
+        KEY: TH1D     hit_ch00_time;1 hit_ch00_time
+        KEY: TH1D     hit_ch00_time_octant;1  hit_ch00_time_octant
+        KEY: TH1D     hit_ch00_tot;1  hit_ch00_tot
+        KEY: TH1D     hit_ch01_channel;1      hit_ch01_channel
+        KEY: TH1D     hit_ch01_delta_t;1      hit_ch01_delta_t
+        KEY: TH1D     hit_ch01_hgain;1        hit_ch01_hgain
+        KEY: TH1D     hit_ch01_lgain;1        hit_ch01_lgain
+        KEY: TH1D     hit_ch01_time;1 hit_ch01_time
+        KEY: TH1D     hit_ch01_time_octant;1  hit_ch01_time_octant
+        KEY: TH1D     hit_ch01_tot;1  hit_ch01_tot
+        KEY: TH1D     hit_ch02_channel;1      hit_ch02_channel
+        KEY: TH1D     hit_ch02_delta_t;1      hit_ch02_delta_t
+        KEY: TH1D     hit_ch02_hgain;1        hit_ch02_hgain
+        KEY: TH1D     hit_ch02_lgain;1        hit_ch02_lgain
+        KEY: TH1D     hit_ch02_time;1 hit_ch02_time
+        KEY: TH1D     hit_ch02_time_octant;1  hit_ch02_time_octant
+        KEY: TH1D     hit_ch02_tot;1  hit_ch02_tot
+        KEY: TH1D     hit_ch03_channel;1      hit_ch03_channel
+        KEY: TH1D     hit_ch03_delta_t;1      hit_ch03_delta_t
+        KEY: TH1D     hit_ch03_hgain;1        hit_ch03_hgain
+        KEY: TH1D     hit_ch03_lgain;1        hit_ch03_lgain
+        KEY: TH1D     hit_ch03_time;1 hit_ch03_time
+        KEY: TH1D     hit_ch03_time_octant;1  hit_ch03_time_octant
+        KEY: TH1D     hit_ch03_tot;1  hit_ch03_tot
+        KEY: TH1D     hit_ch04_channel;1      hit_ch04_channel
+        KEY: TH1D     hit_ch04_delta_t;1      hit_ch04_delta_t
+        KEY: TH1D     hit_ch04_hgain;1        hit_ch04_hgain
+        KEY: TH1D     hit_ch04_lgain;1        hit_ch04_lgain
+        KEY: TH1D     hit_ch04_time;1 hit_ch04_time
+        KEY: TH1D     hit_ch04_time_octant;1  hit_ch04_time_octant
+        KEY: TH1D     hit_ch04_tot;1  hit_ch04_tot
+        KEY: TH1D     hit_ch05_channel;1      hit_ch05_channel
+        KEY: TH1D     hit_ch05_delta_t;1      hit_ch05_delta_t
+        KEY: TH1D     hit_ch05_hgain;1        hit_ch05_hgain
+        KEY: TH1D     hit_ch05_lgain;1        hit_ch05_lgain
+        KEY: TH1D     hit_ch05_time;1 hit_ch05_time
+        KEY: TH1D     hit_ch05_time_octant;1  hit_ch05_time_octant
+        KEY: TH1D     hit_ch05_tot;1  hit_ch05_tot
+        KEY: TH1D     hit_ch06_channel;1      hit_ch06_channel
+        KEY: TH1D     hit_ch06_delta_t;1      hit_ch06_delta_t
+        KEY: TH1D     hit_ch06_hgain;1        hit_ch06_hgain
+        KEY: TH1D     hit_ch06_lgain;1        hit_ch06_lgain
+        KEY: TH1D     hit_ch06_time;1 hit_ch06_time
+        KEY: TH1D     hit_ch06_time_octant;1  hit_ch06_time_octant
+        KEY: TH1D     hit_ch06_tot;1  hit_ch06_tot
+        KEY: TH1D     hit_ch07_channel;1      hit_ch07_channel
+        KEY: TH1D     hit_ch07_delta_t;1      hit_ch07_delta_t
+        KEY: TH1D     hit_ch07_hgain;1        hit_ch07_hgain
+        KEY: TH1D     hit_ch07_lgain;1        hit_ch07_lgain
+        KEY: TH1D     hit_ch07_time;1 hit_ch07_time
+        KEY: TH1D     hit_ch07_time_octant;1  hit_ch07_time_octant
+        KEY: TH1D     hit_ch07_tot;1  hit_ch07_tot
+        KEY: TH1D     hit_ch08_channel;1      hit_ch08_channel
+        KEY: TH1D     hit_ch08_delta_t;1      hit_ch08_delta_t
+        KEY: TH1D     hit_ch08_hgain;1        hit_ch08_hgain
+        KEY: TH1D     hit_ch08_lgain;1        hit_ch08_lgain
+        KEY: TH1D     hit_ch08_time;1 hit_ch08_time
+        KEY: TH1D     hit_ch08_time_octant;1  hit_ch08_time_octant
+        KEY: TH1D     hit_ch08_tot;1  hit_ch08_tot
+        KEY: TH1D     hit_ch09_channel;1      hit_ch09_channel
+        KEY: TH1D     hit_ch09_delta_t;1      hit_ch09_delta_t
+        KEY: TH1D     hit_ch09_hgain;1        hit_ch09_hgain
+        KEY: TH1D     hit_ch09_lgain;1        hit_ch09_lgain
+        KEY: TH1D     hit_ch09_time;1 hit_ch09_time
+        KEY: TH1D     hit_ch09_time_octant;1  hit_ch09_time_octant
+        KEY: TH1D     hit_ch09_tot;1  hit_ch09_tot
+        KEY: TH1D     hit_ch10_channel;1      hit_ch10_channel
+        KEY: TH1D     hit_ch10_delta_t;1      hit_ch10_delta_t
+        KEY: TH1D     hit_ch10_hgain;1        hit_ch10_hgain
+        KEY: TH1D     hit_ch10_lgain;1        hit_ch10_lgain
+        KEY: TH1D     hit_ch10_time;1 hit_ch10_time
+        KEY: TH1D     hit_ch10_time_octant;1  hit_ch10_time_octant
+        KEY: TH1D     hit_ch10_tot;1  hit_ch10_tot
+        KEY: TH1D     hit_ch11_channel;1      hit_ch11_channel
+        KEY: TH1D     hit_ch11_delta_t;1      hit_ch11_delta_t
+        KEY: TH1D     hit_ch11_hgain;1        hit_ch11_hgain
+        KEY: TH1D     hit_ch11_lgain;1        hit_ch11_lgain
+        KEY: TH1D     hit_ch11_time;1 hit_ch11_time
+        KEY: TH1D     hit_ch11_time_octant;1  hit_ch11_time_octant
+        KEY: TH1D     hit_ch11_tot;1  hit_ch11_tot
+        KEY: TH1D     ped_ch00_channel;1      ped_ch00_channel
+        KEY: TH1D     ped_ch00_delta_t;1      ped_ch00_delta_t
+        KEY: TH1D     ped_ch00_hgain;1        ped_ch00_hgain
+        KEY: TH1D     ped_ch00_lgain;1        ped_ch00_lgain
+        KEY: TH1D     ped_ch00_time;1 ped_ch00_time
+        KEY: TH1D     ped_ch00_time_octant;1  ped_ch00_time_octant
+        KEY: TH1D     ped_ch00_tot;1  ped_ch00_tot
+        KEY: TH1D     ped_ch01_channel;1      ped_ch01_channel
+        KEY: TH1D     ped_ch01_delta_t;1      ped_ch01_delta_t
+        KEY: TH1D     ped_ch01_hgain;1        ped_ch01_hgain
+        KEY: TH1D     ped_ch01_lgain;1        ped_ch01_lgain
+        KEY: TH1D     ped_ch01_time;1 ped_ch01_time
+        KEY: TH1D     ped_ch01_time_octant;1  ped_ch01_time_octant
+        KEY: TH1D     ped_ch01_tot;1  ped_ch01_tot
+        KEY: TH1D     ped_ch02_channel;1      ped_ch02_channel
+        KEY: TH1D     ped_ch02_delta_t;1      ped_ch02_delta_t
+        KEY: TH1D     ped_ch02_hgain;1        ped_ch02_hgain
+        KEY: TH1D     ped_ch02_lgain;1        ped_ch02_lgain
+        KEY: TH1D     ped_ch02_time;1 ped_ch02_time
+        KEY: TH1D     ped_ch02_time_octant;1  ped_ch02_time_octant
+        KEY: TH1D     ped_ch02_tot;1  ped_ch02_tot
+        KEY: TH1D     ped_ch03_channel;1      ped_ch03_channel
+        KEY: TH1D     ped_ch03_delta_t;1      ped_ch03_delta_t
+        KEY: TH1D     ped_ch03_hgain;1        ped_ch03_hgain
+        KEY: TH1D     ped_ch03_lgain;1        ped_ch03_lgain
+        KEY: TH1D     ped_ch03_time;1 ped_ch03_time
+        KEY: TH1D     ped_ch03_time_octant;1  ped_ch03_time_octant
+        KEY: TH1D     ped_ch03_tot;1  ped_ch03_tot
+        KEY: TH1D     ped_ch04_channel;1      ped_ch04_channel
+        KEY: TH1D     ped_ch04_delta_t;1      ped_ch04_delta_t
+        KEY: TH1D     ped_ch04_hgain;1        ped_ch04_hgain
+        KEY: TH1D     ped_ch04_lgain;1        ped_ch04_lgain
+        KEY: TH1D     ped_ch04_time;1 ped_ch04_time
+        KEY: TH1D     ped_ch04_time_octant;1  ped_ch04_time_octant
+        KEY: TH1D     ped_ch04_tot;1  ped_ch04_tot
+        KEY: TH1D     ped_ch05_channel;1      ped_ch05_channel
+        KEY: TH1D     ped_ch05_delta_t;1      ped_ch05_delta_t
+        KEY: TH1D     ped_ch05_hgain;1        ped_ch05_hgain
+        KEY: TH1D     ped_ch05_lgain;1        ped_ch05_lgain
+        KEY: TH1D     ped_ch05_time;1 ped_ch05_time
+        KEY: TH1D     ped_ch05_time_octant;1  ped_ch05_time_octant
+        KEY: TH1D     ped_ch05_tot;1  ped_ch05_tot
+        KEY: TH1D     ped_ch06_channel;1      ped_ch06_channel
+        KEY: TH1D     ped_ch06_delta_t;1      ped_ch06_delta_t
+        KEY: TH1D     ped_ch06_hgain;1        ped_ch06_hgain
+        KEY: TH1D     ped_ch06_lgain;1        ped_ch06_lgain
+        KEY: TH1D     ped_ch06_time;1 ped_ch06_time
+        KEY: TH1D     ped_ch06_time_octant;1  ped_ch06_time_octant
+        KEY: TH1D     ped_ch06_tot;1  ped_ch06_tot
+        KEY: TH1D     ped_ch07_channel;1      ped_ch07_channel
+        KEY: TH1D     ped_ch07_delta_t;1      ped_ch07_delta_t
+        KEY: TH1D     ped_ch07_hgain;1        ped_ch07_hgain
+        KEY: TH1D     ped_ch07_lgain;1        ped_ch07_lgain
+        KEY: TH1D     ped_ch07_time;1 ped_ch07_time
+        KEY: TH1D     ped_ch07_time_octant;1  ped_ch07_time_octant
+        KEY: TH1D     ped_ch07_tot;1  ped_ch07_tot
+        KEY: TH1D     ped_ch08_channel;1      ped_ch08_channel
+        KEY: TH1D     ped_ch08_delta_t;1      ped_ch08_delta_t
+        KEY: TH1D     ped_ch08_hgain;1        ped_ch08_hgain
+        KEY: TH1D     ped_ch08_lgain;1        ped_ch08_lgain
+        KEY: TH1D     ped_ch08_time;1 ped_ch08_time
+        KEY: TH1D     ped_ch08_time_octant;1  ped_ch08_time_octant
+        KEY: TH1D     ped_ch08_tot;1  ped_ch08_tot
+        KEY: TH1D     ped_ch09_channel;1      ped_ch09_channel
+        KEY: TH1D     ped_ch09_delta_t;1      ped_ch09_delta_t
+        KEY: TH1D     ped_ch09_hgain;1        ped_ch09_hgain
+        KEY: TH1D     ped_ch09_lgain;1        ped_ch09_lgain
+        KEY: TH1D     ped_ch09_time;1 ped_ch09_time
+        KEY: TH1D     ped_ch09_time_octant;1  ped_ch09_time_octant
+        KEY: TH1D     ped_ch09_tot;1  ped_ch09_tot
+        KEY: TH1D     ped_ch10_channel;1      ped_ch10_channel
+        KEY: TH1D     ped_ch10_delta_t;1      ped_ch10_delta_t
+        KEY: TH1D     ped_ch10_hgain;1        ped_ch10_hgain
+        KEY: TH1D     ped_ch10_lgain;1        ped_ch10_lgain
+        KEY: TH1D     ped_ch10_time;1 ped_ch10_time
+        KEY: TH1D     ped_ch10_time_octant;1  ped_ch10_time_octant
+        KEY: TH1D     ped_ch10_tot;1  ped_ch10_tot
+        KEY: TH1D     ped_ch11_channel;1      ped_ch11_channel
+        KEY: TH1D     ped_ch11_delta_t;1      ped_ch11_delta_t
+        KEY: TH1D     ped_ch11_hgain;1        ped_ch11_hgain
+        KEY: TH1D     ped_ch11_lgain;1        ped_ch11_lgain
+        KEY: TH1D     ped_ch11_time;1 ped_ch11_time
+        KEY: TH1D     ped_ch11_time_octant;1  ped_ch11_time_octant
+        KEY: TH1D     ped_ch11_tot;1  ped_ch11_tot
+        KEY: TH2D     all_ch00_lgain_channel;1        all_ch00_lgain_channel
+        KEY: TH2D     all_ch01_lgain_channel;1        all_ch01_lgain_channel
+        KEY: TH2D     all_ch02_lgain_channel;1        all_ch02_lgain_channel
+        KEY: TH2D     all_ch03_lgain_channel;1        all_ch03_lgain_channel
+        KEY: TH2D     all_ch04_lgain_channel;1        all_ch04_lgain_channel
+        KEY: TH2D     all_ch05_lgain_channel;1        all_ch05_lgain_channel
+        KEY: TH2D     all_ch06_lgain_channel;1        all_ch06_lgain_channel
+        KEY: TH2D     all_ch07_lgain_channel;1        all_ch07_lgain_channel
+        KEY: TH2D     all_ch08_lgain_channel;1        all_ch08_lgain_channel
+        KEY: TH2D     all_ch09_lgain_channel;1        all_ch09_lgain_channel
+        KEY: TH2D     all_ch10_lgain_channel;1        all_ch10_lgain_channel
+        KEY: TH2D     all_ch11_lgain_channel;1        all_ch11_lgain_channel
+        KEY: TH2D     hit_ch00_lgain_channel;1        hit_ch00_lgain_channel
+        KEY: TH2D     hit_ch01_lgain_channel;1        hit_ch01_lgain_channel
+        KEY: TH2D     hit_ch02_lgain_channel;1        hit_ch02_lgain_channel
+        KEY: TH2D     hit_ch03_lgain_channel;1        hit_ch03_lgain_channel
+        KEY: TH2D     hit_ch04_lgain_channel;1        hit_ch04_lgain_channel
+        KEY: TH2D     hit_ch05_lgain_channel;1        hit_ch05_lgain_channel
+        KEY: TH2D     hit_ch06_lgain_channel;1        hit_ch06_lgain_channel
+        KEY: TH2D     hit_ch07_lgain_channel;1        hit_ch07_lgain_channel
+        KEY: TH2D     hit_ch08_lgain_channel;1        hit_ch08_lgain_channel
+        KEY: TH2D     hit_ch09_lgain_channel;1        hit_ch09_lgain_channel
+        KEY: TH2D     hit_ch10_lgain_channel;1        hit_ch10_lgain_channel
+        KEY: TH2D     hit_ch11_lgain_channel;1        hit_ch11_lgain_channel
+        KEY: TH2D     ped_ch00_lgain_channel;1        ped_ch00_lgain_channel
+        KEY: TH2D     ped_ch01_lgain_channel;1        ped_ch01_lgain_channel
+        KEY: TH2D     ped_ch02_lgain_channel;1        ped_ch02_lgain_channel
+        KEY: TH2D     ped_ch03_lgain_channel;1        ped_ch03_lgain_channel
+        KEY: TH2D     ped_ch04_lgain_channel;1        ped_ch04_lgain_channel
+        KEY: TH2D     ped_ch05_lgain_channel;1        ped_ch05_lgain_channel
+        KEY: TH2D     ped_ch06_lgain_channel;1        ped_ch06_lgain_channel
+        KEY: TH2D     ped_ch07_lgain_channel;1        ped_ch07_lgain_channel
+        KEY: TH2D     ped_ch08_lgain_channel;1        ped_ch08_lgain_channel
+        KEY: TH2D     ped_ch09_lgain_channel;1        ped_ch09_lgain_channel
+        KEY: TH2D     ped_ch10_lgain_channel;1        ped_ch10_lgain_channel
+        KEY: TH2D     ped_ch11_lgain_channel;1        ped_ch11_lgain_channel
+        
+        これらのうち、ped_chXX_{hgain,lgain,tot}（XX=00 ~ 11）を使う
+    
+    - /home/daiki/lab/data/20251117/no{1,2,3,4}/*no{1,2,3,4}-00X-XX.00dB_eventhist.root
+    含まれるヒストグラム
+        あああああ
+
+コードを作成したいディレクトリ
+    - /home/daiki/keio/hkelec/reconst/macros/cpp # C++コード, Makefile
+    - /home/daiki/keio/hkelec/reconst/macros/sh # shell script
+
+最終的に出力されるファイル
+    - /home/daiki/lab/data/20251117/Charge_vs_Time_XXXXXX.pdf
+    - /home/daiki/lab/data/20251117/Charge_vs_tts_XXXXXX.pdf
+    (XXXXXXはチャネル番号などに応じて変化)
+
+現在の状況
+    - hkelec_pedestal_hithist.root から ped_chXX_{hgain,lgain,tot}（XX=00 ~ 11）を取得し、平均値とその誤差を計算するコードは完成している。
+    - no{1,2,3,4}-00X-XX.00dB_eventhist.root から 電荷を取得するコードについては類似のコードが存在する。それを参考に作成したい。
+    - これらのコードを組み合わせて、Charge vs Timeのグラフと Charge vs ttsのグラフを作成するコードを作成したい。別の方法でCharge vs Timeのグラフを作成するコードは別に存在する。
+
+以下に/home/daiki/keio/hkelec/reconst/macros/cpp/fit_pedestal.C（hkelec_pedestal_hithist.root から ped_chXX_{hgain,lgain,tot}（XX=00 ~ 11）を取得し、平均値とその誤差を計算するコード）を示す。
+
+```cpp
+    /*
+    * id: calc_pedestal_mean.C
+    * Place: ~/hkelec/DiscreteSoftware/Analysis/macro/fit_results/
+    * Last Edit: 2025-11-20 Gemini
+    *
+    * 概要: ペデスタルデータ(..._hithist.root)を読み込み、各ヒストグラムの平均値と誤差を算出する。
+    * コンパイル可能
+    */
+    #include <TFile.h>
+    #include <TH1D.h>
+    #include <TCanvas.h>
+    #include <TString.h>
+    #include <TStyle.h>
+    #include <iostream>
+    #include <fstream>
+    #include <vector>
+    #include <string>
+
+    // 1. メインの処理関数
+    void process_pedestals(TString input_filename, bool save_pdf) {
+        // 1-1. ROOTファイルを開く
+        auto infile = TFile::Open(input_filename, "READ");
+        if (!infile || infile->IsZombie()) {
+            std::cerr << "エラー: ペデスタルファイル " << input_filename << " を開けません" << std::endl;
+            return;
+        }
+
+        // 1-2. 結果を出力するテキストファイルの準備
+        TString output_txt_filename = input_filename;
+        output_txt_filename.ReplaceAll(".root", "_means.txt");
+        std::ofstream outfile(output_txt_filename.Data());
+        
+        outfile << "# ch,type,ped_mean,ped_mean_err" << std::endl;
+        
+        // 1-3. 解析対象とするヒストグラムの種類を定義
+        std::vector<std::string> hist_types = {"hgain", "lgain", "tot"};
+        
+        // 1-4. 全チャンネル (0-11) と全種類でループ処理
+        for (int ch = 0; ch < 12; ++ch) {
+            for (const auto& type : hist_types) {
+                TString hist_name = Form("ped_ch%02d_%s", ch, type.c_str());
+                auto hist = infile->Get<TH1D>(hist_name);
+
+                if (!hist || hist->GetEntries() < 100) {
+                    continue;
+                }
+
+                // 平均値と誤差を取得
+                double mean_val = hist->GetMean();
+                double mean_err = hist->GetMeanError();
+                
+                outfile << ch << "," << type << ","
+                        << mean_val << "," << mean_err << std::endl;
+
+                // 1-5. PDFファイルとしてグラフを保存 (オプション)
+                if (save_pdf) {
+                    TCanvas* canvas = new TCanvas("canvas", "Pedestal Mean", 800, 600);
+                    hist->SetStats(0);
+                    hist->Draw();
+                    TString output_pdf_filename = input_filename;
+                    output_pdf_filename.ReplaceAll(".root", Form("_%s_mean.pdf", hist_name.Data()));
+                    canvas->SaveAs(output_pdf_filename);
+                    delete canvas;
+                }
+            }
+        }
+        std::cout << "ペデスタル平均値算出が完了しました。結果は " << output_txt_filename << " に保存されました。" << std::endl;
+        outfile.close();
+        infile->Close();
+    }
+
+    // 2. main関数
+    int main(int argc, char* argv[]) {
+        // 2-1. 引数の数をチェック: 引数がない場合にヘルプを表示
+        if (argc < 2) {
+            std::cerr << "===============================================================================\n"
+                    << "  ペデスタル平均値算出プログラム (Pedestal Mean Calculator)\n"
+                    << "===============================================================================\n\n"
+                    << "[概要]\n"
+                    << "  入力されたROOTファイルを読み込み、各チャンネル・ゲインごとの\n"
+                    << "  ペデスタルヒストグラムから「平均値」と「標準誤差」を算出します。\n"
+                    << "  ガウスフィッティングは行わず、ヒストグラムの統計量を直接使用します。\n\n"
+                    << "[使い方]\n"
+                    << "  $ " << argv[0] << " <input_file.root> [--no-pdf]\n\n"
+                    << "[入出力ファイルの仕様]\n"
+                    << "  -----------------------------------------------------------------------------\n"
+                    << "  | 区分 | ファイル形式 | 必須 | 内容 / 命名規則                              |\n"
+                    << "  -----------------------------------------------------------------------------\n"
+                    << "  | 入力 | .root        | 必須 | ペデスタルデータを含むROOTファイル           |\n"
+                    << "  |      |              |      | 対象ヒストグラム: ped_chXX_{hgain,lgain,tot} |\n"
+                    << "  |      |              |      | (XX: 00-11, 統計量: 100以上のみ対象)         |\n"
+                    << "  -----------------------------------------------------------------------------\n"
+                    << "  | 出力 | _means.txt   | 自動 | 解析結果 (CSV形式)                           |\n"
+                    << "  |      |              |      | フォーマット: ch, type, mean, error          |\n"
+                    << "  -----------------------------------------------------------------------------\n"
+                    << "  | 出力 | _mean.pdf    | 任意 | ヒストグラム画像 (オプション)                |\n"
+                    << "  |      |              |      | ※ --no-pdf 指定時は作成されません           |\n"
+                    << "  -----------------------------------------------------------------------------\n\n"
+                    << "[内部処理]\n"
+                    << "  1. ファイル内の全ヒストグラム (ch00-11 x 3タイプ) を走査\n"
+                    << "  2. データ数が100未満のヒストグラムはスキップ\n"
+                    << "  3. TH1D::GetMean() と GetMeanError() を用いて値を算出\n"
+                    << "  4. 結果をテキストファイルに保存\n"
+                    << "===============================================================================" << std::endl;
+            return 1;
+        }
+        
+        // 2-2. PDF保存オプションを解釈
+        bool save_pdf = true;
+        if (argc > 2 && std::string(argv[2]) == "--no-pdf") {
+            save_pdf = false;
+        }
+        
+        // 2-3. メインの処理関数を呼び出し
+        process_pedestals(argv[1], save_pdf);
+        return 0;
+    }
+
+    // EOF
+```
+
+追加で支持があるまで待ってください。
+
+
+以下は*eventhist.rootに含まれる電荷および時間に関するヒストグラムから、そのピークなどの情報を取り出すコードです。これにいくつか修正を加えて、電荷についての結果のまとめファイル（_mean.txt）および時間情報についての結果のまとめファイル（_timefit.txt）を作成するようにしたいと考えております。
+```cpp
+    /*
+    * id: meanfinder.C
+    * Place: ~/hkelec/DiscreteSoftware/Analysis/macro/fit_results/
+    * Last Edit: 2025-10-29 Gemini
+    *
+    * 概要: 電荷はヒストグラムの平均値 (GetMean()) で算出し、
+    * 時間は高精度なEMGフィット (ttshistofit.Cベース) を行う。
+    *
+    * 電荷計算ロジック:
+    * 1. hgain と lgain の両方の平均値を取得。
+    * 2. hgain の最終ビンが飽和しているか判定
+    * (最終ビン > (最終-1)ビン * 5.0)
+    * 3. 飽和していたら lgain を、していなければ hgain を採用。
+    *
+    * コンパイル:
+    * g++ meanfinder.C -o meanfinder $(root-config --cflags --glibs)
+    */
+
+    // 1. ヘッダーファイルのインクルード
+    #include <TFile.h>
+    #include <TH1D.h>
+    #include <TF1.h>
+    #include <TCanvas.h>
+    #include <TString.h>
+    #include <TStyle.h>
+    #include <TMath.h>
+    #include <TFitResult.h>
+    #include <TFitResultPtr.h>
+    #include <iostream>
+    #include <fstream>
+    #include <vector>
+    #include <string>
+    #include <regex>
+    #include <algorithm>
+
+    // --- 2. グローバル設定 (ttshistofit.C より) ---
+    Bool_t IsAsymGaus = kFALSE;
+    Bool_t IsEMG = kTRUE;
+    Bool_t IsExpGaus = kFALSE;
+
+
+    // --- 3. ユーティリティ関数 (ttshistofit.C ベース) ---
+
+    // 3a. EMG (Exponentially Modified Gaussian) 関数の定義
+    Double_t EMG(Double_t *x, Double_t *par)
+    {
+        if (par[2] == 0) return 0;
+        if (par[3] == 0) return 0;
+        return 0.5*par[3]*exp(0.5*par[3]*(2*par[0]+par[3]*par[2]*par[2]-2.*x[0]))
+            *TMath::Erfc((par[0]+par[3]*par[2]*par[2]-x[0])/(sqrt(2.)*par[2]))*par[1];
+    }
+
+    // 3b. FWHM (半値全幅) を計算する関数
+    Double_t GetFWHM(TF1 *f)
+    {
+        if (!f) return 0;
+        double peak_pos = f->GetMaximumX();
+        double half_max = f->GetMaximum() * 0.5;
+        double x_min = f->GetXaxis()->GetXmin();
+        double x_max = f->GetXaxis()->GetXmax();
+        double x1 = f->GetX(half_max, x_min, peak_pos);
+        double x2 = f->GetX(half_max, peak_pos, x_max);
+        return x2 - x1;
+    }
+
+    // 3c. EMG関数のピーク位置を解析的に計算する関数
+    Double_t GetPeak(TF1 *f)
+    {
+        if (!f) return 0;
+        
+        // EMG関数のパラメータを取得
+        double mu = f->GetParameter(0);     // ガウス中心
+        double sigma = f->GetParameter(2);  // ガウス幅
+        double lambda = f->GetParameter(3); // 1/tau
+        
+        // EMG関数の最大値の位置を解析的に計算
+        // peak = μ + σ²λ
+        return mu + sigma * sigma * lambda;
+    }
+
+    // --- 4. 電圧取得関数 (変更なし) ---
+    double get_voltage_from_filename(const std::string& filename) {
+        std::regex re("(\\d+)V");
+        std::smatch match;
+        if (std::regex_search(filename, match, re) && match.size() > 1) {
+            return std::stod(match.str(1));
+        }
+        return -1.0;
+    }
+
+    // --- 5. ★★★ 電荷計算関数 (新規ロジック) ★★★ ---
+    // (fit_charge から calculate_charge_mean に変更)
+    void calculate_charge_mean(TString input_filename) {
+        auto infile = TFile::Open(input_filename, "READ");
+        if (!infile || infile->IsZombie()) return;
+
+        TString output_txt_filename = input_filename;
+        // 1. 出力ファイル名を _mean.txt に変更
+        output_txt_filename.ReplaceAll("_eventhist.root", "_mean.txt");
+        std::ofstream outfile(output_txt_filename.Data());
+        
+        // 2. 出力ヘッダーを変更
+        outfile << "# ch,type,voltage,mean,mean_err,rms,root_file" << std::endl;
+        
+        double voltage = get_voltage_from_filename(input_filename.Data());
+        
+        // すべてのタイプ（hgain, lgain, tot）を処理
+        std::vector<std::string> hist_types = {"hgain", "lgain", "tot"};
+        
+        for (int ch = 0; ch < 12; ++ch) {
+            // 各タイプのヒストグラムを処理
+            for (const auto& type : hist_types) {
+                TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
+                auto hist = infile->Get<TH1D>(hist_name);
+                
+                if (hist && hist->GetEntries() > 0) {
+                    double mean = hist->GetMean();
+                    double mean_err = hist->GetMeanError();
+                    double rms = hist->GetRMS();
+                    
+                    // 全てのデータを出力（選択はselect_gain_mean.Cで行う）
+                    outfile << ch << "," << type << "," << voltage << ","
+                        << mean << "," << mean_err << "," << rms << ","
+                        << input_filename.Data() << std::endl;
+                }
+            }
+
+            // tot の処理は上のループ内で済んでいるため、ここでは何もしない
+        }
+        std::cout << "電荷 平均値計算完了 -> " << output_txt_filename << std::endl;
+        outfile.close();
+        infile->Close();
+    }
+
+
+    // --- 6. 時間フィット関数 (gausfit.C と同一) ---
+    void fit_time(TString input_filename, bool save_pdf) {
+        auto infile = TFile::Open(input_filename, "READ");
+        if (!infile || infile->IsZombie()) return;
+
+        TString output_txt_filename = input_filename;
+        output_txt_filename.ReplaceAll("_eventhist.root", "_timefit.txt");
+        std::ofstream outfile(output_txt_filename.Data());
+        outfile << "# ch,type,voltage,tts(sigma),sigma,fwhm(calc),peak(calc),peak_err,tau(1/lambda),chi2_ndf" << std::endl;
+
+        double voltage = get_voltage_from_filename(input_filename.Data());
+        
+        if (save_pdf) {
+            gStyle->SetOptStat(0);
+            gStyle->SetOptFit(1);
+        }
+
+        std::vector<std::string> hist_types = {"time_diff"};
+
+        for (int ch = 0; ch < 12; ++ch) {
+            for (const auto& type : hist_types) {
+                TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
+                auto hist = infile->Get<TH1D>(hist_name);
+                
+                if (!hist || hist->GetEntries() < 100) continue;
+
+                double hist_min = hist->GetXaxis()->GetXmin();
+                double hist_max = hist->GetXaxis()->GetXmax();
+
+                TF1 *fgaus = new TF1("fgaus", "gaus", hist_min, hist_max);
+                fgaus->SetLineColor(kCyan);
+                fgaus->SetLineWidth(1);
+                fgaus->SetParameter(1, hist->GetBinCenter(hist->GetMaximumBin()));
+                fgaus->SetParameter(2, hist->GetRMS());
+                hist->Fit(fgaus, "QN", "", hist_min, hist_max);
+                
+                double pre_amp = fgaus->GetParameter(0);
+                double pre_mean = fgaus->GetParameter(1);
+                double pre_sigma = TMath::Abs(fgaus->GetParameter(2));
+                if (pre_sigma == 0) { delete fgaus; continue; }
+
+                TF1 *emg = nullptr;
+                TFitResultPtr fit_result = nullptr;
+
+                if (IsEMG) {
+                    emg = new TF1("emg", EMG, hist_min, hist_max, 4);
+                    emg->SetLineColor(kRed);
+                    emg->SetLineStyle(2);
+                    emg->SetNpx(2000);
+                    emg->SetParName(0, "#mu");
+                    emg->SetParName(1, "#gamma");
+                    emg->SetParName(2, "#sigma");
+                    emg->SetParName(3, "#lambda");
+                    emg->SetParameter(0, pre_mean);
+                    emg->SetParameter(1, pre_amp * 10.0);
+                    emg->SetParameter(2, pre_sigma * 0.7);
+                    emg->SetParameter(3, (pre_sigma > 1e-9) ? (1. / pre_sigma) : 1.0);
+                    emg->SetParLimits(1, 1, 1e9);
+                    emg->SetParLimits(2, 0.01, 100);
+                    emg->SetParLimits(3, 0.001, 500);
+                    fit_result = hist->Fit(emg, "SQR", "", hist_min, hist_max);
+                }
+                
+                if (emg && fit_result.Get() && fit_result->IsValid() && fit_result->Ndf() > 0) {
+                    double sigma = emg->GetParameter(2);
+                    double lambda = emg->GetParameter(3);
+                    double tau = (lambda > 1e-9) ? (1.0 / lambda) : 0.0;
+                    double tts = sigma;
+                    double fwhm = GetFWHM(emg);
+                    double peak = GetPeak(emg);
+                    double chi2_ndf = fit_result->Chi2() / fit_result->Ndf();
+
+                    double peak_err = emg->GetParError(0); // μのエラー
+
+                    outfile << ch << "," << type << "," << voltage << ","
+                            << tts << "," << sigma << "," << fwhm << ","
+                            << peak << "," << peak_err << "," << tau << ","
+                            << chi2_ndf << std::endl;
+                }
+
+                if (save_pdf && emg && fit_result.Get() && fit_result->IsValid()) {
+                    TCanvas* canvas = new TCanvas("c", "c", 800, 600);
+                    hist->GetXaxis()->SetRangeUser(hist->GetBinCenter(hist->GetMaximumBin())-15, hist->GetBinCenter(hist->GetMaximumBin())+20);
+                    hist->Draw();
+                    emg->Draw("same");
+                    TString pdf_name = input_filename;
+                    pdf_name.ReplaceAll("_eventhist.root", Form("_%s_fit.pdf", hist_name.Data()));
+                    canvas->SaveAs(pdf_name);
+                    delete canvas;
+                }
+
+                delete fgaus;
+                if (emg) delete emg;
+            }
+        }
+        std::cout << "Time fit completed. -> " << output_txt_filename << std::endl;
+        outfile.close();
+        infile->Close();
+    }
+
+    // --- 7. main関数 (オプション解析) ---
+    int main(int argc, char* argv[]) {
+        if (argc < 2) {
+            // 1. 使い方を meanfinder に修正
+            std::cerr << "使い方: " << argv[0] << " <input.root> [--fit-charge | --fit-time | --fit-all] [--no-pdf]" << std::endl;
+            return 1;
+        }
+
+        // 2. デフォルトを --fit-charge に設定
+        std::string fit_mode = "--fit-charge";
+        bool save_pdf = true;
+
+        for (int i = 2; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg == "--fit-charge" || arg == "--fit-time" || arg == "--fit-all") {
+                fit_mode = arg;
+            }
+            if (arg == "--no-pdf") {
+                save_pdf = false;
+            }
+        }
+        
+        // 3. --fit-charge または --fit-all の場合
+        if (fit_mode == "--fit-charge" || fit_mode == "--fit-all") {
+            // 4. 電荷計算関数 (calculate_charge_mean) を呼び出す
+            calculate_charge_mean(argv[1]);
+        }
+        
+        // 5. --fit-time または --fit-all の場合
+        if (fit_mode == "--fit-time" || fit_mode == "--fit-all") {
+            // 6. 時間フィット関数 (fit_time) を呼び出す
+            //    (電荷計算とPDF保存オプションを共有)
+            fit_time(argv[1], save_pdf);
+        }
+
+        return 0;
+    }
+    // EOF
+```
+
+まず、電荷のまとめファイルに欲しい情報は、ch,type,mean,mean_err,rms,root_です。
+typeはhgain,lgainにpc(ピコクーロン)_by_h, pc_by_lを加えた④種類です。
+以前あった電圧の情報はいりませんが、ファイル名から電圧を取得する関数は後で使うかもしれないので残しておいてください。
+pcの場合のmean,mean_errには、hgainとlgainの平均値と、既に作成されているはずのhkelec_pedestal_hithist_fits.txtにあるhgain,lgainそれぞれのpedestalの値を使って、以下のように計算した値を入れてください。
+charge [pC] = (charge [ADC] - pedestal [ADC]) * k [pC/ADC]
+k = 0.073 pC/ADC (high gain), 0.599 pC/ADC (low gain)
+ここでkの値はのちに変更する可能性があるのでコードの先頭部においてください。
+mean_errについては、hgain, lgain, pedestalの誤差を考慮して（誤差の伝播則に従って）計算してください。
+また、pcを計算する際に、hgainとlgainのどちらを使うかは以下のロジックに従ってください。これにより、pc_by_h, pc_by_lのどちらになるかが決まります。
+```cpp
+    bool check_saturation(const std::string& root_file, int ch, const std::string& type) {
+        TFile* file = TFile::Open(root_file.c_str(), "READ");
+        if (!file || file->IsZombie()) {
+            std::cerr << "警告: ROOTファイル " << root_file << " を開けません" << std::endl;
+            return false;
+        }
+
+        // try several common histogram name patterns used in different macros
+        std::vector<TString> names_to_try;
+        names_to_try.push_back(Form("h_%s_ch%d", type.c_str(), ch));
+        names_to_try.push_back(Form("h_%s_ch%02d", type.c_str(), ch));
+        names_to_try.push_back(Form("%s_ch%d", type.c_str(), ch));
+        names_to_try.push_back(Form("%s_ch%02d", type.c_str(), ch));
+        names_to_try.push_back(Form("ch%02d_%s", ch, type.c_str()));
+
+        TH1* hist = nullptr;
+        TString used_name = "";
+        for (const auto& hn : names_to_try) {
+            hist = (TH1*)file->Get(hn);
+            if (hist) { used_name = hn; break; }
+        }
+        if (!hist) {
+            std::cerr << "警告: ヒストグラム (any of common patterns) for type=" << type << " ch=" << ch << " が見つかりません" << std::endl;
+            file->Close();
+            return false;
+        }
+
+        // 最後のビンとその前のビンの内容を比較
+        int last_bin = hist->GetNbinsX();
+        double last_bin_content = hist->GetBinContent(last_bin);
+        
+        // 右から順に最初の非空ビンを探す
+        int reference_bin = last_bin - 1;
+        while(reference_bin > 0 && hist->GetBinContent(reference_bin) == 0) {
+            reference_bin--;
+        }
+        
+        if(reference_bin <= 0) {
+            file->Close();
+            return false;  // 有効なビンが見つからない場合
+        }
+        
+        double reference_content = hist->GetBinContent(reference_bin);
+        bool is_saturated = (last_bin_content > reference_content * 5.0);
+        
+        file->Close();
+        return is_saturated;
+    }
+```
+
+次に時間に関する情報のまとめファイルに欲しい情報は、ch, peak, peak_err, tts(FWHM), mu, gamma, sigma, lambda ,tts_err, chi2, ndfです。
+まずpeakの計算の関数は間違っているので、以下のように修正してください。
+```cpp
+    Double_t GetPeak(TF1 *f)
+    {
+        if (!f) return 0;
+
+        // 数値計算で関数の最大値を与えるX座標（ピーク位置）を探す
+        // 探索範囲は関数の定義域全体を指定
+        return f->GetMaximumX(f->GetXmin(), f->GetXmax());
+    }
+```
+peakやttsの誤差については、fit_resultから取得できるパラメータの共分散行列を用いて、誤差の伝播則に従って計算してください。
+以下にGeminiに時間の部分についてのみ修正を依頼した結果を示します。これに間違いがなければそのまま使ってください。間違っている場合は修正してください。
+```cpp
+    /*
+    * id: meanfinder.C
+    * Place: ~/hkelec/DiscreteSoftware/Analysis/macro/fit_results/
+    * Last Edit: 2025-11-20 Gemini
+    *
+    * 概要: 電荷はヒストグラムの平均値で算出し、
+    * 時間はEMGフィットを行い、数値微分法を用いてPeak, FWHMおよびその誤差を算出する。
+    *
+    * コンパイル:
+    * g++ meanfinder.C -o meanfinder $(root-config --cflags --glibs)
+    */
+
+    // 1. ヘッダーファイルのインクルード
+    #include <TFile.h>
+    #include <TH1D.h>
+    #include <TF1.h>
+    #include <TCanvas.h>
+    #include <TString.h>
+    #include <TStyle.h>
+    #include <TMath.h>
+    #include <TFitResult.h>
+    #include <TFitResultPtr.h>
+    #include <TMatrixDSym.h>
+    #include <iostream>
+    #include <fstream>
+    #include <vector>
+    #include <string>
+    #include <regex>
+    #include <functional>
+
+    // --- 2. グローバル設定 ---
+    Bool_t IsEMG = kTRUE;
+
+    // --- 3. ユーティリティ関数 ---
+
+    // 3a. EMG (Exponentially Modified Gaussian) 関数の定義
+    // par[0]: mu (Gaussian Mean), par[1]: Constant (Amplitude factor), par[2]: sigma, par[3]: lambda (1/tau)
+    Double_t EMG(Double_t *x, Double_t *par)
+    {
+        if (par[2] <= 0) return 0;
+        if (par[3] <= 0) return 0;
+        // 定数の定義 (計算高速化のため)
+        Double_t k = 0.5 * par[3];
+        Double_t arg_exp = k * (2 * par[0] + par[3] * par[2] * par[2] - 2.0 * x[0]);
+        Double_t arg_erfc = (par[0] + par[3] * par[2] * par[2] - x[0]) / (sqrt(2.0) * par[2]);
+        
+        return k * exp(arg_exp) * TMath::Erfc(arg_erfc) * par[1];
+    }
+
+    // 3b. FWHM (半値全幅) を数値的に計算する関数
+    Double_t GetFWHM(TF1 *f)
+    {
+        if (!f) return 0;
+        // 数値的に正確なピーク位置を取得
+        double peak_pos = f->GetMaximumX(f->GetXmin(), f->GetXmax());
+        double half_max = f->Eval(peak_pos) * 0.5;
+        
+        // ピークの左側で半値になる点を探す
+        double x1 = f->GetX(half_max, f->GetXmin(), peak_pos);
+        // ピークの右側で半値になる点を探す
+        double x2 = f->GetX(half_max, peak_pos, f->GetXmax());
+        
+        return x2 - x1;
+    }
+
+    // 3c. EMG関数のピーク位置を数値的に取得する関数 (GetMaximumXを使用)
+    Double_t GetPeak(TF1 *f)
+    {
+        if (!f) return 0;
+        // 数値計算により関数の最大値を与えるX座標を高精度に探索
+        return f->GetMaximumX(f->GetXmin(), f->GetXmax());
+    }
+
+    // 3d. 任意の導出量に対する誤差を数値微分(誤差伝播)で計算する関数
+    // func: 値を計算する関数 (GetPeak や GetFWHM など)
+    // f: フィット済みのTF1
+    // cov: フィット結果の共分散行列
+    Double_t GetDerivedError(TF1 *f, const TMatrixDSym &cov, std::function<Double_t(TF1*)> func)
+    {
+        int nPar = f->GetNpar();
+        std::vector<Double_t> params(nPar);
+        for(int i=0; i<nPar; ++i) params[i] = f->GetParameter(i);
+
+        // 数値微分のための微小変位
+        Double_t epsilon = 1e-4; 
+        std::vector<Double_t> grad(nPar); // 勾配ベクトル (Jacobian)
+
+        // 各パラメータについて偏微分係数を計算
+        for (int i = 0; i < nPar; ++i) {
+            Double_t original_val = params[i];
+            
+            // パラメータを +epsilon ずらす
+            f->SetParameter(i, original_val + epsilon);
+            Double_t val_plus = func(f);
+            
+            // パラメータを -epsilon ずらす
+            f->SetParameter(i, original_val - epsilon);
+            Double_t val_minus = func(f);
+            
+            // 中心差分で微分係数を近似
+            grad[i] = (val_plus - val_minus) / (2.0 * epsilon);
+            
+            // パラメータを元に戻す
+            f->SetParameter(i, original_val); 
+        }
+
+        // 誤差伝播: sigma^2 = J^T * C * J
+        Double_t variance = 0.0;
+        for (int i = 0; i < nPar; ++i) {
+            for (int j = 0; j < nPar; ++j) {
+                variance += grad[i] * grad[j] * cov(i, j);
+            }
+        }
+
+        return (variance > 0) ? TMath::Sqrt(variance) : 0.0;
+    }
+
+    // --- 4. 電圧取得関数 ---
+    double get_voltage_from_filename(const std::string& filename) {
+        std::regex re("(\\d+)V");
+        std::smatch match;
+        if (std::regex_search(filename, match, re) && match.size() > 1) {
+            return std::stod(match.str(1));
+        }
+        return -1.0;
+    }
+
+    // --- 5. 電荷計算関数 (変更なし) ---
+    void calculate_charge_mean(TString input_filename) {
+        auto infile = TFile::Open(input_filename, "READ");
+        if (!infile || infile->IsZombie()) return;
+
+        TString output_txt_filename = input_filename;
+        output_txt_filename.ReplaceAll("_eventhist.root", "_mean.txt");
+        std::ofstream outfile(output_txt_filename.Data());
+        outfile << "# ch,type,voltage,mean,mean_err,rms,root_file" << std::endl;
+        double voltage = get_voltage_from_filename(input_filename.Data());
+        std::vector<std::string> hist_types = {"hgain", "lgain", "tot"};
+        
+        for (int ch = 0; ch < 12; ++ch) {
+            for (const auto& type : hist_types) {
+                TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
+                auto hist = infile->Get<TH1D>(hist_name);
+                if (hist && hist->GetEntries() > 0) {
+                    outfile << ch << "," << type << "," << voltage << ","
+                            << hist->GetMean() << "," << hist->GetMeanError() << "," << hist->GetRMS() << ","
+                            << input_filename.Data() << std::endl;
+                }
+            }
+        }
+        std::cout << "電荷 平均値計算完了 -> " << output_txt_filename << std::endl;
+        outfile.close();
+        infile->Close();
+    }
+
+    // --- 6. ★★★ 時間フィット関数 (修正版) ★★★ ---
+    void fit_time(TString input_filename, bool save_pdf) {
+        auto infile = TFile::Open(input_filename, "READ");
+        if (!infile || infile->IsZombie()) return;
+
+        TString output_txt_filename = input_filename;
+        output_txt_filename.ReplaceAll("_eventhist.root", "_timefit.txt");
+        std::ofstream outfile(output_txt_filename.Data());
+        
+        // ヘッダー出力: PeakとFWHMの誤差を追加
+        outfile << "# ch,type,voltage,TTS(FWHM),TTS_err,Peak,Peak_err,sigma,tau(1/lambda),chi2_ndf" << std::endl;
+
+        double voltage = get_voltage_from_filename(input_filename.Data());
+        
+        if (save_pdf) {
+            gStyle->SetOptStat(0);
+            gStyle->SetOptFit(1);
+        }
+
+        std::vector<std::string> hist_types = {"time_diff"};
+
+        for (int ch = 0; ch < 12; ++ch) {
+            for (const auto& type : hist_types) {
+                TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
+                auto hist = infile->Get<TH1D>(hist_name);
+                
+                if (!hist || hist->GetEntries() < 100) continue;
+
+                double hist_min = hist->GetXaxis()->GetXmin();
+                double hist_max = hist->GetXaxis()->GetXmax();
+
+                // 1. ガウスフィットで初期パラメータを推定
+                TF1 *fgaus = new TF1("fgaus", "gaus", hist_min, hist_max);
+                fgaus->SetParameter(1, hist->GetBinCenter(hist->GetMaximumBin()));
+                fgaus->SetParameter(2, hist->GetRMS());
+                hist->Fit(fgaus, "QN0", "", hist_min, hist_max); // QN0: 静かに、描画せず、保存せず
+                
+                double pre_amp = fgaus->GetParameter(0);
+                double pre_mean = fgaus->GetParameter(1);
+                double pre_sigma = TMath::Abs(fgaus->GetParameter(2));
+                delete fgaus; // 不要になったので削除
+
+                if (pre_sigma == 0) continue;
+
+                // 2. EMGフィットの実行
+                TF1 *emg = new TF1("emg", EMG, hist_min, hist_max, 4);
+                emg->SetLineColor(kRed);
+                emg->SetNpx(2000); // 描画と探索の精度のため点を多くする
+                emg->SetParName(0, "#mu");
+                emg->SetParName(1, "Const");
+                emg->SetParName(2, "#sigma");
+                emg->SetParName(3, "#lambda");
+
+                // 初期値設定
+                emg->SetParameter(0, pre_mean);
+                emg->SetParameter(1, pre_amp * 10.0); // EMGの振幅はガウスより大きくなる傾向があるため調整
+                emg->SetParameter(2, pre_sigma * 0.7);
+                emg->SetParameter(3, (pre_sigma > 1e-9) ? (1.0 / pre_sigma) : 1.0);
+                
+                // パラメータ制限 (発散防止)
+                emg->SetParLimits(2, 0.01, 100);
+                emg->SetParLimits(3, 0.001, 1000);
+
+                // フィット実行 ("S": 結果をTFitResultPtrで取得, "Q": 静かに, "R": 範囲指定)
+                TFitResultPtr fit_result = hist->Fit(emg, "SQR", "", hist_min, hist_max);
+                
+                if (fit_result.Get() && fit_result->IsValid() && fit_result->Ndf() > 0) {
+                    // 共分散行列の取得
+                    TMatrixDSym cov = fit_result->GetCovarianceMatrix();
+
+                    // パラメータ取得
+                    double sigma = emg->GetParameter(2);
+                    double lambda = emg->GetParameter(3);
+                    double tau = (lambda > 1e-9) ? (1.0 / lambda) : 0.0;
+                    double chi2_ndf = fit_result->Chi2() / fit_result->Ndf();
+
+                    // --- ★★★ 重要な計算部分 ★★★ ---
+                    
+                    // 1. 値の計算 (数値的解法を使用)
+                    double peak = GetPeak(emg);
+                    double fwhm = GetFWHM(emg); // これがTTS
+
+                    // 2. 誤差の計算 (数値微分による誤差伝播)
+                    // Peakの誤差
+                    double peak_err = GetDerivedError(emg, cov, GetPeak);
+                    
+                    // TTS(FWHM)の誤差
+                    double fwhm_err = GetDerivedError(emg, cov, GetFWHM);
+
+                    // 結果出力
+                    outfile << ch << "," << type << "," << voltage << ","
+                            << fwhm << "," << fwhm_err << "," 
+                            << peak << "," << peak_err << "," 
+                            << sigma << "," << tau << ","
+                            << chi2_ndf << std::endl;
+                    
+                    // PDF保存
+                    if (save_pdf) {
+                        TCanvas* canvas = new TCanvas("c", "c", 800, 600);
+                        // ピーク周辺を拡大表示
+                        hist->GetXaxis()->SetRangeUser(peak - 15, peak + 20);
+                        hist->Draw();
+                        emg->Draw("same");
+                        TString pdf_name = input_filename;
+                        pdf_name.ReplaceAll("_eventhist.root", Form("_%s_fit.pdf", hist_name.Data()));
+                        canvas->SaveAs(pdf_name);
+                        delete canvas;
+                    }
+                }
+                if (emg) delete emg;
+            }
+        }
+        std::cout << "Time fit completed. -> " << output_txt_filename << std::endl;
+        outfile.close();
+        infile->Close();
+    }
+
+    // --- 7. main関数 ---
+    int main(int argc, char* argv[]) {
+        if (argc < 2) {
+            std::cerr << "使い方: " << argv[0] << " <input.root> [--fit-charge | --fit-time | --fit-all] [--no-pdf]" << std::endl;
+            return 1;
+        }
+
+        std::string fit_mode = "--fit-charge";
+        bool save_pdf = true;
+
+        for (int i = 2; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg == "--fit-charge" || arg == "--fit-time" || arg == "--fit-all") {
+                fit_mode = arg;
+            }
+            if (arg == "--no-pdf") {
+                save_pdf = false;
+            }
+        }
+        
+        if (fit_mode == "--fit-charge" || fit_mode == "--fit-all") {
+            calculate_charge_mean(argv[1]);
+        }
+        
+        if (fit_mode == "--fit-time" || fit_mode == "--fit-all") {
+            fit_time(argv[1], save_pdf);
+        }
+
+        return 0;
+    }
+```
+
+
+次にやりたいこととしては、以下の機能を持つシェルスクリプトを/home/daiki/keio/hkelec/reconst/macros/shに作りたいと考えています。
+
+1. 指定したペデスタルディレクトリ（/home/daiki/lab/data/20251117/no{1,2,3,4}）内でhkelec_pedestal_hithist.rootを探し、存在すれば先ほど共有したfit_pedestalでpedestalのフィッティングを行う。
+2. 指定したデータディレクトリ（/home/daiki/lab/data/20251117/no{1,2,3,4}）内で*eventhist.rootファイルをすべてと、fit_pedestalで作成されたペデスタルのまとめファイル探し、先ほど作成したmeanfinderを実行する。
+3. 2で作成された電荷、時間、tts、およびそれらの誤差のファイルから、チャンネルごとの電荷対時間、電荷対ttsのグラフをエラーバーとともに作成し、グラフを7次関数（y = a0 x + a1 x^2 + ... + a7 x^7）でエラーも考慮に入れてフィッティングし、結果をテキストファイルに出力する。フィット結果のグラフはPDFとして出力する。
+
+3. のやり方については、どのような方法でも構いませんが、まず1つのチャンネルについてこれらのフィット処理を行うC++のコードを作成したうえで、それをシェルスクリプトで回す形にすることを提案します。
+
+オプションはデフォルトでは--allとし、--fit-charge, --fit-timeも指定可能とする。pdfについてはデフォルトで保存するが、--no-pdfオプションで保存しないようにできるようにする。
+/home/daiki/lab/data/20251117/no{1,2,3,4}/*no{1,2,3,4}-00X-XX.00dB_eventhist.root
+以下は過去に似たようなことをやった際のスクリプト例です。これを参考にして、新しいスクリプトを作成してください。
+```bash
+    #!/bin/bash
+    #
+    # id: run_fitter_batch.sh
+    # Place: ~/hkelec/DiscreteSoftware/Analysis/macro/
+    # Created: 2025-11-05
+    #
+    # 概要: gausfit / meanfinder / peakfinder のワークフローを統一して実行する
+    #       引数で method を指定 (gaus|mean|peak|all)。実行ログを出力する。
+    #
+
+    BASE_DIR="$(dirname "$0")"
+
+    # executables
+    GAUS_FITTER="${BASE_DIR}/fit_results/gausfit"
+    MEAN_FITTER="${BASE_DIR}/fit_results/meanfinder"
+    PEAK_FITTER="${BASE_DIR}/fit_results/peakfinder"
+    GAIN_SELECTOR="${BASE_DIR}/fit_results/select_gain"
+    GAIN_SELECTOR_MEAN="${BASE_DIR}/fit_results/select_gain_mean"
+    CT_PLOT_CREATOR="${BASE_DIR}/fit_results/create_ct_plot"
+
+    usage(){
+        cat <<EOF
+    Usage: $0 <target_dir> <method> [pedestal_dir] [options]
+    method: gaus | mean | peak | all
+    options:
+        --fit-charge | --fit-time | --fit-all
+        --no-pdf
+        --make-ct-plot
+    EOF
+    }
+
+    if [ "$#" -lt 2 ]; then
+        usage; exit 1
+    fi
+
+    # TARGET_DIR=$1
+    # METHOD=$2
+    # PEDESTAL_DIR=$3 ##########$TARGET_DIR
+    # shift 2
+    # if [ "$#" -ge 1 ] && ! [[ "$1" =~ ^-- ]]; then
+    #     PEDESTAL_DIR=$3; shift #### $1
+    # fi
+
+    # FIT_OPTION="--fit-charge"
+
+    # 1. TARGET_DIR と METHOD を取得
+    TARGET_DIR=$1
+    METHOD=$2
+
+    # 2. PEDESTAL_DIR のデフォルト値を TARGET_DIR に設定
+    PEDESTAL_DIR="$TARGET_DIR" 
+    shift 2 # $1 と $2 を消費
+
+    # 3. 残りの第1引数($1)が存在し、かつオプション(--で始まらない)場合、
+    #    それを PEDESTAL_DIR として採用し、引数リストから消費($1)する
+    if [ "$#" -ge 1 ] && ! [[ "$1" =~ ^-- ]]; then
+        PEDESTAL_DIR=$1; shift 
+    fi
+
+    # 4. FIT_OPTION 以降のオプション解析は変更なし
+    FIT_OPTION="--fit-charge"
+    PDF_OPTION=""
+    MAKE_CT_PLOT="no"
+    for arg in "$@"; do
+        case $arg in
+            --fit-charge|--fit-time|--fit-all) FIT_OPTION=$arg ;; 
+            --no-pdf) PDF_OPTION=$arg ;;
+            --make-ct-plot) MAKE_CT_PLOT="yes" ;;
+            *) echo "Unknown option: $arg"; usage; exit 1 ;;
+        esac
+    done
+
+    # prepare logfile
+    TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+    LOGFILE="$TARGET_DIR/run_fitter_${METHOD}_${TIMESTAMP}.log"
+    mkdir -p "$(dirname "$LOGFILE")"
+    exec > >(tee -a "$LOGFILE") 2>&1
+
+    echo "=== run_fitter_batch start: $(date) ==="
+    echo "target: $TARGET_DIR  method: $METHOD  fit: $FIT_OPTION  make_ct: $MAKE_CT_PLOT"
+
+    # helper: run per-file command if method matches
+    run_for_method(){
+        local m=$1; shift
+        case "$METHOD" in
+            all) $@ ;;
+            $m) $@ ;;
+            *) return 0 ;;
+        esac
+    }
+
+    echo "\n--- Pedestal step ---"
+    PEDESTAL_ROOT_FILE="hkelec_pedestal_hithist.root"
+    PEDESTAL_ROOT_PATH="$PEDESTAL_DIR/$PEDESTAL_ROOT_FILE"
+    PEDESTAL_TXT_PATH="$PEDESTAL_DIR/${PEDESTAL_ROOT_FILE/.root/_fits.txt}"
+    if [ -f "$PEDESTAL_ROOT_PATH" ]; then
+        if [ -x "${BASE_DIR}/fit_results/fit_pedestal" ]; then
+            echo "running pedestal fitter..."
+            "${BASE_DIR}/fit_results/fit_pedestal" "$PEDESTAL_ROOT_PATH" "$PDF_OPTION"
+        else
+            echo "pedestal fitter not found, skipping"
+            touch "$PEDESTAL_TXT_PATH"
+        fi
+    else
+        echo "pedestal root not found: $PEDESTAL_ROOT_PATH"
+        touch "$PEDESTAL_TXT_PATH"
+    fi
+
+    # Process eventhist files
+    echo "\n--- Processing eventhist files ---"
+    for evf in "$TARGET_DIR"/*_eventhist.root; do
+        [ -f "$evf" ] || continue
+        echo "Processing: $evf"
+
+        # run fit-charge / fit-time with the correct executable depending on METHOD
+        if [[ "$FIT_OPTION" == "--fit-charge" || "$FIT_OPTION" == "--fit-all" ]]; then
+            case "$METHOD" in
+                gaus)
+                    "$GAUS_FITTER" "$evf" "--fit-charge" "$PDF_OPTION" ;;
+                mean)
+                    "$MEAN_FITTER" "$evf" "--fit-charge" "$PDF_OPTION" ;;
+                peak)
+                    "$PEAK_FITTER" "$evf" "--fit-charge" "$PDF_OPTION" ;;
+                all)
+                    "$GAUS_FITTER" "$evf" "--fit-charge" "$PDF_OPTION"
+                    "$MEAN_FITTER" "$evf" "--fit-charge" "$PDF_OPTION"
+                    "$PEAK_FITTER" "$evf" "--fit-charge" "$PDF_OPTION" ;;
+            esac
+        fi
+
+        if [[ "$FIT_OPTION" == "--fit-time" || "$FIT_OPTION" == "--fit-all" ]]; then
+            case "$METHOD" in
+                gaus)
+                    "$GAUS_FITTER" "$evf" "--fit-time" "$PDF_OPTION" ;;
+                mean)
+                    "$MEAN_FITTER" "$evf" "--fit-time" "$PDF_OPTION" ;;
+                peak)
+                    "$PEAK_FITTER" "$evf" "--fit-time" "$PDF_OPTION" ;;
+                all)
+                    "$GAUS_FITTER" "$evf" "--fit-time" "$PDF_OPTION"
+                    "$MEAN_FITTER" "$evf" "--fit-time" "$PDF_OPTION"
+                    "$PEAK_FITTER" "$evf" "--fit-time" "$PDF_OPTION" ;;
+            esac
+        fi
+    done
+
+    echo "\n--- Creating summaries and HV vs Charge files ---"
+    if [[ "$METHOD" == "gaus" || "$METHOD" == "all" ]]; then
+        SUMMARY_FILE_CHARGE="$TARGET_DIR/summary_gausfit_all.txt"
+        rm -f "$SUMMARY_FILE_CHARGE"
+        echo "# ch,type,voltage,peak,peak_err,sigma,sigma_err,chi2_ndf,rough_sigma" > "$SUMMARY_FILE_CHARGE"
+        cat "$TARGET_DIR"/*_gausfit.txt | grep -v '^#' >> "$SUMMARY_FILE_CHARGE"
+        echo "Running gain selector (gaus)"
+        if [ -x "$GAIN_SELECTOR" ]; then
+            "$GAIN_SELECTOR" "$SUMMARY_FILE_CHARGE" "$PEDESTAL_TXT_PATH" "$TARGET_DIR" "gaus"
+        else
+            echo "GAIN_SELECTOR not found: $GAIN_SELECTOR"
+        fi
+    fi
+
+    if [[ "$METHOD" == "mean" || "$METHOD" == "all" ]]; then
+        SUMMARY_FILE_CHARGE_MEAN="$TARGET_DIR/summary_HV_vs_Charge_mean.txt"
+        # meanfinder outputs *_mean.txt; select_gain_mean produces selected files and summary
+        # create aggregated mean summary so select_gain_mean can read a single CSV-like file
+        rm -f "$SUMMARY_FILE_CHARGE_MEAN"
+        echo "# ch,type,voltage,mean,mean_err,rms" > "$SUMMARY_FILE_CHARGE_MEAN"
+        # Some *_mean.txt files may contain wrapped lines; pick only lines that start with channel number
+        grep -h '^[0-9]' "$TARGET_DIR"/*_mean.txt 2>/dev/null >> "$SUMMARY_FILE_CHARGE_MEAN" || true
+        if [ -x "$GAIN_SELECTOR_MEAN" ]; then
+            echo "Running gain selector (mean)"
+            # pass: <summary_mean_all.txt> <pedestal_fits.txt> <output_dir>
+            "$GAIN_SELECTOR_MEAN" "$SUMMARY_FILE_CHARGE_MEAN" "$PEDESTAL_TXT_PATH" "$TARGET_DIR"
+        else
+            echo "GAIN_SELECTOR_MEAN not found: $GAIN_SELECTOR_MEAN"
+        fi
+    fi
+
+    if [[ "$METHOD" == "peak" || "$METHOD" == "all" ]]; then
+        # peak workflow may create HV_vs_ChargeSubtracted files; keep existing behaviour
+        echo "Note: peak workflow HV file creation should be handled by existing batch scripts before calling this unified script if needed."
+    fi
+
+    echo "\n--- Time summary aggregation ---"
+    SUMMARY_FILE_TIME="$TARGET_DIR/summary_timefit_all.txt"
+    rm -f "$SUMMARY_FILE_TIME"
+    echo "# ch,type,voltage,tts,sigma,fwhm,peak,tau,chi2_ndf" > "$SUMMARY_FILE_TIME"
+    cat "$TARGET_DIR"/*_timefit.txt 2>/dev/null | grep -v '^#' >> "$SUMMARY_FILE_TIME" || true
+
+    # Create Charge vs Time files if requested
+    if [ "$MAKE_CT_PLOT" == "yes" ]; then
+        echo "\n--- Creating Charge vs Time data and plots ---"
+        # call CT plot creator if summaries exist
+        if [ -f "$SUMMARY_FILE_TIME" ]; then
+            # For CT plot creation, we need:
+            # 1. charge summary (from gausfit/mean/peak)
+            # 2. time summary (already in SUMMARY_FILE_TIME)
+            # 3. pedestal file
+            # 4. output directory
+            CHARGE_SUMMARY=""
+            case "$METHOD" in
+                gaus|all)
+                    if [ -f "$SUMMARY_FILE_CHARGE" ]; then
+                        CHARGE_SUMMARY="$SUMMARY_FILE_CHARGE"
+                    fi ;;
+                mean)
+                    if [ -f "$SUMMARY_FILE_CHARGE_MEAN" ]; then
+                        CHARGE_SUMMARY="$SUMMARY_FILE_CHARGE_MEAN"
+                    fi ;;
+                peak)
+                    # Try to find first *_peak.txt in target dir
+                    PEAK_SUMMARY=$(find "$TARGET_DIR" -name "*_peak.txt" | head -n 1)
+                    if [ -n "$PEAK_SUMMARY" ]; then
+                        CHARGE_SUMMARY="$PEAK_SUMMARY"
+                    fi ;;
+            esac
+            
+            if [ -n "$CHARGE_SUMMARY" ] && [ -x "$CT_PLOT_CREATOR" ]; then
+                # decide which method the charge summary corresponds to so CT filenames reflect it
+                CT_METHOD="$METHOD"
+                case "$CHARGE_SUMMARY" in
+                    *gaus* ) CT_METHOD="gaus" ;;
+                    *mean* ) CT_METHOD="mean" ;;
+                    *peak* ) CT_METHOD="peak" ;;
+                    * ) CT_METHOD="$METHOD" ;;
+                esac
+                # pass method_for_ct as last arg
+                "$CT_PLOT_CREATOR" "$CHARGE_SUMMARY" "$SUMMARY_FILE_TIME" "$PEDESTAL_TXT_PATH" "$TARGET_DIR" "$CT_METHOD"
+            else
+                echo "CT_PLOT_CREATOR not found or charge summary missing"
+            fi
+        else
+            echo "summary_timefit_all.txt not found; cannot create CT plots"
+        fi
+    fi
+
+    echo "\n=== run_fitter_batch end: $(date) ==="
+    echo "Log saved to: $LOGFILE"
+
+    exit 0
+
+```
+また、以下は以前作成したcharge vs timeをプロットするコードです。参考にしていただいても構いません。
+```cpp
+    /*
+    * id: plot_ct.C
+    * Place: ~/hkelec/DiscreteSoftware/Analysis/macro/fit_results/
+    * Last Edit: 2025-11-04
+    *
+    * 概要: Charge vs Time の散布図（エラーバー付き）を作成する
+    * コンパイル可能
+    */
+
+    #include <TFile.h>
+    #include <TGraphErrors.h>
+    #include <TCanvas.h>
+    #include <TAxis.h>
+    #include <TString.h>
+    #include <iostream>
+    #include <fstream>
+    #include <string>
+    #include <vector>
+    #include <sstream>
+
+    void create_ct_plot(const std::string& input_file, const std::string& output_dir) {
+        std::ifstream infile(input_file);
+        if (!infile) {
+            std::cerr << "エラー: 入力ファイル " << input_file << " を開けません" << std::endl;
+            return;
+        }
+
+        // データを格納するベクター
+        std::vector<double> charges, charge_errs, times, time_errs;
+
+        // チャンネル番号を入力ファイル名から取得
+        std::string ch_str = "unknown";
+        size_t ch_pos = input_file.find("_ch");
+        if (ch_pos != std::string::npos) {
+            ch_str = input_file.substr(ch_pos + 3, 2);
+        }
+
+        // ヘッダーをスキップ
+        std::string line;
+        std::getline(infile, line);
+
+        // データを読み込む — カンマ区切りでもスペース区切りでも対応
+        while (std::getline(infile, line)) {
+            if (line.size() == 0) continue;
+            if (line[0] == '#') continue;
+            // replace commas with spaces so both formats are accepted
+            for (char &c : line) if (c == ',') c = ' ';
+            std::stringstream ss(line);
+            double charge=0, charge_err=0, time=0, time_err=0;
+            if (!(ss >> charge)) continue;
+            // try reading all remaining values; if only 3 columns present interpret as x y ey
+            if (!(ss >> charge_err)) charge_err = 0;
+            if (!(ss >> time)) time = 0;
+            if (!(ss >> time_err)) time_err = 0;
+
+            charges.push_back(charge);
+            charge_errs.push_back(charge_err);
+            times.push_back(time);
+            time_errs.push_back(time_err);
+        }
+
+        if (charges.empty()) {
+            std::cerr << "警告: データが見つかりません" << std::endl;
+            return;
+        }
+
+        // グラフの作成
+        TGraphErrors* graph = new TGraphErrors((Int_t)charges.size(),
+            charges.data(), times.data(),
+            charge_errs.data(), time_errs.data());
+
+        // キャンバスの設定
+        TCanvas* canvas = new TCanvas("canvas", "Charge vs Time", 800, 600);
+        canvas->SetGrid();
+
+        // グラフのスタイル設定
+        graph->SetMarkerStyle(20);
+        graph->SetMarkerSize(1.2);
+        graph->SetLineWidth(2);
+        graph->SetLineColor(kBlue);
+        graph->SetTitle(Form("Channel %s;Charge [pC];Time [ns]", ch_str.c_str()));
+
+        // グラフの描画
+        graph->Draw("AP");
+
+        // PDFファイルとして保存
+        TString output_filename;
+            std::string method;
+            if (input_file.find("_gaus_") != std::string::npos) {
+                method = "gaus";
+            } else if (input_file.find("_peak_") != std::string::npos) {
+                method = "peak";
+            } else if (input_file.find("_mean_") != std::string::npos) {
+                method = "mean";
+            } else {
+                method = "";
+            }
+
+            // チャンネル番号から余分な.を削除
+            size_t dot_pos = ch_str.find('.');
+            if (dot_pos != std::string::npos) {
+                ch_str = ch_str.substr(0, dot_pos);
+            }
+        
+            output_filename = method.empty() ?
+                Form("%s/Charge_vs_Time_ch%s.pdf", output_dir.c_str(), ch_str.c_str()) :
+                Form("%s/Charge_vs_Time_%s_ch%s.pdf", output_dir.c_str(), method.c_str(), ch_str.c_str());
+
+        canvas->SaveAs(output_filename);
+        
+        // クリーンアップ
+        delete graph;
+        delete canvas;
+    }
+
+    int main(int argc, char* argv[]) {
+        if (argc != 3) {
+            std::cerr << "使い方: " << argv[0] << " <入力ファイル> <出力ディレクトリ>" << std::endl;
+            return 1;
+        }
+
+        create_ct_plot(argv[1], argv[2]);
+        return 0;
+    }
+```
+
+また、meanfinderやctおよびcttsグラフを作成するコードを追加で作成したため、makefileの更新が必要かと思われます。こちらもどうぞよろしくお願いいたします。
+最後に、今後作成するコードは、fit_pedestalやmeanfinderと同様に、引数なしで実行した際にコードの機能や入力されるべきファイル、内部での処理、出力されるファイルを分かりやすくまとめて表示するようにしてくださいいただきたいです。特に入出力ファイルなどについては表などを用いてわかりやすく説明していただきますようよろしくお願いいたします。

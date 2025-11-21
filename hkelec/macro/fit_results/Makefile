@@ -17,6 +17,8 @@ TARGET7 := meanfinder
 TARGET8 := select_gain_mean
 TARGET9 := plot_ct
 
+TARGET10 := fit_hv_gain_2
+
 # ソースファイル名
 SRC1 := gausfit.C
 SRC2 := fit_pedestal.C
@@ -28,6 +30,7 @@ SRC7 := meanfinder.C
 SRC8 := select_gain_mean.C
 SRC9 := plot_ct.C
 
+SRC10 := fit_hv_gain_2.C
 # ヘッダーファイル
 HEADER1 := tts_fitter.h
 
@@ -78,6 +81,9 @@ $(TARGET8): $(SRC8)
 $(TARGET9): $(SRC9)
 	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
-clean:
-	rm -f $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) $(TARGET5) $(TARGET6) $(TARGET7) $(TARGET8) $(TARGET9) *.o
+# fit_hv_gain_2
+$(TARGET10): $(SRC10)
+	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
+clean:
+	rm -f $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) $(TARGET5) $(TARGET6) $(TARGET7) $(TARGET8) $(TARGET9) $(TARGET10) *.o

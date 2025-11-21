@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "gausfit.C": "cpp",
+        "fit_hv_gain_2.C": "cpp",
+        "fit_hv_gain.C": "cpp",
+        "create_ct_plot.C": "cpp",
+        "meanfinder.C": "cpp",
+        "eventtree2hist.C": "cpp",
+        "fit_pedestal.C": "cpp",
+        "select_gain.C": "cpp",
+        "plot_ct.C": "cpp",
+        "plot_summary.C": "cpp"
+    }
+}
