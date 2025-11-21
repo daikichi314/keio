@@ -176,7 +176,7 @@ std::map<std::pair<int, std::string>, PedestalInfo> load_pedestal_file(TString i
     
     // 入力ファイルのディレクトリを取得し、そこにペデスタルファイルがあると仮定
     TString dir = gSystem->DirName(input_root_filename);
-    TString ped_filename = dir + "/hkelec_pedestal_hithist_fits.txt"; // 指定されたファイル名
+    TString ped_filename = dir + "/hkelec_pedestal_hithist_means.txt"; // 指定されたファイル名
 
     std::ifstream infile(ped_filename.Data());
     if (!infile.is_open()) {
@@ -437,7 +437,7 @@ int main(int argc, char* argv[]) {
                   << "  | 区分 | ファイル形式     | 必須 | 内容 / 命名規則                            |\n"
                   << "  -----------------------------------------------------------------------------\n"
                   << "  | 入力 | .root            | 必須 | イベントデータ (h_hgain_chXX 等を含む)     |\n"
-                  << "  | 入力 | ...fits.txt      | 自動 | ペデスタル情報 (hkelec_pedestal...fits.txt)|\n"
+                  << "  | 入力 | ...means.txt      | 自動 | ペデスタル情報 (hkelec_pedestal...means.txt)|\n"
                   << "  |      |                  |      | ※入力ROOTと同じディレクトリから自動探索   |\n"
                   << "  -----------------------------------------------------------------------------\n"
                   << "  | 出力 | _mean.txt        | 自動 | 電荷計算結果 (CSV形式)                     |\n"

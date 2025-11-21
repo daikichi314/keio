@@ -97,6 +97,8 @@ In hkpd@hkdaq
 # 2. -r (再帰的に)
 # 3. hkpd@hkdaq の指定ディレクトリにコピーする
 daiki@daisukekishita:~/keio/hkelec/macro$ scp -r * hkpd@hkdaq:~/hkelec/DiscreteSoftware/Analysis/macro/
+daiki@daisukekishita:~/keio/hkelec/reconst$ scp -r * hkpd@hkdaq:~/hkelec/DiscreteSoftware/Analysis/macro/reconst/
+
 
 ### hkpd@hkdaq to kishita@hep ###
 # 1. daiki@daisukekishita:~$ ssh -Y hkdaq (_out)
