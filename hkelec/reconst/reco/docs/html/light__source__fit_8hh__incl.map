@@ -1,0 +1,11 @@
+<map id="light_source_fit.hh" name="light_source_fit.hh">
+<area shape="rect" id="Node000001" title=" " alt="" coords="31,5,172,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,152,96,177"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,33,55,52,34,80,31,94,31,109,40,139,35,140,26,110,25,94,30,77,52,49,78,29"/>
+<area shape="rect" id="Node000003" href="$fittinginput_8hh.html" title=" " alt="" coords="45,79,158,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="104,31,104,65,99,65,99,31"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="142,152,205,177"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="124,29,151,49,173,78,181,108,180,138,175,138,176,109,168,80,147,53,121,33"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="95,106,69,142,65,139,91,103"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="115,102,154,140,150,144,111,106"/>
+</map>

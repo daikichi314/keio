@@ -1,0 +1,55 @@
+\doxysection{light\+\_\+source\+\_\+fit.\+hh ファイル}
+\hypertarget{light__source__fit_8hh}{}\label{light__source__fit_8hh}\index{light\_source\_fit.hh@{light\_source\_fit.hh}}
+{\ttfamily \#include "{}TVector3.\+h"{}}\newline
+{\ttfamily \#include "{}fittinginput.\+hh"{}}\newline
+{\ttfamily \#include $<$vector$>$}\newline
+light\+\_\+source\+\_\+fit.\+hh の依存先関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=230pt]{light__source__fit_8hh__incl}
+\end{center}
+\end{figure}
+被依存関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=225pt]{light__source__fit_8hh__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{関数}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{light__source__fit_8hh_af52f4c49963bd906b4e02aa62d714fae}{Fit\+Light\+Source}} (const std\+::vector$<$ \mbox{\hyperlink{structSensorUnit}{Sensor\+Unit}} $>$ \&sensors, TVector3 \&fitted\+\_\+pos, double \&fitted\+\_\+time, TVector3 \&fiterr\+\_\+pos, double \&fiterr\+\_\+time, double \&chi2)
+\begin{DoxyCompactList}\small\item\em function to fit the light source position and time using Minuit. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{関数詳解}
+\Hypertarget{light__source__fit_8hh_af52f4c49963bd906b4e02aa62d714fae}\label{light__source__fit_8hh_af52f4c49963bd906b4e02aa62d714fae} 
+\index{light\_source\_fit.hh@{light\_source\_fit.hh}!FitLightSource@{FitLightSource}}
+\index{FitLightSource@{FitLightSource}!light\_source\_fit.hh@{light\_source\_fit.hh}}
+\doxysubsubsection{\texorpdfstring{FitLightSource()}{FitLightSource()}}
+{\footnotesize\ttfamily void Fit\+Light\+Source (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ \mbox{\hyperlink{structSensorUnit}{Sensor\+Unit}} $>$ \&}]{sensors,  }\item[{TVector3 \&}]{fitted\+\_\+pos,  }\item[{double \&}]{fitted\+\_\+time,  }\item[{TVector3 \&}]{fiterr\+\_\+pos,  }\item[{double \&}]{fiterr\+\_\+time,  }\item[{double \&}]{chi2 }\end{DoxyParamCaption})}
+
+
+
+function to fit the light source position and time using Minuit. 
+
+
+\begin{DoxyParams}{引数}
+{\em sensors} & parameters for the light source fitting (\doxylink{structSensorUnit}{Sensor\+Unit} vector) \\
+\hline
+{\em fitted\+\_\+pos} & fitted position of the light source (TVector3, in cm) \\
+\hline
+{\em fitted\+\_\+time} & fitted time of the light source (double, in ns) \\
+\hline
+{\em fiterr\+\_\+pos} & error of the fitted position (TVector3, in cm) \\
+\hline
+{\em fiterr\+\_\+time} & error of the fitted time (double, in ns) \\
+\hline
+{\em chi2} & chi-\/squared value of the fit (double)\\
+\hline
+\end{DoxyParams}
+only sensors are input parameters. 

@@ -82,7 +82,7 @@ In hkpd@hkdaq
     # どの項目をヒストグラムにするかは要編集
     # ヒットの採用条件やヒストグラムの表示範囲に注意
 
-4.1. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ mv 2025XXXX/100pe/*42* 2025XXXX/1pe
+5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/Analysis/macro/reconst/macros/sh/run_analysis_batch.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/  ## 
 
 
 

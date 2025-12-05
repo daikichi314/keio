@@ -1,0 +1,383 @@
+\doxysection{onem\+PMTfit.\+cc ファイル}
+\hypertarget{onemPMTfit_8cc}{}\label{onemPMTfit_8cc}\index{onemPMTfit.cc@{onemPMTfit.cc}}
+{\ttfamily \#include "{}onem\+PMTfit.\+hh"{}}\newline
+{\ttfamily \#include "{}TBox.\+h"{}}\newline
+{\ttfamily \#include "{}TBranch.\+h"{}}\newline
+{\ttfamily \#include "{}TCanvas.\+h"{}}\newline
+{\ttfamily \#include "{}TChain.\+h"{}}\newline
+{\ttfamily \#include "{}TEllipse.\+h"{}}\newline
+{\ttfamily \#include "{}TFile.\+h"{}}\newline
+{\ttfamily \#include "{}TH1\+F.\+h"{}}\newline
+{\ttfamily \#include "{}TH2\+F.\+h"{}}\newline
+{\ttfamily \#include "{}TMath.\+h"{}}\newline
+{\ttfamily \#include "{}TObject.\+h"{}}\newline
+{\ttfamily \#include "{}TROOT.\+h"{}}\newline
+{\ttfamily \#include "{}TStyle.\+h"{}}\newline
+{\ttfamily \#include "{}TSystem.\+h"{}}\newline
+{\ttfamily \#include "{}TSystem\+Directory.\+h"{}}\newline
+{\ttfamily \#include "{}TTree.\+h"{}}\newline
+{\ttfamily \#include "{}fittinginput.\+hh"{}}\newline
+{\ttfamily \#include $<$TMinuit.\+h$>$}\newline
+{\ttfamily \#include $<$chrono$>$}\newline
+{\ttfamily \#include $<$cmath$>$}\newline
+{\ttfamily \#include $<$fstream$>$}\newline
+{\ttfamily \#include $<$iostream$>$}\newline
+{\ttfamily \#include $<$random$>$}\newline
+{\ttfamily \#include $<$stdio.\+h$>$}\newline
+{\ttfamily \#include $<$stdlib.\+h$>$}\newline
+onem\+PMTfit.\+cc の依存先関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8cc__incl}
+\end{center}
+\end{figure}
+被依存関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=169pt]{onemPMTfit_8cc__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{関数}
+\begin{DoxyCompactItemize}
+\item 
+double \mbox{\hyperlink{onemPMTfit_8cc_a35baad4a0c898615f0ec4b47d964fc28}{Calculate\+Angle}} (double x1, double y1, double z1, double x2, double y2, double z2)
+\item 
+std\+::array$<$ double, 3 $>$ \mbox{\hyperlink{onemPMTfit_8cc_a4162f29900eeb6ec8dcdcd5f642b62df}{Convert\+To\+Spherical}} (double x, double y, double z, double x0, double y0, double z0)
+\item 
+std\+::array$<$ double, 3 $>$ \mbox{\hyperlink{onemPMTfit_8cc_ad2b882242ae4f63158e7e4a6d4316f75}{Convert\+To\+Cartesian}} (double r, double theta, double phi, double x0, double y0, double z0)
+\item 
+void \mbox{\hyperlink{onemPMTfit_8cc_a037ebc409ff7e3e33ebb210b503c7e2e}{Normalize\+Angles}} (double \&theta, double \&phi)
+\item 
+std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \mbox{\hyperlink{onemPMTfit_8cc_a0849c3a1ef2dc7b82ae2b4b5a0d115ed}{find\+Expanded\+Groups}} (const std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \&pmt\+Data, double tau, int n, double expand\+\_\+before, double expand\+\_\+after)
+\begin{DoxyCompactList}\small\item\em PMTヒット群から時間的にまとまったグループを探し、前後に拡張する。 \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{onemPMTfit_8cc_aef2ff6a835672a27cfad1c91c64def72}{Calculate\+Error}} (double \texorpdfstring{$\ast$}{*}params)
+\item 
+static void \mbox{\hyperlink{onemPMTfit_8cc_a4cc9f5c09126a80f2d5c7657bfdf3012}{Fcn\+For\+Minuit}} (Int\+\_\+t \&npar, Double\+\_\+t \texorpdfstring{$\ast$}{*}grad, Double\+\_\+t \&fval, Double\+\_\+t \texorpdfstring{$\ast$}{*}par, Int\+\_\+t flag)
+\item 
+int \mbox{\hyperlink{onemPMTfit_8cc_ac365ff640b676f542adfd77fb96d7d4e}{fitting}} (double \&fit\+\_\+theta, double \&fit\+\_\+phi, double \&err\+\_\+theta, double \&err\+\_\+phi, double \&minimized)
+\item 
+void \mbox{\hyperlink{onemPMTfit_8cc_ac9ecc9bfc02574be9a8df31a594f792f}{Fit\+Position}} (std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \&pmt\+Data, double \&fit\+\_\+theta, double \&fit\+\_\+phi, double \&err\+\_\+theta, double \&err\+\_\+phi)
+\item 
+int \mbox{\hyperlink{onemPMTfit_8cc_a4d381345f638a85eae428a5c53be18f2}{onem\+PMTfit}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{変数}
+\begin{DoxyCompactItemize}
+\item 
+static double \mbox{\hyperlink{onemPMTfit_8cc_a973fb851d96ddc866bae8e425dbed0f4}{t\+\_\+light}}
+\item 
+static double \mbox{\hyperlink{onemPMTfit_8cc_a53cb37d255c296056650850a78d969d9}{error\+\_\+min}}
+\item 
+static double \mbox{\hyperlink{onemPMTfit_8cc_a2f52cbcf3a145ad9ba1d916b7056df75}{fitting\+\_\+accuracy}}
+\item 
+static double \mbox{\hyperlink{onemPMTfit_8cc_aead00cbfe20f2a957a7949628920f685}{firsthit\+\_\+time}}
+\item 
+static TFile \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{onemPMTfit_8cc_a1f7faee2ef4fb527dac27e141049ee7e}{outputrootfile}}
+\item 
+static TTree \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}}
+\item 
+static std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\+\_\+pmt\+Data}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{関数詳解}
+\Hypertarget{onemPMTfit_8cc_a35baad4a0c898615f0ec4b47d964fc28}\label{onemPMTfit_8cc_a35baad4a0c898615f0ec4b47d964fc28} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!CalculateAngle@{CalculateAngle}}
+\index{CalculateAngle@{CalculateAngle}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{CalculateAngle()}{CalculateAngle()}}
+{\footnotesize\ttfamily double Calculate\+Angle (\begin{DoxyParamCaption}\item[{double}]{x1,  }\item[{double}]{y1,  }\item[{double}]{z1,  }\item[{double}]{x2,  }\item[{double}]{y2,  }\item[{double}]{z2 }\end{DoxyParamCaption})}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00042}{42}} 行目に定義があります。
+
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8cc_a35baad4a0c898615f0ec4b47d964fc28_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{onemPMTfit_8cc_aef2ff6a835672a27cfad1c91c64def72}\label{onemPMTfit_8cc_aef2ff6a835672a27cfad1c91c64def72} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!CalculateError@{CalculateError}}
+\index{CalculateError@{CalculateError}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{CalculateError()}{CalculateError()}}
+{\footnotesize\ttfamily double Calculate\+Error (\begin{DoxyParamCaption}\item[{double \texorpdfstring{$\ast$}{*}}]{params }\end{DoxyParamCaption})}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00203}{203}} 行目に定義があります。
+
+呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=314pt]{onemPMTfit_8cc_aef2ff6a835672a27cfad1c91c64def72_cgraph}
+\end{center}
+\end{figure}
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8cc_aef2ff6a835672a27cfad1c91c64def72_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{onemPMTfit_8cc_ad2b882242ae4f63158e7e4a6d4316f75}\label{onemPMTfit_8cc_ad2b882242ae4f63158e7e4a6d4316f75} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!ConvertToCartesian@{ConvertToCartesian}}
+\index{ConvertToCartesian@{ConvertToCartesian}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{ConvertToCartesian()}{ConvertToCartesian()}}
+{\footnotesize\ttfamily std\+::array$<$ double, 3 $>$ Convert\+To\+Cartesian (\begin{DoxyParamCaption}\item[{double}]{r,  }\item[{double}]{theta,  }\item[{double}]{phi,  }\item[{double}]{x0,  }\item[{double}]{y0,  }\item[{double}]{z0 }\end{DoxyParamCaption})}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00077}{77}} 行目に定義があります。
+
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8cc_ad2b882242ae4f63158e7e4a6d4316f75_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{onemPMTfit_8cc_a4162f29900eeb6ec8dcdcd5f642b62df}\label{onemPMTfit_8cc_a4162f29900eeb6ec8dcdcd5f642b62df} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!ConvertToSpherical@{ConvertToSpherical}}
+\index{ConvertToSpherical@{ConvertToSpherical}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{ConvertToSpherical()}{ConvertToSpherical()}}
+{\footnotesize\ttfamily std\+::array$<$ double, 3 $>$ Convert\+To\+Spherical (\begin{DoxyParamCaption}\item[{double}]{x,  }\item[{double}]{y,  }\item[{double}]{z,  }\item[{double}]{x0,  }\item[{double}]{y0,  }\item[{double}]{z0 }\end{DoxyParamCaption})}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00067}{67}} 行目に定義があります。
+
+\Hypertarget{onemPMTfit_8cc_a4cc9f5c09126a80f2d5c7657bfdf3012}\label{onemPMTfit_8cc_a4cc9f5c09126a80f2d5c7657bfdf3012} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!FcnForMinuit@{FcnForMinuit}}
+\index{FcnForMinuit@{FcnForMinuit}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{FcnForMinuit()}{FcnForMinuit()}}
+{\footnotesize\ttfamily static void Fcn\+For\+Minuit (\begin{DoxyParamCaption}\item[{Int\+\_\+t \&}]{npar,  }\item[{Double\+\_\+t \texorpdfstring{$\ast$}{*}}]{grad,  }\item[{Double\+\_\+t \&}]{fval,  }\item[{Double\+\_\+t \texorpdfstring{$\ast$}{*}}]{par,  }\item[{Int\+\_\+t}]{flag }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00239}{239}} 行目に定義があります。
+
+呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8cc_a4cc9f5c09126a80f2d5c7657bfdf3012_cgraph}
+\end{center}
+\end{figure}
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8cc_a4cc9f5c09126a80f2d5c7657bfdf3012_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{onemPMTfit_8cc_a0849c3a1ef2dc7b82ae2b4b5a0d115ed}\label{onemPMTfit_8cc_a0849c3a1ef2dc7b82ae2b4b5a0d115ed} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!findExpandedGroups@{findExpandedGroups}}
+\index{findExpandedGroups@{findExpandedGroups}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{findExpandedGroups()}{findExpandedGroups()}}
+{\footnotesize\ttfamily std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ find\+Expanded\+Groups (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \&}]{pmt\+Data,  }\item[{double}]{tau,  }\item[{int}]{n,  }\item[{double}]{expand\+\_\+before,  }\item[{double}]{expand\+\_\+after }\end{DoxyParamCaption})}
+
+
+
+PMTヒット群から時間的にまとまったグループを探し、前後に拡張する。 
+
+
+\begin{DoxyParams}{引数}
+{\em pmt\+Data} & PMTデータのリスト \\
+\hline
+{\em tau} & グルーピングに使う時間幅（単位：ns） \\
+\hline
+{\em n} & tauの幅の中でこの数以上ヒットがあればグループとみなす \\
+\hline
+{\em expand\+\_\+before} & グループ発見時に前に拡張する時間幅（ns） \\
+\hline
+{\em expand\+\_\+after} & グループ発見時に後に拡張する時間幅（ns） \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{戻り値}
+std\+::vector$<$\+PMTData$>$ グループ化された\+PMTデータのリスト 
+\end{DoxyReturn}
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00113}{113}} 行目に定義があります。
+
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=308pt]{onemPMTfit_8cc_a0849c3a1ef2dc7b82ae2b4b5a0d115ed_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{onemPMTfit_8cc_ac9ecc9bfc02574be9a8df31a594f792f}\label{onemPMTfit_8cc_ac9ecc9bfc02574be9a8df31a594f792f} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!FitPosition@{FitPosition}}
+\index{FitPosition@{FitPosition}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{FitPosition()}{FitPosition()}}
+{\footnotesize\ttfamily void Fit\+Position (\begin{DoxyParamCaption}\item[{std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \&}]{pmt\+Data,  }\item[{double \&}]{fit\+\_\+theta,  }\item[{double \&}]{fit\+\_\+phi,  }\item[{double \&}]{err\+\_\+theta,  }\item[{double \&}]{err\+\_\+phi }\end{DoxyParamCaption})}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00283}{283}} 行目に定義があります。
+
+呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8cc_ac9ecc9bfc02574be9a8df31a594f792f_cgraph}
+\end{center}
+\end{figure}
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=259pt]{onemPMTfit_8cc_ac9ecc9bfc02574be9a8df31a594f792f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{onemPMTfit_8cc_ac365ff640b676f542adfd77fb96d7d4e}\label{onemPMTfit_8cc_ac365ff640b676f542adfd77fb96d7d4e} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!fitting@{fitting}}
+\index{fitting@{fitting}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{fitting()}{fitting()}}
+{\footnotesize\ttfamily int fitting (\begin{DoxyParamCaption}\item[{double \&}]{fit\+\_\+theta,  }\item[{double \&}]{fit\+\_\+phi,  }\item[{double \&}]{err\+\_\+theta,  }\item[{double \&}]{err\+\_\+phi,  }\item[{double \&}]{minimized }\end{DoxyParamCaption})}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00243}{243}} 行目に定義があります。
+
+呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8cc_ac365ff640b676f542adfd77fb96d7d4e_cgraph}
+\end{center}
+\end{figure}
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{onemPMTfit_8cc_ac365ff640b676f542adfd77fb96d7d4e_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{onemPMTfit_8cc_a037ebc409ff7e3e33ebb210b503c7e2e}\label{onemPMTfit_8cc_a037ebc409ff7e3e33ebb210b503c7e2e} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!NormalizeAngles@{NormalizeAngles}}
+\index{NormalizeAngles@{NormalizeAngles}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{NormalizeAngles()}{NormalizeAngles()}}
+{\footnotesize\ttfamily void Normalize\+Angles (\begin{DoxyParamCaption}\item[{double \&}]{theta,  }\item[{double \&}]{phi }\end{DoxyParamCaption})}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00087}{87}} 行目に定義があります。
+
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8cc_a037ebc409ff7e3e33ebb210b503c7e2e_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{onemPMTfit_8cc_a4d381345f638a85eae428a5c53be18f2}\label{onemPMTfit_8cc_a4d381345f638a85eae428a5c53be18f2} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!onemPMTfit@{onemPMTfit}}
+\index{onemPMTfit@{onemPMTfit}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{onemPMTfit()}{onemPMTfit()}}
+{\footnotesize\ttfamily int onem\+PMTfit (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00312}{312}} 行目に定義があります。
+
+呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8cc_a4d381345f638a85eae428a5c53be18f2_cgraph}
+\end{center}
+\end{figure}
+
+
+\doxysubsection{変数詳解}
+\Hypertarget{onemPMTfit_8cc_a53cb37d255c296056650850a78d969d9}\label{onemPMTfit_8cc_a53cb37d255c296056650850a78d969d9} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!error\_min@{error\_min}}
+\index{error\_min@{error\_min}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{error\_min}{error\_min}}
+{\footnotesize\ttfamily double error\+\_\+min\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00032}{32}} 行目に定義があります。
+
+\Hypertarget{onemPMTfit_8cc_aead00cbfe20f2a957a7949628920f685}\label{onemPMTfit_8cc_aead00cbfe20f2a957a7949628920f685} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!firsthit\_time@{firsthit\_time}}
+\index{firsthit\_time@{firsthit\_time}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{firsthit\_time}{firsthit\_time}}
+{\footnotesize\ttfamily double firsthit\+\_\+time\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00033}{33}} 行目に定義があります。
+
+\Hypertarget{onemPMTfit_8cc_a2f52cbcf3a145ad9ba1d916b7056df75}\label{onemPMTfit_8cc_a2f52cbcf3a145ad9ba1d916b7056df75} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!fitting\_accuracy@{fitting\_accuracy}}
+\index{fitting\_accuracy@{fitting\_accuracy}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{fitting\_accuracy}{fitting\_accuracy}}
+{\footnotesize\ttfamily double fitting\+\_\+accuracy\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00032}{32}} 行目に定義があります。
+
+\Hypertarget{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}\label{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!g\_pmtData@{g\_pmtData}}
+\index{g\_pmtData@{g\_pmtData}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{g\_pmtData}{g\_pmtData}}
+{\footnotesize\ttfamily std\+::vector$<$\mbox{\hyperlink{structPMTData}{PMTData}}$>$ g\+\_\+pmt\+Data\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00039}{39}} 行目に定義があります。
+
+\Hypertarget{onemPMTfit_8cc_a1f7faee2ef4fb527dac27e141049ee7e}\label{onemPMTfit_8cc_a1f7faee2ef4fb527dac27e141049ee7e} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!outputrootfile@{outputrootfile}}
+\index{outputrootfile@{outputrootfile}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{outputrootfile}{outputrootfile}}
+{\footnotesize\ttfamily TFile\texorpdfstring{$\ast$}{*} outputrootfile\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00035}{35}} 行目に定義があります。
+
+\Hypertarget{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}\label{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!outputtree@{outputtree}}
+\index{outputtree@{outputtree}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{outputtree}{outputtree}}
+{\footnotesize\ttfamily TTree\texorpdfstring{$\ast$}{*} outputtree\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00036}{36}} 行目に定義があります。
+
+\Hypertarget{onemPMTfit_8cc_a973fb851d96ddc866bae8e425dbed0f4}\label{onemPMTfit_8cc_a973fb851d96ddc866bae8e425dbed0f4} 
+\index{onemPMTfit.cc@{onemPMTfit.cc}!t\_light@{t\_light}}
+\index{t\_light@{t\_light}!onemPMTfit.cc@{onemPMTfit.cc}}
+\doxysubsubsection{\texorpdfstring{t\_light}{t\_light}}
+{\footnotesize\ttfamily double t\+\_\+light\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00031}{31}} 行目に定義があります。
+

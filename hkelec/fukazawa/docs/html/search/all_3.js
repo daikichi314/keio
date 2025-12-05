@@ -1,0 +1,12 @@
+var searchData=
+[
+  ['fcnforminuit_0',['FcnForMinuit',['../onemPMTfit_8cc.html#a4cc9f5c09126a80f2d5c7657bfdf3012',1,'onemPMTfit.cc']]],
+  ['fcnforminuit_5flightsource_1',['FcnForMinuit_lightsource',['../light__source__fit_8cc.html#a83007bbc6c727b710288b55eed54dc8d',1,'light_source_fit.cc']]],
+  ['findexpandedgroups_2',['findexpandedgroups',['../onemPMTfit_8cc.html#a0849c3a1ef2dc7b82ae2b4b5a0d115ed',1,'findExpandedGroups(const std::vector&lt; PMTData &gt; &amp;pmtData, double tau, int n, double expand_before, double expand_after):&#160;onemPMTfit.cc'],['../onemPMTfit_8hh.html#a0849c3a1ef2dc7b82ae2b4b5a0d115ed',1,'findExpandedGroups(const std::vector&lt; PMTData &gt; &amp;pmtData, double tau, int n, double expand_before, double expand_after):&#160;onemPMTfit.cc']]],
+  ['firsthit_5ftime_3',['firsthit_time',['../onemPMTfit_8cc.html#aead00cbfe20f2a957a7949628920f685',1,'onemPMTfit.cc']]],
+  ['fitlightsource_4',['fitlightsource',['../light__source__fit_8cc.html#a6e959677c04d0c844a7923101d1a4709',1,'FitLightSource(const std::vector&lt; SensorUnit &gt; &amp;sensors, const std::vector&lt; SensorUnit &gt; &amp;pmtunits, TVector3 &amp;fitted_pos, double &amp;fitted_time, TVector3 &amp;fiterr_pos, double &amp;fiterr_time, double &amp;chi2):&#160;light_source_fit.cc'],['../light__source__fit_8hh.html#af52f4c49963bd906b4e02aa62d714fae',1,'FitLightSource(const std::vector&lt; SensorUnit &gt; &amp;sensors, TVector3 &amp;fitted_pos, double &amp;fitted_time, TVector3 &amp;fiterr_pos, double &amp;fiterr_time, double &amp;chi2):&#160;light_source_fit.hh']]],
+  ['fitposition_5',['fitposition',['../onemPMTfit_8cc.html#ac9ecc9bfc02574be9a8df31a594f792f',1,'FitPosition(std::vector&lt; PMTData &gt; &amp;pmtData, double &amp;fit_theta, double &amp;fit_phi, double &amp;err_theta, double &amp;err_phi):&#160;onemPMTfit.cc'],['../onemPMTfit_8hh.html#ac9ecc9bfc02574be9a8df31a594f792f',1,'FitPosition(std::vector&lt; PMTData &gt; &amp;pmtData, double &amp;fit_theta, double &amp;fit_phi, double &amp;err_theta, double &amp;err_phi):&#160;onemPMTfit.cc']]],
+  ['fitting_6',['fitting',['../onemPMTfit_8cc.html#ac365ff640b676f542adfd77fb96d7d4e',1,'onemPMTfit.cc']]],
+  ['fitting_5faccuracy_7',['fitting_accuracy',['../onemPMTfit_8cc.html#a2f52cbcf3a145ad9ba1d916b7056df75',1,'onemPMTfit.cc']]],
+  ['fittinginput_2ehh_8',['fittinginput.hh',['../fittinginput_8hh.html',1,'']]]
+];

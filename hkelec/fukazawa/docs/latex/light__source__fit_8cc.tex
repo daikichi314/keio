@@ -1,0 +1,147 @@
+\doxysection{light\+\_\+source\+\_\+fit.\+cc ファイル}
+\hypertarget{light__source__fit_8cc}{}\label{light__source__fit_8cc}\index{light\_source\_fit.cc@{light\_source\_fit.cc}}
+{\ttfamily \#include "{}light\+\_\+source\+\_\+fit.\+hh"{}}\newline
+{\ttfamily \#include "{}TMinuit.\+h"{}}\newline
+{\ttfamily \#include "{}TVector3.\+h"{}}\newline
+{\ttfamily \#include $<$cmath$>$}\newline
+light\+\_\+source\+\_\+fit.\+cc の依存先関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{light__source__fit_8cc__incl}
+\end{center}
+\end{figure}
+被依存関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=184pt]{light__source__fit_8cc__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{関数}
+\begin{DoxyCompactItemize}
+\item 
+static void \mbox{\hyperlink{light__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d}{Fcn\+For\+Minuit\+\_\+lightsource}} (Int\+\_\+t \&, Double\+\_\+t \texorpdfstring{$\ast$}{*}, Double\+\_\+t \&fval, Double\+\_\+t \texorpdfstring{$\ast$}{*}par, Int\+\_\+t)
+\item 
+void \mbox{\hyperlink{light__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709}{Fit\+Light\+Source}} (const std\+::vector$<$ \mbox{\hyperlink{structSensorUnit}{Sensor\+Unit}} $>$ \&sensors, const std\+::vector$<$ \mbox{\hyperlink{structSensorUnit}{Sensor\+Unit}} $>$ \&pmtunits, TVector3 \&fitted\+\_\+pos, double \&fitted\+\_\+time, TVector3 \&fiterr\+\_\+pos, double \&fiterr\+\_\+time, double \&chi2)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{変数}
+\begin{DoxyCompactItemize}
+\item 
+static std\+::vector$<$ \mbox{\hyperlink{structSensorUnit}{Sensor\+Unit}} $>$ \mbox{\hyperlink{light__source__fit_8cc_a6c8b357ca63dfaa78f5e6779e3babdd7}{g\+Sensors}}
+\begin{DoxyCompactList}\small\item\em This program fits the position and time of a light source based on the detected directions and times from multiple m\+PMTs. \end{DoxyCompactList}\item 
+static std\+::vector$<$ \mbox{\hyperlink{structSensorUnit}{Sensor\+Unit}} $>$ \mbox{\hyperlink{light__source__fit_8cc_aabd79b29c4e2adb4f14b29c343ece737}{g\+PMTs\+Units}}
+\item 
+double \mbox{\hyperlink{light__source__fit_8cc_aad06b697b85dbf814c7487bdcf5aab8a}{chi2\+\_\+1}}
+\item 
+double \mbox{\hyperlink{light__source__fit_8cc_a5883e7d8e3640a94284fd88c36482744}{chi2\+\_\+2}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{関数詳解}
+\Hypertarget{light__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d}\label{light__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d} 
+\index{light\_source\_fit.cc@{light\_source\_fit.cc}!FcnForMinuit\_lightsource@{FcnForMinuit\_lightsource}}
+\index{FcnForMinuit\_lightsource@{FcnForMinuit\_lightsource}!light\_source\_fit.cc@{light\_source\_fit.cc}}
+\doxysubsubsection{\texorpdfstring{FcnForMinuit\_lightsource()}{FcnForMinuit\_lightsource()}}
+{\footnotesize\ttfamily static void Fcn\+For\+Minuit\+\_\+lightsource (\begin{DoxyParamCaption}\item[{Int\+\_\+t \&}]{,  }\item[{Double\+\_\+t \texorpdfstring{$\ast$}{*}}]{,  }\item[{Double\+\_\+t \&}]{fval,  }\item[{Double\+\_\+t \texorpdfstring{$\ast$}{*}}]{par,  }\item[{Int\+\_\+t}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+ \mbox{\hyperlink{light__source__fit_8cc_source}{light\+\_\+source\+\_\+fit.\+cc}} の \mbox{\hyperlink{light__source__fit_8cc_source_l00031}{31}} 行目に定義があります。
+
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{light__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{light__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709}\label{light__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709} 
+\index{light\_source\_fit.cc@{light\_source\_fit.cc}!FitLightSource@{FitLightSource}}
+\index{FitLightSource@{FitLightSource}!light\_source\_fit.cc@{light\_source\_fit.cc}}
+\doxysubsubsection{\texorpdfstring{FitLightSource()}{FitLightSource()}}
+{\footnotesize\ttfamily void Fit\+Light\+Source (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ \mbox{\hyperlink{structSensorUnit}{Sensor\+Unit}} $>$ \&}]{sensors,  }\item[{const std\+::vector$<$ \mbox{\hyperlink{structSensorUnit}{Sensor\+Unit}} $>$ \&}]{pmtunits,  }\item[{TVector3 \&}]{fitted\+\_\+pos,  }\item[{double \&}]{fitted\+\_\+time,  }\item[{TVector3 \&}]{fiterr\+\_\+pos,  }\item[{double \&}]{fiterr\+\_\+time,  }\item[{double \&}]{chi2 }\end{DoxyParamCaption})}
+
+
+
+ \mbox{\hyperlink{light__source__fit_8cc_source}{light\+\_\+source\+\_\+fit.\+cc}} の \mbox{\hyperlink{light__source__fit_8cc_source_l00087}{87}} 行目に定義があります。
+
+呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=341pt]{light__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709_cgraph}
+\end{center}
+\end{figure}
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=243pt]{light__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709_icgraph}
+\end{center}
+\end{figure}
+
+
+\doxysubsection{変数詳解}
+\Hypertarget{light__source__fit_8cc_aad06b697b85dbf814c7487bdcf5aab8a}\label{light__source__fit_8cc_aad06b697b85dbf814c7487bdcf5aab8a} 
+\index{light\_source\_fit.cc@{light\_source\_fit.cc}!chi2\_1@{chi2\_1}}
+\index{chi2\_1@{chi2\_1}!light\_source\_fit.cc@{light\_source\_fit.cc}}
+\doxysubsubsection{\texorpdfstring{chi2\_1}{chi2\_1}}
+{\footnotesize\ttfamily double chi2\+\_\+1}
+
+
+
+ \mbox{\hyperlink{light__source__fit_8cc_source}{light\+\_\+source\+\_\+fit.\+cc}} の \mbox{\hyperlink{light__source__fit_8cc_source_l00029}{29}} 行目に定義があります。
+
+\Hypertarget{light__source__fit_8cc_a5883e7d8e3640a94284fd88c36482744}\label{light__source__fit_8cc_a5883e7d8e3640a94284fd88c36482744} 
+\index{light\_source\_fit.cc@{light\_source\_fit.cc}!chi2\_2@{chi2\_2}}
+\index{chi2\_2@{chi2\_2}!light\_source\_fit.cc@{light\_source\_fit.cc}}
+\doxysubsubsection{\texorpdfstring{chi2\_2}{chi2\_2}}
+{\footnotesize\ttfamily double chi2\+\_\+2}
+
+
+
+ \mbox{\hyperlink{light__source__fit_8cc_source}{light\+\_\+source\+\_\+fit.\+cc}} の \mbox{\hyperlink{light__source__fit_8cc_source_l00029}{29}} 行目に定義があります。
+
+\Hypertarget{light__source__fit_8cc_aabd79b29c4e2adb4f14b29c343ece737}\label{light__source__fit_8cc_aabd79b29c4e2adb4f14b29c343ece737} 
+\index{light\_source\_fit.cc@{light\_source\_fit.cc}!gPMTsUnits@{gPMTsUnits}}
+\index{gPMTsUnits@{gPMTsUnits}!light\_source\_fit.cc@{light\_source\_fit.cc}}
+\doxysubsubsection{\texorpdfstring{gPMTsUnits}{gPMTsUnits}}
+{\footnotesize\ttfamily std\+::vector$<$\mbox{\hyperlink{structSensorUnit}{Sensor\+Unit}}$>$ g\+PMTs\+Units\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+ \mbox{\hyperlink{light__source__fit_8cc_source}{light\+\_\+source\+\_\+fit.\+cc}} の \mbox{\hyperlink{light__source__fit_8cc_source_l00028}{28}} 行目に定義があります。
+
+\Hypertarget{light__source__fit_8cc_a6c8b357ca63dfaa78f5e6779e3babdd7}\label{light__source__fit_8cc_a6c8b357ca63dfaa78f5e6779e3babdd7} 
+\index{light\_source\_fit.cc@{light\_source\_fit.cc}!gSensors@{gSensors}}
+\index{gSensors@{gSensors}!light\_source\_fit.cc@{light\_source\_fit.cc}}
+\doxysubsubsection{\texorpdfstring{gSensors}{gSensors}}
+{\footnotesize\ttfamily std\+::vector$<$\mbox{\hyperlink{structSensorUnit}{Sensor\+Unit}}$>$ g\+Sensors\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+This program fits the position and time of a light source based on the detected directions and times from multiple m\+PMTs. 
+
+The direction from each m\+PMT needs to be estimated, and the time of detection is also considered.
+\begin{DoxyItemize}
+\item Example (test program)\+: lightfittest.\+cc
+\end{DoxyItemize}
+
+In this program, chi2 is calculated based on the following formula\+: χ² = Σ ((\texorpdfstring{$\vert$}{|}perp\texorpdfstring{$\vert$}{|}² / \texorpdfstring{$\vert$}{|}d\texorpdfstring{$\vert$}{|}² / σ²\+\_\+θ + (\texorpdfstring{$\vert$}{|}d\texorpdfstring{$\vert$}{|}/c -\/ Δt)² / σ²\+\_\+t) where\+:
+\begin{DoxyItemize}
+\item perp is the component of the vector from the m\+PMT to the light source that is perpendicular to the estimated direction
+\item \texorpdfstring{$\vert$}{|}d\texorpdfstring{$\vert$}{|} is the distance from the light source to the m\+PMT
+\item σ²\+\_\+θ is the direction error (in rad)
+\item σ²\+\_\+t is the time resolution (in ns)
+\item Δt is the difference between the expected time of light travel and the measured time
+\item c is the speed of light in water (22.\+556 cm/ns) \doxylink{structSensorUnit}{Sensor\+Unit} \+: \texorpdfstring{$\ast$}{*} Structure to hold sensor data. Written in \doxylink{fittinginput_8hh}{fittinginput.\+hh} Recommended to create a vector of \doxylink{structSensorUnit}{Sensor\+Unit} with at least 4 m\+PMTs. 
+\end{DoxyItemize}
+
+ \mbox{\hyperlink{light__source__fit_8cc_source}{light\+\_\+source\+\_\+fit.\+cc}} の \mbox{\hyperlink{light__source__fit_8cc_source_l00027}{27}} 行目に定義があります。
+

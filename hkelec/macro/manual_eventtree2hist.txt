@@ -117,3 +117,6 @@ memo
     #現在はtime_diffのピークの前後50 nsを採用
 
 - manualをAIにまとめさせる．
+
+
+event->Draw("NormalHits.time","NormalHits.channel == 0 && (NormalHits.time - TriggerHits[0].time) > 0 && (NormalHits.time - TriggerHits[0].time) < 300e-9");

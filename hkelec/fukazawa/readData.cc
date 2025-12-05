@@ -1,3 +1,4 @@
+// readData.cc
 #include "readData.hh"
 #include "TFile.h"
 #include "TTree.h"
@@ -32,7 +33,7 @@ int readData(std::string &inputfilename,  std::map<int, std::vector<PMTData>> &P
     tree->SetBranchAddress("tubeid", &tubeid);
     tree->SetBranchAddress("mPMTid", &mPMTid);
     tree->SetBranchAddress("mPMT_pmtid", &mPMT_pmtid);
-    tree->SetBranchAddress("x", &x);
+    tree->SetBranchAddress("x", &x);// PMTnoiti
     tree->SetBranchAddress("y", &y);
     tree->SetBranchAddress("z", &z);
     tree->SetBranchAddress("L", &L);

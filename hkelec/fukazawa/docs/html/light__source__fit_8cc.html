@@ -1,0 +1,386 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.9.8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HKElec Fukazawa Analysis: light_source_fit.cc ファイル</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">HKElec Fukazawa Analysis<span id="projectnumber">&#160;0.1</span>
+   </div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- 構築: Doxygen 1.9.8 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() {
+  initMenu('',true,false,'search.php','検索');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */
+</script>
+<div id="main-nav"></div>
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">読み取り中…</div>
+<div class="SRStatus" id="Searching">検索中…</div>
+<div class="SRStatus" id="NoMatches">一致する文字列を見つけられません</div>
+</div>
+</div>
+</div>
+</div>
+
+</div><!-- top -->
+<div class="header">
+  <div class="summary">
+<a href="#func-members">関数</a> &#124;
+<a href="#var-members">変数</a>  </div>
+  <div class="headertitle"><div class="title">light_source_fit.cc ファイル</div></div>
+</div><!--header-->
+<div class="contents">
+<div class="textblock"><code>#include &quot;<a class="el" href="light__source__fit_8hh_source.html">light_source_fit.hh</a>&quot;</code><br />
+<code>#include &quot;TMinuit.h&quot;</code><br />
+<code>#include &quot;TVector3.h&quot;</code><br />
+<code>#include &lt;cmath&gt;</code><br />
+</div><div class="textblock"><div class="dynheader">
+light_source_fit.cc の依存先関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="light__source__fit_8cc__incl.png" border="0" usemap="#alight__source__fit_8cc" alt=""/></div>
+<map name="alight__source__fit_8cc" id="alight__source__fit_8cc">
+<area shape="rect" title=" " alt="" coords="202,5,341,31"/>
+<area shape="rect" href="light__source__fit_8hh.html" title=" " alt="" coords="35,79,177,104"/>
+<area shape="poly" title=" " alt="" coords="246,33,147,76,144,71,244,28"/>
+<area shape="rect" title=" " alt="" coords="137,225,227,251"/>
+<area shape="poly" title=" " alt="" coords="269,32,194,213,190,211,264,30"/>
+<area shape="rect" title=" " alt="" coords="270,79,353,104"/>
+<area shape="poly" title=" " alt="" coords="280,30,300,65,296,68,276,32"/>
+<area shape="rect" title=" " alt="" coords="377,79,440,104"/>
+<area shape="poly" title=" " alt="" coords="295,28,375,70,373,75,292,33"/>
+<area shape="poly" title=" " alt="" coords="120,102,140,124,159,151,172,181,180,211,175,212,167,183,154,153,136,127,117,106"/>
+<area shape="rect" href="fittinginput_8hh.html" title=" " alt="" coords="31,152,144,177"/>
+<area shape="poly" title=" " alt="" coords="105,105,96,140,91,138,100,104"/>
+<area shape="rect" title=" " alt="" coords="5,225,68,251"/>
+<area shape="poly" title=" " alt="" coords="77,106,45,125,31,138,20,153,16,167,16,183,26,212,21,214,11,183,11,167,16,151,27,134,42,121,74,102"/>
+<area shape="poly" title=" " alt="" coords="104,175,157,215,154,219,101,179"/>
+<area shape="poly" title=" " alt="" coords="81,179,55,216,51,213,77,176"/>
+</map>
+</div>
+</div><div class="textblock"><div class="dynheader">
+被依存関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="light__source__fit_8cc__dep__incl.png" border="0" usemap="#alight__source__fit_8ccdep" alt=""/></div>
+<map name="alight__source__fit_8ccdep" id="alight__source__fit_8ccdep">
+<area shape="rect" title=" " alt="" coords="5,5,144,31"/>
+<area shape="rect" href="main_8cc.html" title=" " alt="" coords="38,79,111,104"/>
+<area shape="poly" title=" " alt="" coords="77,44,77,79,72,79,72,44"/>
+</map>
+</div>
+</div>
+<p><a href="light__source__fit_8cc_source.html">[ソースコード]</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+関数</h2></td></tr>
+<tr class="memitem:a83007bbc6c727b710288b55eed54dc8d" id="r_a83007bbc6c727b710288b55eed54dc8d"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="light__source__fit_8cc.html#a83007bbc6c727b710288b55eed54dc8d">FcnForMinuit_lightsource</a> (Int_t &amp;, Double_t *, Double_t &amp;fval, Double_t *par, Int_t)</td></tr>
+<tr class="separator:a83007bbc6c727b710288b55eed54dc8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e959677c04d0c844a7923101d1a4709" id="r_a6e959677c04d0c844a7923101d1a4709"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="light__source__fit_8cc.html#a6e959677c04d0c844a7923101d1a4709">FitLightSource</a> (const std::vector&lt; <a class="el" href="structSensorUnit.html">SensorUnit</a> &gt; &amp;sensors, const std::vector&lt; <a class="el" href="structSensorUnit.html">SensorUnit</a> &gt; &amp;pmtunits, TVector3 &amp;fitted_pos, double &amp;fitted_time, TVector3 &amp;fiterr_pos, double &amp;fiterr_time, double &amp;chi2)</td></tr>
+<tr class="separator:a6e959677c04d0c844a7923101d1a4709"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
+変数</h2></td></tr>
+<tr class="memitem:a6c8b357ca63dfaa78f5e6779e3babdd7" id="r_a6c8b357ca63dfaa78f5e6779e3babdd7"><td class="memItemLeft" align="right" valign="top">static std::vector&lt; <a class="el" href="structSensorUnit.html">SensorUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="light__source__fit_8cc.html#a6c8b357ca63dfaa78f5e6779e3babdd7">gSensors</a></td></tr>
+<tr class="memdesc:a6c8b357ca63dfaa78f5e6779e3babdd7"><td class="mdescLeft">&#160;</td><td class="mdescRight">This program fits the position and time of a light source based on the detected directions and times from multiple mPMTs.  <br /></td></tr>
+<tr class="separator:a6c8b357ca63dfaa78f5e6779e3babdd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aabd79b29c4e2adb4f14b29c343ece737" id="r_aabd79b29c4e2adb4f14b29c343ece737"><td class="memItemLeft" align="right" valign="top">static std::vector&lt; <a class="el" href="structSensorUnit.html">SensorUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="light__source__fit_8cc.html#aabd79b29c4e2adb4f14b29c343ece737">gPMTsUnits</a></td></tr>
+<tr class="separator:aabd79b29c4e2adb4f14b29c343ece737"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad06b697b85dbf814c7487bdcf5aab8a" id="r_aad06b697b85dbf814c7487bdcf5aab8a"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="light__source__fit_8cc.html#aad06b697b85dbf814c7487bdcf5aab8a">chi2_1</a></td></tr>
+<tr class="separator:aad06b697b85dbf814c7487bdcf5aab8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5883e7d8e3640a94284fd88c36482744" id="r_a5883e7d8e3640a94284fd88c36482744"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="light__source__fit_8cc.html#a5883e7d8e3640a94284fd88c36482744">chi2_2</a></td></tr>
+<tr class="separator:a5883e7d8e3640a94284fd88c36482744"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h2 class="groupheader">関数詳解</h2>
+<a id="a83007bbc6c727b710288b55eed54dc8d" name="a83007bbc6c727b710288b55eed54dc8d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83007bbc6c727b710288b55eed54dc8d">&#9670;&#160;</a></span>FcnForMinuit_lightsource()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void FcnForMinuit_lightsource </td>
+          <td>(</td>
+          <td class="paramtype">Int_t &amp;&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Double_t *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Double_t &amp;&#160;</td>
+          <td class="paramname"><em>fval</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Double_t *&#160;</td>
+          <td class="paramname"><em>par</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Int_t&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition"> <a class="el" href="light__source__fit_8cc_source.html">light_source_fit.cc</a> の <a class="el" href="light__source__fit_8cc_source.html#l00031">31</a> 行目に定義があります。</p>
+<div class="dynheader">
+被呼び出し関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="light__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d_icgraph.png" border="0" usemap="#alight__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d_icgraph" alt=""/></div>
+<map name="alight__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d_icgraph" id="alight__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d_icgraph">
+<area shape="rect" title=" " alt="" coords="271,5,456,31"/>
+<area shape="rect" href="light__source__fit_8cc.html#a6e959677c04d0c844a7923101d1a4709" title=" " alt="" coords="108,5,223,31"/>
+<area shape="poly" title=" " alt="" coords="257,21,223,21,223,15,257,15"/>
+<area shape="rect" href="main_8cc.html#ae66f6b31b5ad750f1fe042a706a4e3d4" title=" " alt="" coords="5,5,60,31"/>
+<area shape="poly" title=" " alt="" coords="94,21,60,21,60,15,94,15"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a6e959677c04d0c844a7923101d1a4709" name="a6e959677c04d0c844a7923101d1a4709"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6e959677c04d0c844a7923101d1a4709">&#9670;&#160;</a></span>FitLightSource()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void FitLightSource </td>
+          <td>(</td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="structSensorUnit.html">SensorUnit</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>sensors</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="structSensorUnit.html">SensorUnit</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>pmtunits</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">TVector3 &amp;&#160;</td>
+          <td class="paramname"><em>fitted_pos</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>fitted_time</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">TVector3 &amp;&#160;</td>
+          <td class="paramname"><em>fiterr_pos</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>fiterr_time</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>chi2</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition"> <a class="el" href="light__source__fit_8cc_source.html">light_source_fit.cc</a> の <a class="el" href="light__source__fit_8cc_source.html#l00087">87</a> 行目に定義があります。</p>
+<div class="dynheader">
+呼び出し関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="light__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709_cgraph.png" border="0" usemap="#alight__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709_cgraph" alt=""/></div>
+<map name="alight__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709_cgraph" id="alight__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709_cgraph">
+<area shape="rect" title=" " alt="" coords="5,5,120,31"/>
+<area shape="rect" href="light__source__fit_8cc.html#a83007bbc6c727b710288b55eed54dc8d" title=" " alt="" coords="168,5,353,31"/>
+<area shape="poly" title=" " alt="" coords="120,15,154,15,154,21,120,21"/>
+</map>
+</div>
+<div class="dynheader">
+被呼び出し関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="light__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709_icgraph.png" border="0" usemap="#alight__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709_icgraph" alt=""/></div>
+<map name="alight__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709_icgraph" id="alight__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709_icgraph">
+<area shape="rect" title=" " alt="" coords="108,5,223,31"/>
+<area shape="rect" href="main_8cc.html#ae66f6b31b5ad750f1fe042a706a4e3d4" title=" " alt="" coords="5,5,60,31"/>
+<area shape="poly" title=" " alt="" coords="94,21,60,21,60,15,94,15"/>
+</map>
+</div>
+
+</div>
+</div>
+<h2 class="groupheader">変数詳解</h2>
+<a id="aad06b697b85dbf814c7487bdcf5aab8a" name="aad06b697b85dbf814c7487bdcf5aab8a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aad06b697b85dbf814c7487bdcf5aab8a">&#9670;&#160;</a></span>chi2_1</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">double chi2_1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition"> <a class="el" href="light__source__fit_8cc_source.html">light_source_fit.cc</a> の <a class="el" href="light__source__fit_8cc_source.html#l00029">29</a> 行目に定義があります。</p>
+
+</div>
+</div>
+<a id="a5883e7d8e3640a94284fd88c36482744" name="a5883e7d8e3640a94284fd88c36482744"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5883e7d8e3640a94284fd88c36482744">&#9670;&#160;</a></span>chi2_2</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">double chi2_2</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition"> <a class="el" href="light__source__fit_8cc_source.html">light_source_fit.cc</a> の <a class="el" href="light__source__fit_8cc_source.html#l00029">29</a> 行目に定義があります。</p>
+
+</div>
+</div>
+<a id="aabd79b29c4e2adb4f14b29c343ece737" name="aabd79b29c4e2adb4f14b29c343ece737"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aabd79b29c4e2adb4f14b29c343ece737">&#9670;&#160;</a></span>gPMTsUnits</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="structSensorUnit.html">SensorUnit</a>&gt; gPMTsUnits</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition"> <a class="el" href="light__source__fit_8cc_source.html">light_source_fit.cc</a> の <a class="el" href="light__source__fit_8cc_source.html#l00028">28</a> 行目に定義があります。</p>
+
+</div>
+</div>
+<a id="a6c8b357ca63dfaa78f5e6779e3babdd7" name="a6c8b357ca63dfaa78f5e6779e3babdd7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6c8b357ca63dfaa78f5e6779e3babdd7">&#9670;&#160;</a></span>gSensors</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="structSensorUnit.html">SensorUnit</a>&gt; gSensors</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>This program fits the position and time of a light source based on the detected directions and times from multiple mPMTs. </p>
+<p>The direction from each mPMT needs to be estimated, and the time of detection is also considered.</p><ul>
+<li>Example (test program): lightfittest.cc</li>
+</ul>
+<p>In this program, chi2 is calculated based on the following formula: χ² = Σ ((|perp|² / |d|² / σ²_θ + (|d|/c - Δt)² / σ²_t) where:</p><ul>
+<li>perp is the component of the vector from the mPMT to the light source that is perpendicular to the estimated direction</li>
+<li>|d| is the distance from the light source to the mPMT</li>
+<li>σ²_θ is the direction error (in rad)</li>
+<li>σ²_t is the time resolution (in ns)</li>
+<li>Δt is the difference between the expected time of light travel and the measured time</li>
+<li>c is the speed of light in water (22.556 cm/ns) <a class="el" href="structSensorUnit.html">SensorUnit</a> : * Structure to hold sensor data. Written in <a class="el" href="fittinginput_8hh.html">fittinginput.hh</a> Recommended to create a vector of <a class="el" href="structSensorUnit.html">SensorUnit</a> with at least 4 mPMTs. </li>
+</ul>
+
+<p class="definition"> <a class="el" href="light__source__fit_8cc_source.html">light_source_fit.cc</a> の <a class="el" href="light__source__fit_8cc_source.html#l00027">27</a> 行目に定義があります。</p>
+
+</div>
+</div>
+</div><!-- contents -->
+<!-- start footer part -->
+<hr class="footer"/><address class="footer"><small>
+構築:&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8
+</small></address>
+</body>
+</html>

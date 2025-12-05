@@ -1,0 +1,145 @@
+\doxysection{read\+Data.\+cc}
+\hypertarget{readData_8cc_source}{}\label{readData_8cc_source}\mbox{\hyperlink{readData_8cc}{\mbox{[}詳解\mbox{]}}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00001}00001\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{readData_8hh}{readData.hh}}"{}}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00002}00002\ \textcolor{preprocessor}{\#include\ "{}TFile.h"{}}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00003}00003\ \textcolor{preprocessor}{\#include\ "{}TTree.h"{}}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00004}00004\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{fittinginput_8hh}{fittinginput.hh}}"{}}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00005}00005\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00006}00006\ \textcolor{preprocessor}{\#include\ <map>}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00007}00007\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00008}00008\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00009}00009\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00010}\mbox{\hyperlink{readData_8cc_ac3c8af7b5bc5576c180f3442e2ec87c8}{00010}}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{readData_8cc_ac3c8af7b5bc5576c180f3442e2ec87c8}{readData}}(std::string\ \&inputfilename,\ \ std::map<\textcolor{keywordtype}{int},\ std::vector<PMTData>>\ \&PMTDataMap)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00011}00011\ \ \ \ \ \textcolor{keywordtype}{int}\ ev=0;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00012}00012\ \ \ \ \ \textcolor{keywordtype}{int}\ firstentry=0;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00013}00013\ \ \ \ \ \textcolor{keywordtype}{int}\ lastentry;\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00014}00014\ \ \ \ \ \textcolor{keywordtype}{int}\ eventNumber=0;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00015}00015\ \ \ \ \ TFile\ *file\ =\ TFile::Open((inputfilename\ +\ \textcolor{stringliteral}{"{}.root"{}}).c\_str());}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00016}00016\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}open\ file\ "{}}<<file<<std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00017}00017\ \ \ \ \ \textcolor{keywordflow}{if}\ (!file\ ||\ file-\/>IsZombie())\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00018}00018\ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Error:\ Cannot\ open\ file\ pmtdata.root"{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00019}00019\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 1;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00020}00020\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00021}00021\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00022}00022\ \ \ \ \ TTree\ *tree\ =\ \textcolor{keyword}{dynamic\_cast<}TTree\ *\textcolor{keyword}{>}(file-\/>Get(\textcolor{stringliteral}{"{}PMTTree"{}}));}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00023}00023\ \ \ \ \ \textcolor{keywordflow}{if}\ (!tree)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00024}00024\ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Error:\ Cannot\ find\ TTree\ 'PMTTree'\ in\ file."{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00025}00025\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 1;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00026}00026\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00027}00027\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00028}00028\ \ \ \ \ \textcolor{comment}{//\ ブランチ変数の定義}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00029}00029\ \ \ \ \ \textcolor{keywordtype}{int}\ tubeid,\ mPMTid,\ mPMT\_pmtid;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00030}00030\ \ \ \ \ \textcolor{keywordtype}{double}\ x,\ y,\ z,\ L,\ t,\ ori\_x,\ ori\_y,\ ori\_z,\ center\_x,\ center\_y,\ center\_z;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00031}00031\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}eventNumber"{}},\ \&eventNumber);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00032}00032\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}tubeid"{}},\ \&tubeid);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00033}00033\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}mPMTid"{}},\ \&mPMTid);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00034}00034\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}mPMT\_pmtid"{}},\ \&mPMT\_pmtid);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00035}00035\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}x"{}},\ \&x);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00036}00036\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}y"{}},\ \&y);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00037}00037\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}z"{}},\ \&z);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00038}00038\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}L"{}},\ \&L);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00039}00039\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}t"{}},\ \&t);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00040}00040\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}ori\_x"{}},\ \&ori\_x);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00041}00041\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}ori\_y"{}},\ \&ori\_y);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00042}00042\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}ori\_z"{}},\ \&ori\_z);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00043}00043\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}center\_x"{}},\ \&center\_x);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00044}00044\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}center\_y"{}},\ \&center\_y);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00045}00045\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}center\_z"{}},\ \&center\_z);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00046}00046\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00047}00047\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}branch\ is\ read"{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00048}00048\ \ \ \ \ Long64\_t\ nEntries\ =\ tree-\/>GetEntries();}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00049}00049\ \ \ \ \ \textcolor{keywordflow}{if}\ (nEntries\ ==\ 0)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00050}00050\ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Error:\ No\ entries\ in\ TTree."{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00051}00051\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 1;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00052}00052\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00053}00053\ \ \ \ \ tree-\/>GetEntry(nEntries\ -\/\ 1);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00054}00054\ \ \ \ \ \textcolor{keywordtype}{int}\ eventNumber\_max\ =\ eventNumber\ +\ 1;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00055}00055\ \ \ \ \ \textcolor{keywordflow}{if}\ (ev\ >=\ eventNumber\_max)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00056}00056\ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}all\ event\ is\ readed,\ eventNumber\_max\ is\ "{}}\ <<\ eventNumber\_max\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00057}00057\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 3;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00058}00058\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00059}00059\ \ \ \ \ \mbox{\hyperlink{structPMTData}{PMTData}}\ data;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00060}00060\ \ \ \ \ \textcolor{keywordflow}{for}\ (Long64\_t\ i\ =0\ ;\ i\ <\ nEntries;\ ++i)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00061}00061\ \ \ \ \ \ \ \ \ tree-\/>GetEntry(i);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00062}00062\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ use\ mPMT\ id\ is\ \{338,\ 339,340,\ 346,\ 347,348,\ 354,355,356\};\ the\ case\ of\ the\ data\ 30-\/4-\/all\ center\ is\ 40,40}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00063}00063\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (eventNumber\ ==\ ev\ \&\&\ (mPMTid\ ==\ 338\ ||\ mPMTid\ ==\ 339\ ||\ mPMTid\ ==\ 340\ ||\ mPMTid\ ==\ 346\ ||\ mPMTid\ ==\ 347\ ||\ mPMTid\ ==\ 348\ ||\ mPMTid\ ==\ 354\ ||\ mPMTid\ ==\ 355\ ||\ mPMTid\ ==\ 356))\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00064}00064\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ use\ uPMT\ id\ is\ \{330,\ 331,332,339,\ 340,341,\ 347,\ 348,349\}}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00065}00065\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ (eventNumber\ ==\ ev\ \&\&\ (mPMTid\ ==\ 330\ ||\ mPMTid\ ==\ 331\ ||\ mPMTid\ ==\ 332\ ||\ mPMTid\ ==\ 339\ ||\ mPMTid\ ==\ 340\ ||\ mPMTid\ ==\ 341\ ||\ mPMTid\ ==\ 347\ ||\ mPMTid\ ==\ 348\ ||\ mPMTid\ ==\ 349))\ \{}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00066}00066\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ (eventNumber\ ==\ ev\ \&\&\ mPMTid\ >\ 317)\ \{}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00067}00067\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ if\ (eventNumber\ ==\ ev)\ \{}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00068}00068\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_ae6663b4f7ecc70285f25804341296875}{tubeid}}\ =\ tubeid;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00069}00069\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_ad599f4a054f2efc34d85e947fd1ead48}{mPMTid}}\ =\ mPMTid;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00070}00070\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_ac581a8365b1267b9450fd53aac5ff073}{mPMT\_pmtid}}\ =\ mPMT\_pmtid;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00071}00071\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a99887a40cf593092932441b9307ae54c}{t}}\ =\ t;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00072}00072\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_ac144ac5366990fb7c44a3d9f3ad0e059}{x}}\ =\ x;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00073}00073\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a7f873080261f5e18b7e405e7517b3530}{y}}\ =\ y;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00074}00074\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a7bf04c728bb5b89f095af6da2bd3e0e7}{z}}\ =\ z;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00075}00075\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a84818b99095d72414de9274030f4e767}{L}}\ =\ L;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00076}00076\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a3911aff0974f478ea90986b47da8342a}{ori\_x}}\ =\ ori\_x;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00077}00077\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_ab56c084462a51f96c603d7af1df48695}{ori\_y}}\ =\ ori\_y;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00078}00078\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a86751019f78c35a24c70b5ee112b2b7c}{ori\_z}}\ =\ ori\_z;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00079}00079\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_ad1aea84cdd4f5419acfb96081e07e0ce}{center\_x}}\ =\ center\_x;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00080}00080\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a841ecbb2efac1058beda718e66d55283}{center\_y}}\ =\ center\_y;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00081}00081\ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_aef8bc561dfd6403678c19c5b7819e0b8}{center\_z}}\ =\ center\_z;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00082}00082\ \ \ \ \ \ \ \ \ \ \ \ \ PMTDataMap[mPMTid].push\_back(data);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00083}00083\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00084}00084\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (eventNumber\ >\ ev)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00085}00085\ \ \ \ \ \ \ \ \ \ \ \ \ lastentry\ =\ i;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00086}00086\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00087}00087\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00088}00088\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00089}00089\ \ \ \ \ \textcolor{comment}{//\ PMTDataMap[i]が空かどうかを確認}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00090}00090\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{const}\ \textcolor{keyword}{auto}\ \&pair\ :\ PMTDataMap)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00091}00091\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (pair.second.empty())\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00092}00092\ \ \ \ \ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}No\ data\ for\ mPMTid:\ "{}}\ <<\ pair.first\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00093}00093\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00094}00094\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00095}00095\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}PMTDataMap\ size:\ "{}}\ <<\ PMTDataMap.size()\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00096}00096\ \ \ \ \ file-\/>Close();}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00097}00097\ \ \ \ \ \textcolor{keywordflow}{if}(PMTDataMap.size()\ ==\ 0)\ \textcolor{keywordflow}{return}\ 2;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00098}00098\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00099}00099\ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00100}00100\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00101}\mbox{\hyperlink{readData_8cc_a5d7b99f5eee0993c4f156589721d53df}{00101}}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{readData_8cc_a5d7b99f5eee0993c4f156589721d53df}{readPMTinfo}}(std::string\ \&inputfilename,\ \textcolor{keywordtype}{int}\ \&target\_mPMT\_id,\ \textcolor{keywordtype}{int}\ \&target\_mPMT\_pmtid,\ \textcolor{keywordtype}{double}\ \&ori\_x\_return,\ \textcolor{keywordtype}{double}\ \&ori\_y\_return,\ \textcolor{keywordtype}{double}\ \&ori\_z\_return)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00102}00102\ \ \ \ \ std::ifstream\ infile(inputfilename);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00103}00103\ \ \ \ \ \textcolor{keywordflow}{if}\ (!infile)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00104}00104\ \ \ \ \ \ \ \ \ std::cerr\ <<\ \textcolor{stringliteral}{"{}Error:\ Cannot\ open\ file\ "{}}\ <<\ inputfilename\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00105}00105\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 1;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00106}00106\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00107}00107\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00108}00108\ \ \ \ \ std::string\ line;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00109}00109\ \ \ \ \ \textcolor{keywordtype}{int}\ line\_num\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00110}00110\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00111}00111\ \ \ \ \ \textcolor{comment}{//\ skip\ the\ first\ 5\ lines}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00112}00112\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 5\ \&\&\ std::getline(infile,\ line);\ ++i)}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00113}00113\ \ \ \ \ \ \ \ \ ;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00114}00114\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00115}00115\ \ \ \ \ \textcolor{keywordtype}{bool}\ found\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00116}00116\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00117}00117\ \ \ \ \ \textcolor{keywordflow}{while}\ (std::getline(infile,\ line))\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00118}00118\ \ \ \ \ \ \ \ \ std::istringstream\ iss(line);}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00119}00119\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ tube\_id,\ mPMT\_id,\ mPMT\_pmtid,\ info;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00120}00120\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ x,\ y,\ z,\ ori\_x,\ ori\_y,\ ori\_z;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00121}00121\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00122}00122\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!(iss\ >>\ tube\_id\ >>\ mPMT\_id\ >>\ mPMT\_pmtid\ >>\ x\ >>\ y\ >>\ z\ >>\ ori\_x\ >>\ ori\_y\ >>\ ori\_z\ >>\ info))\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00123}00123\ \ \ \ \ \ \ \ \ \ \ \ \ std::cerr\ <<\ \textcolor{stringliteral}{"{}読み取りエラー：\ "{}}\ <<\ line\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00124}00124\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00125}00125\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00126}00126\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00127}00127\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (mPMT\_id\ ==\ target\_mPMT\_id\ \&\&\ mPMT\_pmtid\ ==\ target\_mPMT\_pmtid)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00128}00128\ \ \ \ \ \ \ \ \ \ \ \ \ ori\_x\_return\ =\ ori\_x;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00129}00129\ \ \ \ \ \ \ \ \ \ \ \ \ ori\_y\_return\ =\ ori\_y;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00130}00130\ \ \ \ \ \ \ \ \ \ \ \ \ ori\_z\_return\ =\ ori\_z;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00131}00131\ \ \ \ \ \ \ \ \ \ \ \ \ found\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00132}00132\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};\ \textcolor{comment}{//\ 最初に一致したものだけを取得する場合}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00133}00133\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00134}00134\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00135}00135\ }
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00136}00136\ \ \ \ \ \textcolor{keywordflow}{if}\ (!found)\ \{}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00137}00137\ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}一致するデータが見つかりませんでした。"{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00138}00138\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00139}00139\ \ \ \ \ \textcolor{keywordflow}{return}\ found\ ?\ 0\ :\ 1;\ \textcolor{comment}{//\ 成功なら0、失敗なら1を返す}}
+\DoxyCodeLine{\Hypertarget{readData_8cc_source_l00140}00140\ \}}
+
+\end{DoxyCode}

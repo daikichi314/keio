@@ -1,3 +1,4 @@
+// main.cc
 #include "fittinginput.hh"
 #include "light_source_fit.cc"
 #include "light_source_fit.hh"
@@ -14,6 +15,7 @@
 #include <random>
 #include <string>
 #include <vector>
+// #include<bits/stdc++.h>
 
 void writeToCSV(const std::string &filename,
                 const TVector3 &fit,

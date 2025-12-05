@@ -1,0 +1,300 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.9.8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HKElec Fukazawa Analysis: onemPMTfit.hh ファイル</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">HKElec Fukazawa Analysis<span id="projectnumber">&#160;0.1</span>
+   </div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- 構築: Doxygen 1.9.8 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() {
+  initMenu('',true,false,'search.php','検索');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */
+</script>
+<div id="main-nav"></div>
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">読み取り中…</div>
+<div class="SRStatus" id="Searching">検索中…</div>
+<div class="SRStatus" id="NoMatches">一致する文字列を見つけられません</div>
+</div>
+</div>
+</div>
+</div>
+
+</div><!-- top -->
+<div class="header">
+  <div class="summary">
+<a href="#func-members">関数</a>  </div>
+  <div class="headertitle"><div class="title">onemPMTfit.hh ファイル</div></div>
+</div><!--header-->
+<div class="contents">
+<div class="textblock"><code>#include &quot;<a class="el" href="fittinginput_8hh_source.html">fittinginput.hh</a>&quot;</code><br />
+<code>#include &quot;fstream&quot;</code><br />
+</div><div class="textblock"><div class="dynheader">
+onemPMTfit.hh の依存先関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="onemPMTfit_8hh__incl.png" border="0" usemap="#aonemPMTfit_8hh" alt=""/></div>
+<map name="aonemPMTfit_8hh" id="aonemPMTfit_8hh">
+<area shape="rect" title=" " alt="" coords="100,5,220,31"/>
+<area shape="rect" href="fittinginput_8hh.html" title=" " alt="" coords="45,79,158,104"/>
+<area shape="poly" title=" " alt="" coords="152,33,121,70,117,67,148,29"/>
+<area shape="rect" title=" " alt="" coords="182,79,255,104"/>
+<area shape="poly" title=" " alt="" coords="172,29,203,67,199,70,168,33"/>
+<area shape="rect" title=" " alt="" coords="5,152,96,177"/>
+<area shape="poly" title=" " alt="" coords="95,106,69,142,65,139,91,103"/>
+<area shape="rect" title=" " alt="" coords="121,152,183,177"/>
+<area shape="poly" title=" " alt="" coords="112,103,138,139,134,142,108,106"/>
+</map>
+</div>
+</div><div class="textblock"><div class="dynheader">
+被依存関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="onemPMTfit_8hh__dep__incl.png" border="0" usemap="#aonemPMTfit_8hhdep" alt=""/></div>
+<map name="aonemPMTfit_8hhdep" id="aonemPMTfit_8hhdep">
+<area shape="rect" title=" " alt="" coords="5,5,125,31"/>
+<area shape="rect" href="main_8cc.html" title=" " alt="" coords="29,152,102,177"/>
+<area shape="poly" title=" " alt="" coords="57,44,47,79,46,99,50,119,62,151,57,153,44,120,41,99,41,78,52,43"/>
+<area shape="rect" href="onemPMTfit_8cc.html" title=" " alt="" coords="55,79,174,104"/>
+<area shape="poly" title=" " alt="" coords="83,41,109,77,104,80,79,44"/>
+<area shape="poly" title=" " alt="" coords="101,117,76,153,71,150,97,114"/>
+</map>
+</div>
+</div>
+<p><a href="onemPMTfit_8hh_source.html">[ソースコード]</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+関数</h2></td></tr>
+<tr class="memitem:a7030955e6fc147f6f55793bd879cc2fe" id="r_a7030955e6fc147f6f55793bd879cc2fe"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="onemPMTfit_8hh.html#a7030955e6fc147f6f55793bd879cc2fe">onemPMTfit</a> (const std::string &amp;inputfilename)</td></tr>
+<tr class="separator:a7030955e6fc147f6f55793bd879cc2fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0849c3a1ef2dc7b82ae2b4b5a0d115ed" id="r_a0849c3a1ef2dc7b82ae2b4b5a0d115ed"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="structPMTData.html">PMTData</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="onemPMTfit_8hh.html#a0849c3a1ef2dc7b82ae2b4b5a0d115ed">findExpandedGroups</a> (const std::vector&lt; <a class="el" href="structPMTData.html">PMTData</a> &gt; &amp;pmtData, double tau, int n, double expand_before, double expand_after)</td></tr>
+<tr class="memdesc:a0849c3a1ef2dc7b82ae2b4b5a0d115ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">PMTヒット群から時間的にまとまったグループを探し、前後に拡張する。  <br /></td></tr>
+<tr class="separator:a0849c3a1ef2dc7b82ae2b4b5a0d115ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac9ecc9bfc02574be9a8df31a594f792f" id="r_ac9ecc9bfc02574be9a8df31a594f792f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="onemPMTfit_8hh.html#ac9ecc9bfc02574be9a8df31a594f792f">FitPosition</a> (std::vector&lt; <a class="el" href="structPMTData.html">PMTData</a> &gt; &amp;pmtData, double &amp;fit_theta, double &amp;fit_phi, double &amp;err_theta, double &amp;err_phi)</td></tr>
+<tr class="separator:ac9ecc9bfc02574be9a8df31a594f792f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h2 class="groupheader">関数詳解</h2>
+<a id="a0849c3a1ef2dc7b82ae2b4b5a0d115ed" name="a0849c3a1ef2dc7b82ae2b4b5a0d115ed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0849c3a1ef2dc7b82ae2b4b5a0d115ed">&#9670;&#160;</a></span>findExpandedGroups()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt; <a class="el" href="structPMTData.html">PMTData</a> &gt; findExpandedGroups </td>
+          <td>(</td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="structPMTData.html">PMTData</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>pmtData</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>tau</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>n</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>expand_before</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>expand_after</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>PMTヒット群から時間的にまとまったグループを探し、前後に拡張する。 </p>
+<dl class="params"><dt>引数</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">pmtData</td><td>PMTデータのリスト </td></tr>
+    <tr><td class="paramname">tau</td><td>グルーピングに使う時間幅（単位：ns） </td></tr>
+    <tr><td class="paramname">n</td><td>tauの幅の中でこの数以上ヒットがあればグループとみなす </td></tr>
+    <tr><td class="paramname">expand_before</td><td>グループ発見時に前に拡張する時間幅（ns） </td></tr>
+    <tr><td class="paramname">expand_after</td><td>グループ発見時に後に拡張する時間幅（ns） </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>戻り値</dt><dd>std::vector&lt;PMTData&gt; グループ化されたPMTデータのリスト </dd></dl>
+
+<p class="definition"> <a class="el" href="onemPMTfit_8cc_source.html">onemPMTfit.cc</a> の <a class="el" href="onemPMTfit_8cc_source.html#l00113">113</a> 行目に定義があります。</p>
+<div class="dynheader">
+被呼び出し関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="onemPMTfit_8hh_a0849c3a1ef2dc7b82ae2b4b5a0d115ed_icgraph.png" border="0" usemap="#aonemPMTfit_8hh_a0849c3a1ef2dc7b82ae2b4b5a0d115ed_icgraph" alt=""/></div>
+<map name="aonemPMTfit_8hh_a0849c3a1ef2dc7b82ae2b4b5a0d115ed_icgraph" id="aonemPMTfit_8hh_a0849c3a1ef2dc7b82ae2b4b5a0d115ed_icgraph">
+<area shape="rect" title="PMTヒット群から時間的にまとまったグループを探し、前後に拡張する。" alt="" coords="153,31,309,56"/>
+<area shape="rect" href="main_8cc.html#ae66f6b31b5ad750f1fe042a706a4e3d4" title=" " alt="" coords="28,5,83,31"/>
+<area shape="poly" title=" " alt="" coords="139,33,82,24,83,19,140,27"/>
+<area shape="rect" href="onemPMTfit_8cc.html#a4d381345f638a85eae428a5c53be18f2" title=" " alt="" coords="5,55,105,80"/>
+<area shape="poly" title=" " alt="" coords="140,58,106,63,105,58,139,53"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="ac9ecc9bfc02574be9a8df31a594f792f" name="ac9ecc9bfc02574be9a8df31a594f792f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac9ecc9bfc02574be9a8df31a594f792f">&#9670;&#160;</a></span>FitPosition()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void FitPosition </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; <a class="el" href="structPMTData.html">PMTData</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>pmtData</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>fit_theta</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>fit_phi</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>err_theta</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>err_phi</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition"> <a class="el" href="onemPMTfit_8cc_source.html">onemPMTfit.cc</a> の <a class="el" href="onemPMTfit_8cc_source.html#l00283">283</a> 行目に定義があります。</p>
+<div class="dynheader">
+呼び出し関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="onemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f_cgraph.png" border="0" usemap="#aonemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f_cgraph" alt=""/></div>
+<map name="aonemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f_cgraph" id="aonemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f_cgraph">
+<area shape="rect" title=" " alt="" coords="5,79,96,104"/>
+<area shape="rect" href="onemPMTfit_8cc.html#ac365ff640b676f542adfd77fb96d7d4e" title=" " alt="" coords="144,53,204,79"/>
+<area shape="poly" title=" " alt="" coords="96,79,130,72,131,77,97,85"/>
+<area shape="rect" href="onemPMTfit_8cc.html#a037ebc409ff7e3e33ebb210b503c7e2e" title=" " alt="" coords="577,104,711,129"/>
+<area shape="poly" title=" " alt="" coords="97,91,564,111,563,116,96,96"/>
+<area shape="rect" href="onemPMTfit_8cc.html#a4cc9f5c09126a80f2d5c7657bfdf3012" title=" " alt="" coords="252,53,359,79"/>
+<area shape="poly" title=" " alt="" coords="205,63,238,63,238,69,205,69"/>
+<area shape="rect" href="onemPMTfit_8cc.html#aef2ff6a835672a27cfad1c91c64def72" title=" " alt="" coords="407,53,521,79"/>
+<area shape="poly" title=" " alt="" coords="359,63,393,63,393,69,359,69"/>
+<area shape="rect" href="onemPMTfit_8cc.html#a35baad4a0c898615f0ec4b47d964fc28" title=" " alt="" coords="584,5,704,31"/>
+<area shape="poly" title=" " alt="" coords="512,51,582,32,583,37,513,56"/>
+<area shape="rect" href="onemPMTfit_8cc.html#ad2b882242ae4f63158e7e4a6d4316f75" title=" " alt="" coords="569,55,719,80"/>
+<area shape="poly" title=" " alt="" coords="521,64,555,64,555,69,521,69"/>
+<area shape="poly" title=" " alt="" coords="511,76,586,98,584,103,509,81"/>
+</map>
+</div>
+<div class="dynheader">
+被呼び出し関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="onemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f_icgraph.png" border="0" usemap="#aonemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f_icgraph" alt=""/></div>
+<map name="aonemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f_icgraph" id="aonemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f_icgraph">
+<area shape="rect" title=" " alt="" coords="153,31,244,56"/>
+<area shape="rect" href="main_8cc.html#ae66f6b31b5ad750f1fe042a706a4e3d4" title=" " alt="" coords="28,5,83,31"/>
+<area shape="poly" title=" " alt="" coords="139,36,83,25,83,20,140,30"/>
+<area shape="rect" href="onemPMTfit_8cc.html#a4d381345f638a85eae428a5c53be18f2" title=" " alt="" coords="5,55,105,80"/>
+<area shape="poly" title=" " alt="" coords="141,56,106,62,105,56,140,50"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a7030955e6fc147f6f55793bd879cc2fe" name="a7030955e6fc147f6f55793bd879cc2fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7030955e6fc147f6f55793bd879cc2fe">&#9670;&#160;</a></span>onemPMTfit()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int onemPMTfit </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>inputfilename</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+</div><!-- contents -->
+<!-- start footer part -->
+<hr class="footer"/><address class="footer"><small>
+構築:&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8
+</small></address>
+</body>
+</html>

@@ -1,0 +1,102 @@
+\doxysection{onem\+PMTfit.\+hh ファイル}
+\hypertarget{onemPMTfit_8hh}{}\label{onemPMTfit_8hh}\index{onemPMTfit.hh@{onemPMTfit.hh}}
+{\ttfamily \#include "{}fittinginput.\+hh"{}}\newline
+{\ttfamily \#include "{}fstream"{}}\newline
+onem\+PMTfit.\+hh の依存先関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=268pt]{onemPMTfit_8hh__incl}
+\end{center}
+\end{figure}
+被依存関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{onemPMTfit_8hh__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{関数}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{onemPMTfit_8hh_a7030955e6fc147f6f55793bd879cc2fe}{onem\+PMTfit}} (const std\+::string \&inputfilename)
+\item 
+std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \mbox{\hyperlink{onemPMTfit_8hh_a0849c3a1ef2dc7b82ae2b4b5a0d115ed}{find\+Expanded\+Groups}} (const std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \&pmt\+Data, double tau, int n, double expand\+\_\+before, double expand\+\_\+after)
+\begin{DoxyCompactList}\small\item\em PMTヒット群から時間的にまとまったグループを探し、前後に拡張する。 \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{onemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f}{Fit\+Position}} (std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \&pmt\+Data, double \&fit\+\_\+theta, double \&fit\+\_\+phi, double \&err\+\_\+theta, double \&err\+\_\+phi)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{関数詳解}
+\Hypertarget{onemPMTfit_8hh_a0849c3a1ef2dc7b82ae2b4b5a0d115ed}\label{onemPMTfit_8hh_a0849c3a1ef2dc7b82ae2b4b5a0d115ed} 
+\index{onemPMTfit.hh@{onemPMTfit.hh}!findExpandedGroups@{findExpandedGroups}}
+\index{findExpandedGroups@{findExpandedGroups}!onemPMTfit.hh@{onemPMTfit.hh}}
+\doxysubsubsection{\texorpdfstring{findExpandedGroups()}{findExpandedGroups()}}
+{\footnotesize\ttfamily std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ find\+Expanded\+Groups (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \&}]{pmt\+Data,  }\item[{double}]{tau,  }\item[{int}]{n,  }\item[{double}]{expand\+\_\+before,  }\item[{double}]{expand\+\_\+after }\end{DoxyParamCaption})}
+
+
+
+PMTヒット群から時間的にまとまったグループを探し、前後に拡張する。 
+
+
+\begin{DoxyParams}{引数}
+{\em pmt\+Data} & PMTデータのリスト \\
+\hline
+{\em tau} & グルーピングに使う時間幅（単位：ns） \\
+\hline
+{\em n} & tauの幅の中でこの数以上ヒットがあればグループとみなす \\
+\hline
+{\em expand\+\_\+before} & グループ発見時に前に拡張する時間幅（ns） \\
+\hline
+{\em expand\+\_\+after} & グループ発見時に後に拡張する時間幅（ns） \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{戻り値}
+std\+::vector$<$\+PMTData$>$ グループ化された\+PMTデータのリスト 
+\end{DoxyReturn}
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00113}{113}} 行目に定義があります。
+
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=308pt]{onemPMTfit_8hh_a0849c3a1ef2dc7b82ae2b4b5a0d115ed_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{onemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f}\label{onemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f} 
+\index{onemPMTfit.hh@{onemPMTfit.hh}!FitPosition@{FitPosition}}
+\index{FitPosition@{FitPosition}!onemPMTfit.hh@{onemPMTfit.hh}}
+\doxysubsubsection{\texorpdfstring{FitPosition()}{FitPosition()}}
+{\footnotesize\ttfamily void Fit\+Position (\begin{DoxyParamCaption}\item[{std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ \&}]{pmt\+Data,  }\item[{double \&}]{fit\+\_\+theta,  }\item[{double \&}]{fit\+\_\+phi,  }\item[{double \&}]{err\+\_\+theta,  }\item[{double \&}]{err\+\_\+phi }\end{DoxyParamCaption})}
+
+
+
+ \mbox{\hyperlink{onemPMTfit_8cc_source}{onem\+PMTfit.\+cc}} の \mbox{\hyperlink{onemPMTfit_8cc_source_l00283}{283}} 行目に定義があります。
+
+呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{onemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f_cgraph}
+\end{center}
+\end{figure}
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=259pt]{onemPMTfit_8hh_ac9ecc9bfc02574be9a8df31a594f792f_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{onemPMTfit_8hh_a7030955e6fc147f6f55793bd879cc2fe}\label{onemPMTfit_8hh_a7030955e6fc147f6f55793bd879cc2fe} 
+\index{onemPMTfit.hh@{onemPMTfit.hh}!onemPMTfit@{onemPMTfit}}
+\index{onemPMTfit@{onemPMTfit}!onemPMTfit.hh@{onemPMTfit.hh}}
+\doxysubsubsection{\texorpdfstring{onemPMTfit()}{onemPMTfit()}}
+{\footnotesize\ttfamily int onem\+PMTfit (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{inputfilename }\end{DoxyParamCaption})}
+

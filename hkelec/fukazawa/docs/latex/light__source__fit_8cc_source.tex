@@ -1,0 +1,115 @@
+\doxysection{light\+\_\+source\+\_\+fit.\+cc}
+\hypertarget{light__source__fit_8cc_source}{}\label{light__source__fit_8cc_source}\mbox{\hyperlink{light__source__fit_8cc}{\mbox{[}詳解\mbox{]}}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00001}00001\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{light__source__fit_8hh}{light\_source\_fit.hh}}"{}}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00002}00002\ \textcolor{preprocessor}{\#include\ "{}TMinuit.h"{}}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00003}00003\ \textcolor{preprocessor}{\#include\ "{}TVector3.h"{}}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00004}00004\ \textcolor{preprocessor}{\#include\ <cmath>}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00005}00005\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00027}\mbox{\hyperlink{light__source__fit_8cc_a6c8b357ca63dfaa78f5e6779e3babdd7}{00027}}\ \textcolor{keyword}{static}\ std::vector<SensorUnit>\ \mbox{\hyperlink{light__source__fit_8cc_a6c8b357ca63dfaa78f5e6779e3babdd7}{gSensors}};\ \ \ \textcolor{comment}{//\ grobal\ variable\ to\ hold\ sensor\ data}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00028}\mbox{\hyperlink{light__source__fit_8cc_aabd79b29c4e2adb4f14b29c343ece737}{00028}}\ \textcolor{keyword}{static}\ std::vector<SensorUnit>\ \mbox{\hyperlink{light__source__fit_8cc_aabd79b29c4e2adb4f14b29c343ece737}{gPMTsUnits}};\ \textcolor{comment}{//\ global\ variable\ to\ hold\ PMT\ units\ for\ fitting}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00029}\mbox{\hyperlink{light__source__fit_8cc_aad06b697b85dbf814c7487bdcf5aab8a}{00029}}\ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{light__source__fit_8cc_aad06b697b85dbf814c7487bdcf5aab8a}{chi2\_1}},\ \mbox{\hyperlink{light__source__fit_8cc_a5883e7d8e3640a94284fd88c36482744}{chi2\_2}};\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ global\ variables\ to\ hold\ chi2\ values\ for\ debugging}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00030}00030\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00031}\mbox{\hyperlink{light__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d}{00031}}\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{light__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d}{FcnForMinuit\_lightsource}}(Int\_t\ \&,\ Double\_t\ *,\ Double\_t\ \&fval,\ Double\_t\ *par,\ Int\_t)\ \{}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00032}00032\ \ \ \ \ \textcolor{comment}{//\ par[0]\ =\ x,\ par[1]\ =\ y,\ par[2]\ =\ z,\ par[3]\ =\ t0}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00033}00033\ \ \ \ \ \textcolor{keywordtype}{double}\ t0\ =\ par[3];}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00034}00034\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{double}\ c\ =\ 22.556;\ \textcolor{comment}{//\ cm/ns\ light\ speed\ in\ water}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00035}00035\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00036}00036\ \ \ \ \ fval\ =\ 0.0;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00037}00037\ \ \ \ \ \mbox{\hyperlink{light__source__fit_8cc_aad06b697b85dbf814c7487bdcf5aab8a}{chi2\_1}}\ =\ 0.0;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00038}00038\ \ \ \ \ \mbox{\hyperlink{light__source__fit_8cc_a5883e7d8e3640a94284fd88c36482744}{chi2\_2}}\ =\ 0.0;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00039}00039\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{const}\ \mbox{\hyperlink{structSensorUnit}{SensorUnit}}\ \&s\ :\ \mbox{\hyperlink{light__source__fit_8cc_a6c8b357ca63dfaa78f5e6779e3babdd7}{gSensors}})\ \{}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00040}00040\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ dx\_x\ =\ par[0]\ -\/\ s.posx;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00041}00041\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ dx\_y\ =\ par[1]\ -\/\ s.posy;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00042}00042\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ dx\_z\ =\ par[2]\ -\/\ s.posz;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00043}00043\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ D\ =\ std::sqrt(dx\_x\ *\ dx\_x\ +\ dx\_y\ *\ dx\_y\ +\ dx\_z\ *\ dx\_z);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00044}00044\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (D\ <\ 1e-\/6)}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00045}00045\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00046}00046\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00047}00047\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ direction\ χ²\ :}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00048}00048\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00049}00049\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ TVector3\ perp\ =\ dx\ -\/\ dx.Dot(s.dir)\ *\ s.dir;}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00050}00050\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ dxdir\ =\ dx\_x\ *\ s.dirx\ +\ dx\_y\ *\ s.diry\ +\ dx\_z\ *\ s.dirz;\ \textcolor{comment}{//\ dot\ product\ of\ direction\ and\ vector\ to\ sensor}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00051}00051\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ perp2\ =\ 1\ -\/\ dxdir\ *\ dxdir\ /\ D\ /\ D;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00052}00052\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00053}00053\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ sigma\_perp\ =\ s.sigma\_sintheta;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00054}00054\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ dir\_chi2\ =\ perp2\ *\ perp2\ /\ (sigma\_perp\ *\ sigma\_perp\ *\ sigma\_perp\ *\ sigma\_perp);\ \textcolor{comment}{//\ chi2\ for\ direction}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00055}00055\ \ \ \ \ \ \ \ \ \textcolor{comment}{//double\ dir\_chi2\ =\ perp2/(sigma\_perp*sigma\_perp);}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00056}00056\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00057}00057\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ dxとdirの内積が負の場合は、方向が逆向きなので、chi2を大きくする}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00058}00058\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ (dxdir\ <\ 30)\ \{}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00059}00059\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ dir\_chi2\ =\ 1000000;\ //\ 大きな値を設定して、方向が逆向きのセンサーを無視する}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00060}00060\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \}}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00061}00061\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00062}00062\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ time\ χ²\ :}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00063}00063\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ delta\_time\ =\ s.time\ -\/\ t0;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00064}00064\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ time\_chi\ =\ (D\ /\ c\ -\/\ delta\_time)\ /\ s.sigma\_time;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00065}00065\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ time\_chi2\ =\ time\_chi\ *\ time\_chi;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00066}00066\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ fval\ +=\ 2\ *\ dir\_chi2\ +\ time\_chi2;\ //\ total\ chi2}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00067}00067\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{light__source__fit_8cc_aad06b697b85dbf814c7487bdcf5aab8a}{chi2\_1}}\ +=\ dir\_chi2;\ \textcolor{comment}{//\ total\ chi2}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00068}00068\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00069}00069\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{const}\ \mbox{\hyperlink{structSensorUnit}{SensorUnit}}\ \&pmt\ :\ \mbox{\hyperlink{light__source__fit_8cc_aabd79b29c4e2adb4f14b29c343ece737}{gPMTsUnits}})\ \{}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00070}00070\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ dx\_x\ =\ par[0]\ -\/\ pmt.posx;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00071}00071\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ dx\_y\ =\ par[1]\ -\/\ pmt.posy;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00072}00072\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ dx\_z\ =\ par[2]\ -\/\ pmt.posz;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00073}00073\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ D\ =\ std::sqrt(dx\_x\ *\ dx\_x\ +\ dx\_y\ *\ dx\_y\ +\ dx\_z\ *\ dx\_z);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00074}00074\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (D\ <\ 1e-\/6)}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00075}00075\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00076}00076\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00077}00077\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ time\ χ²\ :}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00078}00078\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ delta\_time\ =\ pmt.time\ -\/\ t0;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00079}00079\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ time\_chi\ =\ (D\ /\ c\ -\/\ delta\_time)\ /\ pmt.sigma\_time;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00080}00080\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ time\_chi2\ =\ time\_chi\ *\ time\_chi;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00081}00081\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{light__source__fit_8cc_a5883e7d8e3640a94284fd88c36482744}{chi2\_2}}\ +=\ time\_chi2;\ \textcolor{comment}{//\ accumulate\ time\ chi2\ for\ debugging}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00082}00082\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00083}00083\ \ \ \ \ fval\ =\ (\mbox{\hyperlink{light__source__fit_8cc_aad06b697b85dbf814c7487bdcf5aab8a}{chi2\_1}}\ +\ \mbox{\hyperlink{light__source__fit_8cc_a5883e7d8e3640a94284fd88c36482744}{chi2\_2}});}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00084}00084\ \ \ \ \ \textcolor{comment}{//fval\ =\ chi2\_2;}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00085}00085\ \}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00086}00086\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00087}\mbox{\hyperlink{light__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709}{00087}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{light__source__fit_8cc_a6e959677c04d0c844a7923101d1a4709}{FitLightSource}}(\textcolor{keyword}{const}\ std::vector<SensorUnit>\ \&sensors,}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00088}00088\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ std::vector<SensorUnit>\ \&pmtunits,}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00089}00089\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ TVector3\ \&fitted\_pos,}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00090}00090\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ \&fitted\_time,}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00091}00091\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ TVector3\ \&fiterr\_pos,}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00092}00092\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ \&fiterr\_time,}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00093}00093\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ \&chi2)\ \{}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00094}00094\ \ \ \ \ \mbox{\hyperlink{light__source__fit_8cc_a6c8b357ca63dfaa78f5e6779e3babdd7}{gSensors}}\ =\ sensors;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00095}00095\ \ \ \ \ \mbox{\hyperlink{light__source__fit_8cc_aabd79b29c4e2adb4f14b29c343ece737}{gPMTsUnits}}\ =\ pmtunits;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00096}00096\ \ \ \ \ \textcolor{keywordtype}{double}\ last\_hit\_time\ =\ sensors[0].time;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00097}00097\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{const}\ \textcolor{keyword}{auto}\ \&s\ :\ sensors)\ \{}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00098}00098\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (s.time\ >\ last\_hit\_time)\ \{}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00099}00099\ \ \ \ \ \ \ \ \ \ \ \ \ last\_hit\_time\ =\ s.time;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00100}00100\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00101}00101\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00102}00102\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00103}00103\ \ \ \ \ TMinuit\ minuit(4);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00104}00104\ \ \ \ \ minuit.SetFCN(\mbox{\hyperlink{light__source__fit_8cc_a83007bbc6c727b710288b55eed54dc8d}{FcnForMinuit\_lightsource}});}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00105}00105\ \ \ \ \ minuit.SetPrintLevel(-\/1);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00106}00106\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00107}00107\ \ \ \ \ minuit.DefineParameter(0,\ \textcolor{stringliteral}{"{}x"{}},\ 0.0,\ 1,\ -\/350,\ 350);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00108}00108\ \ \ \ \ minuit.DefineParameter(1,\ \textcolor{stringliteral}{"{}y"{}},\ 0.0,\ 1,\ -\/400,\ 400);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00109}00109\ \ \ \ \ minuit.DefineParameter(2,\ \textcolor{stringliteral}{"{}z"{}},\ 0.0,\ 1,\ -\/350,\ 350);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00110}00110\ \ \ \ \ minuit.DefineParameter(3,\ \textcolor{stringliteral}{"{}t0"{}},\ last\_hit\_time\ -\/\ 50,\ 0.1,\ last\_hit\_time\ -\/\ 100,\ last\_hit\_time);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00111}00111\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00112}00112\ \ \ \ \ minuit.Migrad();}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00113}00113\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00114}00114\ \ \ \ \ \textcolor{keywordtype}{double}\ x,\ y,\ z,\ t0,\ errx,\ erry,\ errz,\ errt0;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00115}00115\ \ \ \ \ minuit.GetParameter(0,\ x,\ errx);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00116}00116\ \ \ \ \ minuit.GetParameter(1,\ y,\ erry);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00117}00117\ \ \ \ \ minuit.GetParameter(2,\ z,\ errz);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00118}00118\ \ \ \ \ minuit.GetParameter(3,\ t0,\ errt0);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00119}00119\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00120}00120\ \ \ \ \ fitted\_pos.SetXYZ(x,\ y,\ z);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00121}00121\ \ \ \ \ fitted\_time\ =\ t0;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00122}00122\ \ \ \ \ fiterr\_pos.SetXYZ(errx,\ erry,\ errz);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00123}00123\ \ \ \ \ fiterr\_time\ =\ errt0;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00124}00124\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00125}00125\ \ \ \ \ \textcolor{keywordtype}{double}\ amin,\ edm,\ errdef;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00126}00126\ \ \ \ \ \textcolor{keywordtype}{int}\ nvpar,\ nparx,\ istat;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00127}00127\ \ \ \ \ minuit.mnstat(amin,\ edm,\ errdef,\ nvpar,\ nparx,\ istat);}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00128}00128\ \ \ \ \ chi2\ =\ amin;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00129}00129\ }
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00130}00130\ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}dirchi2\ =\ "{}}\ <<\ \mbox{\hyperlink{light__source__fit_8cc_aad06b697b85dbf814c7487bdcf5aab8a}{chi2\_1}}\ <<\ \textcolor{stringliteral}{"{}\ timechi2\ =\ "{}}\ <<\ \mbox{\hyperlink{light__source__fit_8cc_a5883e7d8e3640a94284fd88c36482744}{chi2\_2}}\ <<\ \textcolor{stringliteral}{"{}\ total\ chi2\ =\ "{}}\ <<\ chi2\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{light__source__fit_8cc_source_l00131}00131\ \}}
+
+\end{DoxyCode}

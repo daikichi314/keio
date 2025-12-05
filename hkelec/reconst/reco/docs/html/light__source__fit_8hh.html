@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.9.8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HKElec Fukazawa Analysis: light_source_fit.hh ファイル</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">HKElec Fukazawa Analysis<span id="projectnumber">&#160;0.1</span>
+   </div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- 構築: Doxygen 1.9.8 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() {
+  initMenu('',true,false,'search.php','検索');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */
+</script>
+<div id="main-nav"></div>
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">読み取り中…</div>
+<div class="SRStatus" id="Searching">検索中…</div>
+<div class="SRStatus" id="NoMatches">一致する文字列を見つけられません</div>
+</div>
+</div>
+</div>
+</div>
+
+</div><!-- top -->
+<div class="header">
+  <div class="summary">
+<a href="#func-members">関数</a>  </div>
+  <div class="headertitle"><div class="title">light_source_fit.hh ファイル</div></div>
+</div><!--header-->
+<div class="contents">
+<div class="textblock"><code>#include &quot;TVector3.h&quot;</code><br />
+<code>#include &quot;<a class="el" href="fittinginput_8hh_source.html">fittinginput.hh</a>&quot;</code><br />
+<code>#include &lt;vector&gt;</code><br />
+</div><div class="textblock"><div class="dynheader">
+light_source_fit.hh の依存先関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="light__source__fit_8hh__incl.png" border="0" usemap="#alight__source__fit_8hh" alt=""/></div>
+<map name="alight__source__fit_8hh" id="alight__source__fit_8hh">
+<area shape="rect" title=" " alt="" coords="31,5,172,31"/>
+<area shape="rect" title=" " alt="" coords="5,152,96,177"/>
+<area shape="poly" title=" " alt="" coords="82,33,55,52,34,80,31,94,31,109,40,139,35,140,26,110,25,94,30,77,52,49,78,29"/>
+<area shape="rect" href="fittinginput_8hh.html" title=" " alt="" coords="45,79,158,104"/>
+<area shape="poly" title=" " alt="" coords="104,31,104,65,99,65,99,31"/>
+<area shape="rect" title=" " alt="" coords="142,152,205,177"/>
+<area shape="poly" title=" " alt="" coords="124,29,151,49,173,78,181,108,180,138,175,138,176,109,168,80,147,53,121,33"/>
+<area shape="poly" title=" " alt="" coords="95,106,69,142,65,139,91,103"/>
+<area shape="poly" title=" " alt="" coords="115,102,154,140,150,144,111,106"/>
+</map>
+</div>
+</div><div class="textblock"><div class="dynheader">
+被依存関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="light__source__fit_8hh__dep__incl.png" border="0" usemap="#alight__source__fit_8hhdep" alt=""/></div>
+<map name="alight__source__fit_8hhdep" id="alight__source__fit_8hhdep">
+<area shape="rect" title=" " alt="" coords="57,5,199,31"/>
+<area shape="rect" href="light__source__fit_8cc.html" title=" " alt="" coords="5,79,144,104"/>
+<area shape="poly" title=" " alt="" coords="113,43,85,80,81,77,109,40"/>
+<area shape="rect" href="main_8cc.html" title=" " alt="" coords="91,152,165,177"/>
+<area shape="poly" title=" " alt="" coords="146,42,157,71,160,88,159,105,149,131,138,153,133,150,144,129,153,103,155,88,152,73,141,44"/>
+<area shape="poly" title=" " alt="" coords="94,113,121,150,117,153,89,117"/>
+</map>
+</div>
+</div>
+<p><a href="light__source__fit_8hh_source.html">[ソースコード]</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+関数</h2></td></tr>
+<tr class="memitem:af52f4c49963bd906b4e02aa62d714fae" id="r_af52f4c49963bd906b4e02aa62d714fae"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="light__source__fit_8hh.html#af52f4c49963bd906b4e02aa62d714fae">FitLightSource</a> (const std::vector&lt; <a class="el" href="structSensorUnit.html">SensorUnit</a> &gt; &amp;sensors, TVector3 &amp;fitted_pos, double &amp;fitted_time, TVector3 &amp;fiterr_pos, double &amp;fiterr_time, double &amp;chi2)</td></tr>
+<tr class="memdesc:af52f4c49963bd906b4e02aa62d714fae"><td class="mdescLeft">&#160;</td><td class="mdescRight">function to fit the light source position and time using Minuit.  <br /></td></tr>
+<tr class="separator:af52f4c49963bd906b4e02aa62d714fae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h2 class="groupheader">関数詳解</h2>
+<a id="af52f4c49963bd906b4e02aa62d714fae" name="af52f4c49963bd906b4e02aa62d714fae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af52f4c49963bd906b4e02aa62d714fae">&#9670;&#160;</a></span>FitLightSource()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void FitLightSource </td>
+          <td>(</td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="structSensorUnit.html">SensorUnit</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>sensors</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">TVector3 &amp;&#160;</td>
+          <td class="paramname"><em>fitted_pos</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>fitted_time</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">TVector3 &amp;&#160;</td>
+          <td class="paramname"><em>fiterr_pos</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>fiterr_time</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double &amp;&#160;</td>
+          <td class="paramname"><em>chi2</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>function to fit the light source position and time using Minuit. </p>
+<dl class="params"><dt>引数</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">sensors</td><td>parameters for the light source fitting (<a class="el" href="structSensorUnit.html">SensorUnit</a> vector) </td></tr>
+    <tr><td class="paramname">fitted_pos</td><td>fitted position of the light source (TVector3, in cm) </td></tr>
+    <tr><td class="paramname">fitted_time</td><td>fitted time of the light source (double, in ns) </td></tr>
+    <tr><td class="paramname">fiterr_pos</td><td>error of the fitted position (TVector3, in cm) </td></tr>
+    <tr><td class="paramname">fiterr_time</td><td>error of the fitted time (double, in ns) </td></tr>
+    <tr><td class="paramname">chi2</td><td>chi-squared value of the fit (double)</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>only sensors are input parameters. </p>
+
+</div>
+</div>
+</div><!-- contents -->
+<!-- start footer part -->
+<hr class="footer"/><address class="footer"><small>
+構築:&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8
+</small></address>
+</body>
+</html>

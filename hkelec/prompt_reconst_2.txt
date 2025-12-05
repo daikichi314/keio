@@ -1,0 +1,131 @@
+これらのコード群は、複数のマルチPMTによる、光源の方向のみを推定するフィッティングを行うプログラムであると思われますが、これを参考に、4つの50 cm PMTを用いて、距離も含めた位置の再構成を行うことを考えています。
+
+以下の関数を見ると、
+
+
+```cpp
+    double CalculateError(double *params) {
+        double maxL = 0;
+        double chi2 = 0.0;
+        for (const auto &pmt : g_pmtData) {
+            NormalizeAngles(params[0], params[1]);
+            std::array<double, 3> Cartesian = ConvertToCartesian(100, params[0], params[1], pmt.center_x, pmt.center_y, pmt.center_z);
+            double dx, dy, dz;
+            // 無限遠光源の場合
+            dx = std::sin(params[0]) * std::cos(params[1]);
+            dy = -std::cos(params[0]);
+            dz = std::sin(params[0]) * std::sin(params[1]);
+            // dx = -pmt.x + Cartesian[0];
+            // dy = -pmt.y + Cartesian[1];
+            // dz = -pmt.z + Cartesian[2]; // rを使う場合はこっち
+            int id = pmt.mPMT_pmtid;
+            // int id =
+            if (id < 0 || id > 19) {
+                std::cout << "Error: PMT ID out of range." << std::endl;
+                continue; // Skip this PMT if the ID is invalid
+            }
+            double ori_x = pmtDirections[id][0];
+            double ori_y = pmtDirections[id][1];
+            double ori_z = pmtDirections[id][2];
+            double cosalpha = CalculateAngle(ori_x, ori_y, ori_z, dx, dy, dz); // Angle between the PMT orientation and the light direction
+            double distance2 = 60;
+            double expectedTime;
+            double model = 0;
+            model = (params[2] / 10000 / (1 + std::exp(-6 * (cosalpha - 1))) + params[3] / 100000);// -6は測定結果によって変更が必要かも N_model
+            if (model < 0) {
+                model = 0;
+            }
+            chi2 += (pmt.L - model * distance2) * (pmt.L - model * distance2) / pmt.L;// chi2
+            // chi2 += (pmt.L - model) * (pmt.L - model) / pmt.L;
+        }
+        return chi2;
+    }
+```
+
+この関数内で、無限遠光源の場合のdx, dy, dzの計算が行われていますが、距離を含めた位置再構成を行うためには、これらの計算を修正し、光源から各PMTまでの距離を考慮する必要があります。具体的には、各PMTの位置情報と光源の位置情報を用いて、光源から各PMTまでのベクトルを計算し、そのベクトルを用いてdx, dy, dzを定義することが考えられます。例えば、以下のように修正できます。   
+
+```cpp
+    double CalculateError(double *params) {
+        double maxL = 0;
+        double chi2 = 0.0;
+        for (const auto &pmt : g_pmtData) {
+            NormalizeAngles(params[0], params[1]);
+            std::array<double, 3> Cartesian = ConvertToCartesian(params[4], params[0], params[1], pmt.center_x, pmt.center_y, pmt.center_z); // params[4] is the distance r
+            double dx, dy, dz;
+            // 有限距離光源の場合
+            dx = Cartesian[0] - pmt.x;
+            dy = Cartesian[1] - pmt.y;
+            dz = Cartesian[2] - pmt.z;
+            int id = pmt.mPMT_pmtid;
+            if (id < 0 || id > 19) {
+                std::cout << "Error: PMT ID out of range." << std::endl;
+                continue; // Skip this PMT if the ID is invalid
+            }
+            double ori_x = pmtDirections[id][0];
+            double ori_y = pmtDirections[id][1];
+            double ori_z = pmtDirections[id][2];
+            double cosalpha = CalculateAngle(ori_x, ori_y, ori_z, dx, dy, dz); // Angle between the PMT orientation and the light direction
+            double distance2 = std::sqrt(dx*dx + dy*dy + dz*dz); // Calculate actual distance to PMT
+            double expectedTime;
+            double model = 0;
+            model = (params[2] / 10000 / (1 + std::exp(-6 * (cosalpha - 1))) + params[3] / 100000);// -6は測定結果によって変更が必要かも N_model
+            if (model < 0) {
+                model = 0;
+            }
+            chi2 += (pmt.L - model * distance2) * (pmt.L - model * distance2) / pmt.L;// chi2
+        }
+        return chi2;
+    }
+```
+また、フィッティング関数内でパラメータの定義を行っている部分も修正が必要です。具体的には、距離rに対応するパラメータを追加し、その範囲を適切に設定する必要があります。例えば、以下のように修正できます。
+```cpp
+    int fitting(double &fit_theta, double &fit_phi, double &err_theta, double &err_phi,
+                double &minimized) {
+        TMinuit minuit(5); // rを増やすなら+1
+        // Set FCN function (fit function)
+        minuit.SetFCN(FcnForMinuit);// Set the function to be minimized
+        minuit.SetPrintLevel(-1);// Suppress output
+
+        double maxL = 0;
+        for (const auto &pmt : g_pmtData) {
+            if (pmt.L > maxL) {
+                maxL = pmt.L;
+            }
+        }
+        maxL = maxL * 10;
+        if (maxL > 800)
+            maxL = 800; // Set a maximum limit for maxL to avoid overflow in fitting
+        minuit.DefineParameter(0, "theta_light", 0, 0.1, (-TMath::Pi() / 2), (TMath::Pi() / 2)); // 0 to pi/2
+        minuit.DefineParameter(1, "phi_light", 0, 0.3, -TMath::Pi() * 2, TMath::Pi() * 2);       // -pi to pi times 2
+        minuit.DefineParameter(2, "A", maxL, 0.1, 0, 1000);
+        minuit.DefineParameter(3, "B", 0, 0.1, 0, 1000);
+        minuit.DefineParameter(4, "r_light", 60, 1, 3, 400.0);  // rのやつ                                 // 3 to 400
+
+        // Perform the minimization
+        int ierflg = 0;
+        minuit.Migrad(); // Use Migrad algorithm for minimization
+
+        // Retrieve the results
+        double theta_fit, phi_fit, r_fit;
+        double theta_err, phi_err, r_err;
+        minuit.GetParameter(0, theta_fit, theta_err);
+        minuit.GetParameter(1, phi_fit, phi_err);
+        minuit.GetParameter(4, r_fit, r_err);
+
+        fit_theta = theta_fit;
+        fit_phi = phi_fit;
+        err_theta = theta_err;
+        err_phi = phi_err;
+        minimized = 0;
+        minuit.GetChisquare(minimized); // Get the minimized chi-square value
+        return ierflg;
+    }
+```
+
+
+fukazawaフォルダ内にはmain.ccを中心としたコード群がありますが、これらにより作成される実行ファイル"reconstructor"の内容、使い方を教えてください。すなわち、具体的な入力ファイル、入力ファイルに含まれているべき情報(key, TTreeなど)、出力ファイルの具体的な内容、内部での具体的な処理を、詳細に教えてください。特に入出力の内容や形式はコードを今後書き換えるために必要なので、正確に丁寧に答えてください。
+
+
+
+memo
+光量に関するフィットはすべてのPMTで共通のパラメータparams[2], params[3]を用いて行っている。しかし、今回はPMTごとに異なるパラメータを用いてフィットを行いたい。具体的には、PMTごとにparams[2], params[3]を用意し、PMT#1にはparams1[2], params1[3]、PMT#2にはparams2[2], params2[3]、... のようにしてフィットを行いたい。

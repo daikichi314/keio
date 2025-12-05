@@ -1,0 +1,239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.9.8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HKElec Fukazawa Analysis: fittinginput.hh ファイル</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">HKElec Fukazawa Analysis<span id="projectnumber">&#160;0.1</span>
+   </div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- 構築: Doxygen 1.9.8 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() {
+  initMenu('',true,false,'search.php','検索');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */
+</script>
+<div id="main-nav"></div>
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">読み取り中…</div>
+<div class="SRStatus" id="Searching">検索中…</div>
+<div class="SRStatus" id="NoMatches">一致する文字列を見つけられません</div>
+</div>
+</div>
+</div>
+</div>
+
+</div><!-- top -->
+<div class="header">
+  <div class="summary">
+<a href="#nested-classes">クラス</a> &#124;
+<a href="#var-members">変数</a>  </div>
+  <div class="headertitle"><div class="title">fittinginput.hh ファイル</div></div>
+</div><!--header-->
+<div class="contents">
+<div class="textblock"><code>#include &quot;TVector3.h&quot;</code><br />
+<code>#include &lt;vector&gt;</code><br />
+</div><div class="textblock"><div class="dynheader">
+fittinginput.hh の依存先関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="fittinginput_8hh__incl.png" border="0" usemap="#afittinginput_8hh" alt=""/></div>
+<map name="afittinginput_8hh" id="afittinginput_8hh">
+<area shape="rect" title=" " alt="" coords="45,5,158,31"/>
+<area shape="rect" title=" " alt="" coords="5,79,96,104"/>
+<area shape="poly" title=" " alt="" coords="95,33,69,69,65,66,91,29"/>
+<area shape="rect" title=" " alt="" coords="121,79,183,104"/>
+<area shape="poly" title=" " alt="" coords="112,29,138,66,134,69,108,33"/>
+</map>
+</div>
+</div><div class="textblock"><div class="dynheader">
+被依存関係図:</div>
+<div class="dyncontent">
+<div class="center"><img src="fittinginput_8hh__dep__incl.png" border="0" usemap="#afittinginput_8hhdep" alt=""/></div>
+<map name="afittinginput_8hhdep" id="afittinginput_8hhdep">
+<area shape="rect" title=" " alt="" coords="291,5,405,31"/>
+<area shape="rect" href="light__source__fit_8hh.html" title=" " alt="" coords="53,79,195,104"/>
+<area shape="poly" title=" " alt="" coords="300,37,161,81,159,76,298,32"/>
+<area shape="rect" href="main_8cc.html" title=" " alt="" coords="293,225,366,251"/>
+<area shape="poly" title=" " alt="" coords="329,42,291,91,273,121,260,153,257,165,260,176,281,204,308,223,305,227,278,208,255,178,252,165,255,151,268,118,287,88,325,39"/>
+<area shape="rect" href="onemPMTfit_8cc.html" title=" " alt="" coords="270,152,389,177"/>
+<area shape="poly" title=" " alt="" coords="339,44,328,79,326,119,330,151,324,152,321,119,323,78,334,42"/>
+<area shape="rect" href="onemPMTfit_8hh.html" title=" " alt="" coords="337,79,457,104"/>
+<area shape="poly" title=" " alt="" coords="366,41,392,77,387,80,362,44"/>
+<area shape="rect" href="readData_8cc.html" title=" " alt="" coords="465,152,565,177"/>
+<area shape="poly" title=" " alt="" coords="399,33,437,51,471,77,486,95,498,115,513,150,509,153,494,117,482,98,468,81,434,56,397,38"/>
+<area shape="rect" href="readData_8hh.html" title=" " alt="" coords="533,79,635,104"/>
+<area shape="poly" title=" " alt="" coords="400,32,547,76,545,81,398,37"/>
+<area shape="rect" href="light__source__fit_8cc.html" title=" " alt="" coords="5,152,144,177"/>
+<area shape="poly" title=" " alt="" coords="110,117,85,153,80,150,106,114"/>
+<area shape="poly" title=" " alt="" coords="145,113,177,144,215,175,260,202,303,223,301,228,258,207,212,180,173,148,142,116"/>
+<area shape="poly" title=" " alt="" coords="130,178,293,224,292,229,128,184"/>
+<area shape="poly" title=" " alt="" coords="332,191,332,225,327,225,327,191"/>
+<area shape="poly" title=" " alt="" coords="406,117,409,147,402,178,380,207,353,227,350,223,376,204,398,176,404,147,401,118"/>
+<area shape="poly" title=" " alt="" coords="379,116,342,154,338,150,375,112"/>
+<area shape="poly" title=" " alt="" coords="473,185,361,228,359,223,471,180"/>
+<area shape="poly" title=" " alt="" coords="591,117,591,149,587,165,578,179,563,191,541,201,485,217,366,236,366,230,483,212,539,196,560,186,574,176,582,163,586,148,586,117"/>
+<area shape="poly" title=" " alt="" coords="565,116,528,154,524,150,561,112"/>
+</map>
+</div>
+</div>
+<p><a href="fittinginput_8hh_source.html">[ソースコード]</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
+クラス</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structPMTData.html">PMTData</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structid__L.html">id_L</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structSensorUnit.html">SensorUnit</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
+変数</h2></td></tr>
+<tr class="memitem:ae7dbd2b3f507b1199e5749b157929a0e" id="r_ae7dbd2b3f507b1199e5749b157929a0e"><td class="memItemLeft" align="right" valign="top">const double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="fittinginput_8hh.html#ae7dbd2b3f507b1199e5749b157929a0e">pmtDirections</a> [20][3]</td></tr>
+<tr class="separator:ae7dbd2b3f507b1199e5749b157929a0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a493a15bd40482a002847210ed8fa8ba4" id="r_a493a15bd40482a002847210ed8fa8ba4"><td class="memItemLeft" align="right" valign="top">const double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="fittinginput_8hh.html#a493a15bd40482a002847210ed8fa8ba4">pmt19orientations</a> [369][3]</td></tr>
+<tr class="separator:a493a15bd40482a002847210ed8fa8ba4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb782434016a2c5bcb6df1c0eec03a8f" id="r_afb782434016a2c5bcb6df1c0eec03a8f"><td class="memItemLeft" align="right" valign="top">const double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="fittinginput_8hh.html#afb782434016a2c5bcb6df1c0eec03a8f">pmt1orientations</a> [369][3]</td></tr>
+<tr class="separator:afb782434016a2c5bcb6df1c0eec03a8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a04df5323f2e95437fc4878740efe03" id="r_a4a04df5323f2e95437fc4878740efe03"><td class="memItemLeft" align="right" valign="top">const double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="fittinginput_8hh.html#a4a04df5323f2e95437fc4878740efe03">pmt4orientations</a> [369][3]</td></tr>
+<tr class="separator:a4a04df5323f2e95437fc4878740efe03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h2 class="groupheader">変数詳解</h2>
+<a id="a493a15bd40482a002847210ed8fa8ba4" name="a493a15bd40482a002847210ed8fa8ba4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a493a15bd40482a002847210ed8fa8ba4">&#9670;&#160;</a></span>pmt19orientations</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const double pmt19orientations[369][3]</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition"> <a class="el" href="fittinginput_8hh_source.html">fittinginput.hh</a> の <a class="el" href="fittinginput_8hh_source.html#l00054">54</a> 行目に定義があります。</p>
+
+</div>
+</div>
+<a id="afb782434016a2c5bcb6df1c0eec03a8f" name="afb782434016a2c5bcb6df1c0eec03a8f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afb782434016a2c5bcb6df1c0eec03a8f">&#9670;&#160;</a></span>pmt1orientations</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const double pmt1orientations[369][3]</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition"> <a class="el" href="fittinginput_8hh_source.html">fittinginput.hh</a> の <a class="el" href="fittinginput_8hh_source.html#l00426">426</a> 行目に定義があります。</p>
+
+</div>
+</div>
+<a id="a4a04df5323f2e95437fc4878740efe03" name="a4a04df5323f2e95437fc4878740efe03"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4a04df5323f2e95437fc4878740efe03">&#9670;&#160;</a></span>pmt4orientations</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const double pmt4orientations[369][3]</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition"> <a class="el" href="fittinginput_8hh_source.html">fittinginput.hh</a> の <a class="el" href="fittinginput_8hh_source.html#l00798">798</a> 行目に定義があります。</p>
+
+</div>
+</div>
+<a id="ae7dbd2b3f507b1199e5749b157929a0e" name="ae7dbd2b3f507b1199e5749b157929a0e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7dbd2b3f507b1199e5749b157929a0e">&#9670;&#160;</a></span>pmtDirections</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const double pmtDirections[20][3]</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>初期値:</b><div class="fragment"><div class="line">= {</div>
+<div class="line">    </div>
+<div class="line">    {0.0, 0.0, 0.0}, </div>
+<div class="line">    {0.587785252, -0.809016994, 0.000000000},</div>
+<div class="line">    {0.509036960, -0.809016994, 0.293892626},</div>
+<div class="line">    {0.293892626, -0.809016994, 0.509036960},</div>
+<div class="line">    {0.000000000, -0.809016994, 0.587785252},</div>
+<div class="line">    {-0.293892626, -0.809016994, 0.509036960},</div>
+<div class="line">    {-0.509036960, -0.809016994, 0.293892626},</div>
+<div class="line">    {-0.587785252, -0.809016994, 0.000000000},</div>
+<div class="line">    {-0.509036960, -0.809016994, -0.293892626},</div>
+<div class="line">    {-0.293892626, -0.809016994, -0.509036960},</div>
+<div class="line">    {0.000000000, -0.809016994, -0.587785252},</div>
+<div class="line">    {0.293892626, -0.809016994, -0.509036960},</div>
+<div class="line">    {0.509036960, -0.809016994, -0.293892626},</div>
+<div class="line">    {0.309016994, -0.951056516, 0.000000000},</div>
+<div class="line">    {0.154508497, -0.951056516, 0.267616567},</div>
+<div class="line">    {-0.154508497, -0.951056516, 0.267616567},</div>
+<div class="line">    {-0.309016994, -0.951056516, 0.000000000},</div>
+<div class="line">    {-0.154508497, -0.951056516, -0.267616567},</div>
+<div class="line">    {0.154508497, -0.951056516, -0.267616567},</div>
+<div class="line">    {0.000000000, -1.000000000, 0.000000000},</div>
+<div class="line">}</div>
+</div><!-- fragment -->
+<p class="definition"> <a class="el" href="fittinginput_8hh_source.html">fittinginput.hh</a> の <a class="el" href="fittinginput_8hh_source.html#l00030">30</a> 行目に定義があります。</p>
+
+</div>
+</div>
+</div><!-- contents -->
+<!-- start footer part -->
+<hr class="footer"/><address class="footer"><small>
+構築:&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8
+</small></address>
+</body>
+</html>

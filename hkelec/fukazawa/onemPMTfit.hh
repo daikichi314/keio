@@ -1,4 +1,4 @@
-// 1mPMTfit.hh
+// onemPMTfit.hh
 #ifndef ONE_MPMT_FIT_HH
 #define ONE_MPMT_FIT_HH
 #include "fittinginput.hh"

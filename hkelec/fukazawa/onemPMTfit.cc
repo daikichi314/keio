@@ -1,3 +1,4 @@
+// onemPMTfit.cc
 // r theta phi 球座標系でフィッティング 現行版
 #include "onemPMTfit.hh"
 #include "TBox.h"
@@ -64,6 +65,7 @@ double CalculateAngle(double x1, double y1, double z1, double x2, double y2, dou
     return cosalpha;
 }
 
+// 球座標系と直交座標系の変換関数
 std::array<double, 3> ConvertToSpherical(
     double x, double y, double z,
     double x0, double y0, double z0 // 球座標の原点
@@ -84,6 +86,8 @@ std::array<double, 3> ConvertToCartesian(
     return {x, y, z};
 }
 
+// 角度の正規化関数 
+// θを[0, π]に、φを[-π, π]に収める
 void NormalizeAngles(double &theta, double &phi) {
     if (theta < 0) {
         theta = -theta;
@@ -110,6 +114,13 @@ void NormalizeAngles(double &theta, double &phi) {
  * @param expand_after    グループ発見時に後に拡張する時間幅（ns）
  * @return std::vector<PMTData> グループ化されたPMTデータのリスト
  */
+
+
+// グルーピングと拡張を行う関数
+// 1. ヒットを時刻順にソート
+// 2. 各ヒットについて、そのヒットを中心にtau秒以内の他のヒットをカウント
+// 3. ヒット数がn以上なら、そのヒットを中心に前後にexpand_before, expand_after秒拡張した範囲のヒットをグループに追加
+// 4. グループに追加したヒットは再度グループに使わないようにする        
 std::vector<PMTData> findExpandedGroups(const std::vector<PMTData> &pmtData,
                                         double tau,
                                         int n,
@@ -202,17 +213,18 @@ std::vector<PMTData> findExpandedGroups(const std::vector<PMTData> &pmtData,
 
 double CalculateError(double *params) {
     double maxL = 0;
-    double is_minimized = 0.0;
+    double chi2 = 0.0;
     for (const auto &pmt : g_pmtData) {
         NormalizeAngles(params[0], params[1]);
         std::array<double, 3> Cartesian = ConvertToCartesian(100, params[0], params[1], pmt.center_x, pmt.center_y, pmt.center_z);
         double dx, dy, dz;
+        // 無限遠光源の場合
         dx = std::sin(params[0]) * std::cos(params[1]);
         dy = -std::cos(params[0]);
         dz = std::sin(params[0]) * std::sin(params[1]);
         // dx = -pmt.x + Cartesian[0];
         // dy = -pmt.y + Cartesian[1];
-        // dz = -pmt.z + Cartesian[2];
+        // dz = -pmt.z + Cartesian[2]; // rを使う場合はこっち
         int id = pmt.mPMT_pmtid;
         // int id =
         if (id < 0 || id > 19) {
@@ -226,14 +238,14 @@ double CalculateError(double *params) {
         double distance2 = 60;
         double expectedTime;
         double model = 0;
-        model = (params[2] / 10000 / (1 + std::exp(-6 * (cosalpha - 1))) + params[3] / 100000);
+        model = (params[2] / 10000 / (1 + std::exp(-6 * (cosalpha - 1))) + params[3] / 100000);// -6は測定結果によって変更が必要かも N_model
         if (model < 0) {
             model = 0;
         }
-        is_minimized += (pmt.L - model * distance2) * (pmt.L - model * distance2) / pmt.L;
-        // is_minimized += (pmt.L - model) * (pmt.L - model) / pmt.L;
+        chi2 += (pmt.L - model * distance2) * (pmt.L - model * distance2) / pmt.L;// chi2
+        // chi2 += (pmt.L - model) * (pmt.L - model) / pmt.L;
     }
-    return is_minimized;
+    return chi2;
 }
 
 static void FcnForMinuit(Int_t &npar, Double_t *grad, Double_t &fval, Double_t *par, Int_t flag) {
@@ -242,10 +254,10 @@ static void FcnForMinuit(Int_t &npar, Double_t *grad, Double_t &fval, Double_t *
 
 int fitting(double &fit_theta, double &fit_phi, double &err_theta, double &err_phi,
             double &minimized) {
-    TMinuit minuit(4);
+    TMinuit minuit(4);// rを増やすなら+1
     // Set FCN function (fit function)
-    minuit.SetFCN(FcnForMinuit);
-    minuit.SetPrintLevel(-1);
+    minuit.SetFCN(FcnForMinuit);// Set the function to be minimized
+    minuit.SetPrintLevel(-1);// Suppress output
 
     double maxL = 0;
     for (const auto &pmt : g_pmtData) {
@@ -255,7 +267,7 @@ int fitting(double &fit_theta, double &fit_phi, double &err_theta, double &err_p
     maxL = maxL * 10;
     if (maxL > 800)
         maxL = 800; // Set a maximum limit for maxL to avoid overflow in fitting
-    // minuit.DefineParameter(5, "r_light", 60, 1, 3, 400.0);                                   // 3 to 400
+    // minuit.DefineParameter(5, "r_light", 60, 1, 3, 400.0);  // rのやつ                                 // 3 to 400
     minuit.DefineParameter(0, "theta_light", 0, 0.1, (-TMath::Pi() / 2), (TMath::Pi() / 2)); // 0 to pi/2
     minuit.DefineParameter(1, "phi_light", 0, 0.3, -TMath::Pi() * 2, TMath::Pi() * 2);       // -pi to pi times 2
     minuit.DefineParameter(2, "A", maxL, 0.1, 0, 1000);
@@ -265,9 +277,9 @@ int fitting(double &fit_theta, double &fit_phi, double &err_theta, double &err_p
     // No need for t_light here as it is a loop variable
 
     // Start the fitting process
-    int status = minuit.Migrad();
-    minuit.GetParameter(0, fit_theta, err_theta);
-    minuit.GetParameter(1, fit_phi, err_phi);
+    int status = minuit.Migrad();// Perform the minimization
+    minuit.GetParameter(0, fit_theta, err_theta);// Retrieve fitted parameters and their errors
+    minuit.GetParameter(1, fit_phi, err_phi);// Retrieve fitted parameters and their errors
 
     double fval, fedm, errdef;
     int nvpar, nparx, istat;
@@ -276,7 +288,7 @@ int fitting(double &fit_theta, double &fit_phi, double &err_theta, double &err_p
     // std::cout << "minimized is " << minimized << std::endl;
 
     minuit.Clear();
-    return status;
+    return status;// あんまりいらないかも
 }
 
 // Function to perform the fitting process
@@ -295,7 +307,7 @@ void FitPosition(std::vector<PMTData> &pmtData,
     double minimized = 0;
     int status = fitting(fit_theta, fit_phi, err_theta, err_phi, minimized);
     if (status != 0) {
-        // std::cout << "Fitting failed with status: " << status << std::endl;
+         std::cout << "Fitting failed with status: " << status << std::endl;
         return;
     }
     NormalizeAngles(fit_theta, fit_phi);

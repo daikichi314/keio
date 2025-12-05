@@ -1,0 +1,405 @@
+\doxysection{onem\+PMTfit.\+cc}
+\hypertarget{onemPMTfit_8cc_source}{}\label{onemPMTfit_8cc_source}\mbox{\hyperlink{onemPMTfit_8cc}{\mbox{[}詳解\mbox{]}}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00001}00001\ \textcolor{comment}{//\ r\ theta\ phi\ 球座標系でフィッティング\ 現行版}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00002}00002\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{onemPMTfit_8hh}{onemPMTfit.hh}}"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00003}00003\ \textcolor{preprocessor}{\#include\ "{}TBox.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00004}00004\ \textcolor{preprocessor}{\#include\ "{}TBranch.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00005}00005\ \textcolor{preprocessor}{\#include\ "{}TCanvas.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00006}00006\ \textcolor{preprocessor}{\#include\ "{}TChain.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00007}00007\ \textcolor{preprocessor}{\#include\ "{}TEllipse.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00008}00008\ \textcolor{preprocessor}{\#include\ "{}TFile.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00009}00009\ \textcolor{preprocessor}{\#include\ "{}TH1F.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00010}00010\ \textcolor{preprocessor}{\#include\ "{}TH2F.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00011}00011\ \textcolor{preprocessor}{\#include\ "{}TMath.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00012}00012\ \textcolor{preprocessor}{\#include\ "{}TObject.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00013}00013\ \textcolor{preprocessor}{\#include\ "{}TROOT.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00014}00014\ \textcolor{preprocessor}{\#include\ "{}TStyle.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00015}00015\ \textcolor{preprocessor}{\#include\ "{}TSystem.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00016}00016\ \textcolor{preprocessor}{\#include\ "{}TSystemDirectory.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00017}00017\ \textcolor{preprocessor}{\#include\ "{}TTree.h"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00018}00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{fittinginput_8hh}{fittinginput.hh}}"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00019}00019\ \textcolor{preprocessor}{\#include\ <TMinuit.h>}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00020}00020\ \textcolor{preprocessor}{\#include\ <chrono>}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00021}00021\ \textcolor{preprocessor}{\#include\ <cmath>}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00022}00022\ \textcolor{preprocessor}{\#include\ <fstream>}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00023}00023\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00024}00024\ \textcolor{preprocessor}{\#include\ <random>}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00025}00025\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00026}00026\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00027}00027\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00028}00028\ \textcolor{comment}{//\ \#include\ "{}WCSimRootPMT.hh"{}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00029}00029\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00030}00030\ \textcolor{comment}{//\ Global\ constants\ and\ variables}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00031}\mbox{\hyperlink{onemPMTfit_8cc_a973fb851d96ddc866bae8e425dbed0f4}{00031}}\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{onemPMTfit_8cc_a973fb851d96ddc866bae8e425dbed0f4}{t\_light}};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00032}\mbox{\hyperlink{onemPMTfit_8cc_a53cb37d255c296056650850a78d969d9}{00032}}\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{onemPMTfit_8cc_a53cb37d255c296056650850a78d969d9}{error\_min}},\ \mbox{\hyperlink{onemPMTfit_8cc_a2f52cbcf3a145ad9ba1d916b7056df75}{fitting\_accuracy}};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00033}\mbox{\hyperlink{onemPMTfit_8cc_aead00cbfe20f2a957a7949628920f685}{00033}}\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{onemPMTfit_8cc_aead00cbfe20f2a957a7949628920f685}{firsthit\_time}};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00034}00034\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00035}\mbox{\hyperlink{onemPMTfit_8cc_a1f7faee2ef4fb527dac27e141049ee7e}{00035}}\ \textcolor{keyword}{static}\ TFile\ *\mbox{\hyperlink{onemPMTfit_8cc_a1f7faee2ef4fb527dac27e141049ee7e}{outputrootfile}};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00036}\mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{00036}}\ \textcolor{keyword}{static}\ TTree\ *\mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00037}00037\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00038}00038\ \textcolor{comment}{//\ Prepare\ a\ vector\ to\ store\ PMT\ data}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00039}\mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{00039}}\ \textcolor{keyword}{static}\ std::vector<PMTData>\ \mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\_pmtData}};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00040}00040\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00041}00041\ \textcolor{comment}{//\ 2つのベクトルがなす角を計算する関数}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00042}\mbox{\hyperlink{onemPMTfit_8cc_a35baad4a0c898615f0ec4b47d964fc28}{00042}}\ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{onemPMTfit_8cc_a35baad4a0c898615f0ec4b47d964fc28}{CalculateAngle}}(\textcolor{keywordtype}{double}\ x1,\ \textcolor{keywordtype}{double}\ y1,\ \textcolor{keywordtype}{double}\ z1,\ \textcolor{keywordtype}{double}\ x2,\ \textcolor{keywordtype}{double}\ y2,\ \textcolor{keywordtype}{double}\ z2)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00043}00043\ \ \ \ \ \textcolor{comment}{//\ ベクトルの内積}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00044}00044\ \ \ \ \ \textcolor{keywordtype}{double}\ dotProduct\ =\ x1\ *\ x2\ +\ y1\ *\ y2\ +\ z1\ *\ z2;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00045}00045\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00046}00046\ \ \ \ \ \textcolor{comment}{//\ ベクトルの大きさ}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00047}00047\ \ \ \ \ \textcolor{keywordtype}{double}\ magnitude1\ =\ std::sqrt(x1\ *\ x1\ +\ y1\ *\ y1\ +\ z1\ *\ z1);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00048}00048\ \ \ \ \ \textcolor{keywordtype}{double}\ magnitude2\ =\ std::sqrt(x2\ *\ x2\ +\ y2\ *\ y2\ +\ z2\ *\ z2);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00049}00049\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00050}00050\ \ \ \ \ \textcolor{comment}{//\ ベクトルの大きさが0の場合はエラー}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00051}00051\ \ \ \ \ \textcolor{keywordflow}{if}\ (magnitude1\ ==\ 0\ ||\ magnitude2\ ==\ 0)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00052}00052\ \ \ \ \ \ \ \ \ std::cerr\ <<\ \textcolor{stringliteral}{"{}Error:\ One\ or\ both\ vectors\ have\ zero\ magnitude."{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00053}00053\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1.0;\ \textcolor{comment}{//\ エラー値}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00054}00054\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00055}00055\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00056}00056\ \ \ \ \ \textcolor{comment}{//\ なす角（ラジアン）の計算}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00057}00057\ \ \ \ \ \textcolor{keywordtype}{double}\ cosalpha\ =\ dotProduct\ /\ (magnitude1\ *\ magnitude2);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00058}00058\ \ \ \ \ \textcolor{comment}{//\ 丸め誤差対策（cosThetaが[-\/1,\ 1]の範囲を超えることを防ぐ）}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00059}00059\ \ \ \ \ \textcolor{keywordflow}{if}\ (cosalpha\ >\ 1.0)}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00060}00060\ \ \ \ \ \ \ \ \ cosalpha\ =\ 1.0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00061}00061\ \ \ \ \ \textcolor{keywordflow}{if}\ (cosalpha\ <\ -\/1.0)}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00062}00062\ \ \ \ \ \ \ \ \ cosalpha\ =\ -\/1.0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00063}00063\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00064}00064\ \ \ \ \ \textcolor{keywordflow}{return}\ cosalpha;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00065}00065\ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00066}00066\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00067}\mbox{\hyperlink{onemPMTfit_8cc_a4162f29900eeb6ec8dcdcd5f642b62df}{00067}}\ std::array<double,\ 3>\ \mbox{\hyperlink{onemPMTfit_8cc_a4162f29900eeb6ec8dcdcd5f642b62df}{ConvertToSpherical}}(}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00068}00068\ \ \ \ \ \textcolor{keywordtype}{double}\ x,\ \textcolor{keywordtype}{double}\ y,\ \textcolor{keywordtype}{double}\ z,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00069}00069\ \ \ \ \ \textcolor{keywordtype}{double}\ x0,\ \textcolor{keywordtype}{double}\ y0,\ \textcolor{keywordtype}{double}\ z0\ \textcolor{comment}{//\ 球座標の原点}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00070}00070\ )\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00071}00071\ \ \ \ \ \textcolor{keywordtype}{double}\ dx\ =\ x\ -\/\ x0,\ dy\ =\ y\ -\/\ y0,\ dz\ =\ z\ -\/\ z0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00072}00072\ \ \ \ \ \textcolor{keywordtype}{double}\ r\ =\ std::sqrt(dx\ *\ dx\ +\ dy\ *\ dy\ +\ dz\ *\ dz);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00073}00073\ \ \ \ \ \textcolor{keywordtype}{double}\ theta\ =\ std::acos(-\/dy\ /\ r);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00074}00074\ \ \ \ \ \textcolor{keywordtype}{double}\ phi\ =\ std::atan2(dz,\ dx);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00075}00075\ \ \ \ \ \textcolor{keywordflow}{return}\ \{r,\ theta,\ phi\};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00076}00076\ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00077}\mbox{\hyperlink{onemPMTfit_8cc_ad2b882242ae4f63158e7e4a6d4316f75}{00077}}\ std::array<double,\ 3>\ \mbox{\hyperlink{onemPMTfit_8cc_ad2b882242ae4f63158e7e4a6d4316f75}{ConvertToCartesian}}(}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00078}00078\ \ \ \ \ \textcolor{keywordtype}{double}\ r,\ \textcolor{keywordtype}{double}\ theta,\ \textcolor{keywordtype}{double}\ phi,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00079}00079\ \ \ \ \ \textcolor{keywordtype}{double}\ x0,\ \textcolor{keywordtype}{double}\ y0,\ \textcolor{keywordtype}{double}\ z0\ \textcolor{comment}{//\ 球座標の原点}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00080}00080\ )\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00081}00081\ \ \ \ \ \textcolor{keywordtype}{double}\ x\ =\ r\ *\ std::sin(theta)\ *\ std::cos(phi)\ +\ x0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00082}00082\ \ \ \ \ \textcolor{keywordtype}{double}\ y\ =\ -\/r\ *\ std::cos(theta)\ +\ y0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00083}00083\ \ \ \ \ \textcolor{keywordtype}{double}\ z\ =\ r\ *\ std::sin(theta)\ *\ std::sin(phi)\ +\ z0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00084}00084\ \ \ \ \ \textcolor{keywordflow}{return}\ \{x,\ y,\ z\};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00085}00085\ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00086}00086\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00087}\mbox{\hyperlink{onemPMTfit_8cc_a037ebc409ff7e3e33ebb210b503c7e2e}{00087}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{onemPMTfit_8cc_a037ebc409ff7e3e33ebb210b503c7e2e}{NormalizeAngles}}(\textcolor{keywordtype}{double}\ \&theta,\ \textcolor{keywordtype}{double}\ \&phi)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00088}00088\ \ \ \ \ \textcolor{keywordflow}{if}\ (theta\ <\ 0)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00089}00089\ \ \ \ \ \ \ \ \ theta\ =\ -\/theta;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00090}00090\ \ \ \ \ \ \ \ \ phi\ +=\ TMath::Pi();}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00091}00091\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00092}00092\ \ \ \ \ \textcolor{keywordflow}{if}\ (theta\ >\ TMath::Pi())\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00093}00093\ \ \ \ \ \ \ \ \ theta\ =\ 2\ *\ TMath::Pi()\ -\/\ theta;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00094}00094\ \ \ \ \ \ \ \ \ phi\ +=\ TMath::Pi();}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00095}00095\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00096}00096\ \ \ \ \ \textcolor{comment}{//\ φ\ を\ [-\/π,\ π]\ に戻す}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00097}00097\ \ \ \ \ \textcolor{keywordflow}{while}\ (phi\ <=\ -\/TMath::Pi())}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00098}00098\ \ \ \ \ \ \ \ \ phi\ +=\ 2\ *\ TMath::Pi();}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00099}00099\ \ \ \ \ \textcolor{keywordflow}{while}\ (phi\ >\ TMath::Pi())}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00100}00100\ \ \ \ \ \ \ \ \ phi\ -\/=\ 2\ *\ TMath::Pi();}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00101}00101\ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00102}00102\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00113}\mbox{\hyperlink{onemPMTfit_8cc_a0849c3a1ef2dc7b82ae2b4b5a0d115ed}{00113}}\ std::vector<PMTData>\ \mbox{\hyperlink{onemPMTfit_8cc_a0849c3a1ef2dc7b82ae2b4b5a0d115ed}{findExpandedGroups}}(\textcolor{keyword}{const}\ std::vector<PMTData>\ \&pmtData,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00114}00114\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ tau,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00115}00115\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ n,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00116}00116\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ expand\_before,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00117}00117\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ expand\_after)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00118}00118\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00119}00119\ \ \ \ \ \textcolor{comment}{//\ ヒットを時刻順にpmtdataを並び替え（元の順序は保持されない）}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00120}00120\ \ \ \ \ std::vector<PMTData>\ sorted\_hits\ =\ pmtData;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00121}00121\ \ \ \ \ std::sort(sorted\_hits.begin(),\ sorted\_hits.end(),}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00122}00122\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [](\textcolor{keyword}{const}\ \mbox{\hyperlink{structPMTData}{PMTData}}\ \&a,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structPMTData}{PMTData}}\ \&b)\ \{\ return\ a.t\ <\ b.t;\ \});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00123}00123\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00124}00124\ \ \ \ \ std::set<int>\ used;\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ すでにグループに使われたヒットのインデックス}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00125}00125\ \ \ \ \ std::vector<PMTData>\ true\_hits;\ \textcolor{comment}{//\ 実際に使うヒット}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00126}00126\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00127}00127\ \ \ \ \ \textcolor{comment}{//\ unuseがあるかのチェック変数}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00128}00128\ \ \ \ \ \textcolor{keywordtype}{int}\ unuse\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00129}00129\ \ \ \ \ \textcolor{comment}{//\ ヒットごとにスキャン}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00130}00130\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ i\ =\ 0;\ i\ <\ sorted\_hits.size();\ ++i)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00131}00131\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ すでにグループに使われたらスキップ}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00132}00132\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (used.count(i))\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00133}00133\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ std::cout\ <<\ "{}this\ is\ used"{}\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00134}00134\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00135}00135\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00136}00136\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00137}00137\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ time\_i\ =\ sorted\_hits[i].t;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00138}00138\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 現在のヒットを中心に、tau秒以内の他のヒットをカウント}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00139}00139\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ count\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00140}00140\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ j\ =\ i;\ j\ <\ sorted\_hits.size();\ ++j)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00141}00141\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ std::cout\ <<\ "{}\ checking\ "{}\ <<\ j\ <<\ "{},\ and\ this\ time\ is\ "{}\ <<\ sorted\_hits[j].t\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00142}00142\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (sorted\_hits[j].t\ -\/\ time\_i\ >\ tau)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00143}00143\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ std::cout\ <<\ "{}tau\ is\ over,\ tau\ is\ "{}\ <<\ tau\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00144}00144\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{continue};\ \textcolor{comment}{//\ tau秒を超えたら終了}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00145}00145\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00146}00146\ \ \ \ \ \ \ \ \ \ \ \ \ count++;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00147}00147\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ ヒット数がn未満ならスキップ（グループとみなさない）}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00148}00148\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00149}00149\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (count\ <\ n)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00150}00150\ \ \ \ \ \ \ \ \ \ \ \ \ count\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00151}00151\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00152}00152\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00153}00153\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00154}00154\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ グループと認められたので、前後に拡張する}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00155}00155\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ t\_start\ =\ time\_i\ -\/\ expand\_before;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00156}00156\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ t\_end\ =\ time\_i\ +\ expand\_after;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00157}00157\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 拡張した時間範囲にあるヒットをグループに追加}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00158}00158\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ j\ =\ 0;\ j\ <\ sorted\_hits.size();\ ++j)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00159}00159\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (sorted\_hits[j].t\ >=\ t\_start\ \&\&\ sorted\_hits[j].t\ <=\ t\_end)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00160}00160\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ true\_hits.push\_back(sorted\_hits[j]);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00161}00161\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ used.insert(j);\ \textcolor{comment}{//\ グループに使ったヒットを記録}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00162}00162\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00163}00163\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00164}00164\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00165}00165\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00166}00166\ \ \ \ \ \textcolor{keywordflow}{return}\ true\_hits;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00167}00167\ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00168}00168\ \textcolor{comment}{//\ void\ writeToRoot(}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00169}00169\ \textcolor{comment}{//\ \ \ \ \ TTree\ *tree,\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ //\ TTree\ object}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00170}00170\ \textcolor{comment}{//\ \ \ \ \ std::vector<double>\ \&fits,\ \ \ //\ fit\ results}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00171}00171\ \textcolor{comment}{//\ \ \ \ \ double\ t\_light,\ \ \ \ \ \ \ \ \ \ \ \ \ \ //\ t\_light}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00172}00172\ \textcolor{comment}{//\ \ \ \ \ std::vector<double>\ \&errors,\ //\ errors\ of\ fits}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00173}00173\ \textcolor{comment}{//\ \ \ \ \ double\ t\_error,\ \ \ \ \ \ \ \ \ \ \ \ \ \ //\ t\_error\ (0\ if\ t\ is\ fixed)}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00174}00174\ \textcolor{comment}{//\ \ \ \ \ double\ minimized,\ \ \ \ \ \ \ \ \ \ \ \ //\ -\/error\_min}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00175}00175\ \textcolor{comment}{//\ \ \ \ \ double\ hitnumber\ \ \ \ \ \ \ \ \ \ \ \ \ //\ how\ many\ PMT\ hits}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00176}00176\ \textcolor{comment}{//\ )\ \{}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00177}00177\ \textcolor{comment}{//\ \ \ \ \ double\ branchFits[3];}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00178}00178\ \textcolor{comment}{//\ \ \ \ \ double\ branchErrors[3];}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00179}00179\ \textcolor{comment}{//\ \ \ \ \ double\ branchTLight\ =\ t\_light;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00180}00180\ \textcolor{comment}{//\ \ \ \ \ double\ branchTError\ =\ t\_error;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00181}00181\ \textcolor{comment}{//\ \ \ \ \ double\ branchG\ =\ minimized;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00182}00182\ \textcolor{comment}{//\ \ \ \ \ double\ branchhitnumber\ =\ hitnumber;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00183}00183\ \textcolor{comment}{//\ \ \ \ \ for\ (int\ i\ =\ 0;\ i\ <\ 3;\ ++i)\ \{}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00184}00184\ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ branchFits[i]\ =\ fits[i];}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00185}00185\ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ branchErrors[i]\ =\ errors[i];}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00186}00186\ \textcolor{comment}{//\ \ \ \ \ \}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00187}00187\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00188}00188\ \textcolor{comment}{//\ \ \ \ \ double\ p\ =\ TMath::Prob(minimized,\ hitnumber\ -\/\ 4);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00189}00189\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00190}00190\ \textcolor{comment}{//\ \ \ \ \ //\ std::cout\ <<\ "{}r,\ theta,\ phi\ =\ "{}\ <<\ branchFits[0]\ <<\ "{},\ "{}\ <<\ branchFits[1]\ <<\ "{},\ "{}\ <<\ branchFits[2]\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00191}00191\ \textcolor{comment}{//\ \ \ \ \ //\ std::cout\ <<\ "{}errors\ =\ "{}\ <<\ branchErrors[0]\ <<\ "{},\ "{}\ <<\ branchErrors[1]\ <<\ "{},\ "{}\ <<\ branchErrors[2]\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00192}00192\ \textcolor{comment}{//\ \ \ \ \ //\ std::cout\ <<\ "{}write\ ::\ minimized\ is\ "{}\ <<\ minimized\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00193}00193\ \textcolor{comment}{//\ \ \ \ \ tree-\/>SetBranchAddress("{}fits"{},\ branchFits);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00194}00194\ \textcolor{comment}{//\ \ \ \ \ tree-\/>SetBranchAddress("{}t\_light"{},\ \&branchTLight);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00195}00195\ \textcolor{comment}{//\ \ \ \ \ tree-\/>SetBranchAddress("{}errors"{},\ branchErrors);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00196}00196\ \textcolor{comment}{//\ \ \ \ \ tree-\/>SetBranchAddress("{}t\_error"{},\ \&branchTError);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00197}00197\ \textcolor{comment}{//\ \ \ \ \ tree-\/>SetBranchAddress("{}chi2"{},\ \&branchG);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00198}00198\ \textcolor{comment}{//\ \ \ \ \ tree-\/>SetBranchAddress("{}hitnumber"{},\ \&branchhitnumber);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00199}00199\ \textcolor{comment}{//\ \ \ \ \ tree-\/>SetBranchAddress("{}p"{},\ \&p);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00200}00200\ \textcolor{comment}{//\ \ \ \ \ tree-\/>Fill();}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00201}00201\ \textcolor{comment}{//\ \}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00202}00202\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00203}\mbox{\hyperlink{onemPMTfit_8cc_aef2ff6a835672a27cfad1c91c64def72}{00203}}\ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{onemPMTfit_8cc_aef2ff6a835672a27cfad1c91c64def72}{CalculateError}}(\textcolor{keywordtype}{double}\ *params)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00204}00204\ \ \ \ \ \textcolor{keywordtype}{double}\ maxL\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00205}00205\ \ \ \ \ \textcolor{keywordtype}{double}\ is\_minimized\ =\ 0.0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00206}00206\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{const}\ \textcolor{keyword}{auto}\ \&pmt\ :\ \mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\_pmtData}})\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00207}00207\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_a037ebc409ff7e3e33ebb210b503c7e2e}{NormalizeAngles}}(params[0],\ params[1]);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00208}00208\ \ \ \ \ \ \ \ \ std::array<double,\ 3>\ Cartesian\ =\ \mbox{\hyperlink{onemPMTfit_8cc_ad2b882242ae4f63158e7e4a6d4316f75}{ConvertToCartesian}}(100,\ params[0],\ params[1],\ pmt.center\_x,\ pmt.center\_y,\ pmt.center\_z);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00209}00209\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ dx,\ dy,\ dz;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00210}00210\ \ \ \ \ \ \ \ \ dx\ =\ std::sin(params[0])\ *\ std::cos(params[1]);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00211}00211\ \ \ \ \ \ \ \ \ dy\ =\ -\/std::cos(params[0]);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00212}00212\ \ \ \ \ \ \ \ \ dz\ =\ std::sin(params[0])\ *\ std::sin(params[1]);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00213}00213\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ dx\ =\ -\/pmt.x\ +\ Cartesian[0];}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00214}00214\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ dy\ =\ -\/pmt.y\ +\ Cartesian[1];}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00215}00215\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ dz\ =\ -\/pmt.z\ +\ Cartesian[2];}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00216}00216\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \textcolor{keywordtype}{id}\ =\ pmt.mPMT\_pmtid;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00217}00217\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ int\ id\ =}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00218}00218\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (id\ <\ 0\ ||\ id\ >\ 19)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00219}00219\ \ \ \ \ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Error:\ PMT\ ID\ out\ of\ range."{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00220}00220\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{continue};\ \textcolor{comment}{//\ Skip\ this\ PMT\ if\ the\ ID\ is\ invalid}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00221}00221\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00222}00222\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ ori\_x\ =\ \mbox{\hyperlink{fittinginput_8hh_ae7dbd2b3f507b1199e5749b157929a0e}{pmtDirections}}[id][0];}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00223}00223\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ ori\_y\ =\ \mbox{\hyperlink{fittinginput_8hh_ae7dbd2b3f507b1199e5749b157929a0e}{pmtDirections}}[id][1];}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00224}00224\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ ori\_z\ =\ \mbox{\hyperlink{fittinginput_8hh_ae7dbd2b3f507b1199e5749b157929a0e}{pmtDirections}}[id][2];}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00225}00225\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ cosalpha\ =\ \mbox{\hyperlink{onemPMTfit_8cc_a35baad4a0c898615f0ec4b47d964fc28}{CalculateAngle}}(ori\_x,\ ori\_y,\ ori\_z,\ dx,\ dy,\ dz);\ \textcolor{comment}{//\ Angle\ between\ the\ PMT\ orientation\ and\ the\ light\ direction}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00226}00226\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ distance2\ =\ 60;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00227}00227\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ expectedTime;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00228}00228\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ model\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00229}00229\ \ \ \ \ \ \ \ \ model\ =\ (params[2]\ /\ 10000\ /\ (1\ +\ std::exp(-\/6\ *\ (cosalpha\ -\/\ 1)))\ +\ params[3]\ /\ 100000);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00230}00230\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (model\ <\ 0)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00231}00231\ \ \ \ \ \ \ \ \ \ \ \ \ model\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00232}00232\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00233}00233\ \ \ \ \ \ \ \ \ is\_minimized\ +=\ (pmt.L\ -\/\ model\ *\ distance2)\ *\ (pmt.L\ -\/\ model\ *\ distance2)\ /\ pmt.L;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00234}00234\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ is\_minimized\ +=\ (pmt.L\ -\/\ model)\ *\ (pmt.L\ -\/\ model)\ /\ pmt.L;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00235}00235\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00236}00236\ \ \ \ \ \textcolor{keywordflow}{return}\ is\_minimized;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00237}00237\ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00238}00238\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00239}\mbox{\hyperlink{onemPMTfit_8cc_a4cc9f5c09126a80f2d5c7657bfdf3012}{00239}}\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{onemPMTfit_8cc_a4cc9f5c09126a80f2d5c7657bfdf3012}{FcnForMinuit}}(Int\_t\ \&npar,\ Double\_t\ *grad,\ Double\_t\ \&fval,\ Double\_t\ *par,\ Int\_t\ flag)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00240}00240\ \ \ \ \ fval\ =\ \mbox{\hyperlink{onemPMTfit_8cc_aef2ff6a835672a27cfad1c91c64def72}{CalculateError}}(par);\ \textcolor{comment}{//\ Compute\ the\ residual\ sum\ of\ squares}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00241}00241\ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00242}00242\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00243}\mbox{\hyperlink{onemPMTfit_8cc_ac365ff640b676f542adfd77fb96d7d4e}{00243}}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{onemPMTfit_8cc_ac365ff640b676f542adfd77fb96d7d4e}{fitting}}(\textcolor{keywordtype}{double}\ \&fit\_theta,\ \textcolor{keywordtype}{double}\ \&fit\_phi,\ \textcolor{keywordtype}{double}\ \&err\_theta,\ \textcolor{keywordtype}{double}\ \&err\_phi,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00244}00244\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ \&minimized)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00245}00245\ \ \ \ \ TMinuit\ minuit(4);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00246}00246\ \ \ \ \ \textcolor{comment}{//\ Set\ FCN\ function\ (fit\ function)}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00247}00247\ \ \ \ \ minuit.SetFCN(\mbox{\hyperlink{onemPMTfit_8cc_a4cc9f5c09126a80f2d5c7657bfdf3012}{FcnForMinuit}});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00248}00248\ \ \ \ \ minuit.SetPrintLevel(-\/1);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00249}00249\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00250}00250\ \ \ \ \ \textcolor{keywordtype}{double}\ maxL\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00251}00251\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{const}\ \textcolor{keyword}{auto}\ \&pmt\ :\ \mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\_pmtData}})\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00252}00252\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (pmt.L\ >\ maxL)}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00253}00253\ \ \ \ \ \ \ \ \ \ \ \ \ maxL\ =\ pmt.L;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00254}00254\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00255}00255\ \ \ \ \ maxL\ =\ maxL\ *\ 10;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00256}00256\ \ \ \ \ \textcolor{keywordflow}{if}\ (maxL\ >\ 800)}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00257}00257\ \ \ \ \ \ \ \ \ maxL\ =\ 800;\ \textcolor{comment}{//\ Set\ a\ maximum\ limit\ for\ maxL\ to\ avoid\ overflow\ in\ fitting}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00258}00258\ \ \ \ \ \textcolor{comment}{//\ minuit.DefineParameter(5,\ "{}r\_light"{},\ 60,\ 1,\ 3,\ 400.0);\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ //\ 3\ to\ 400}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00259}00259\ \ \ \ \ minuit.DefineParameter(0,\ \textcolor{stringliteral}{"{}theta\_light"{}},\ 0,\ 0.1,\ (-\/TMath::Pi()\ /\ 2),\ (TMath::Pi()\ /\ 2));\ \textcolor{comment}{//\ 0\ to\ pi/2}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00260}00260\ \ \ \ \ minuit.DefineParameter(1,\ \textcolor{stringliteral}{"{}phi\_light"{}},\ 0,\ 0.3,\ -\/TMath::Pi()\ *\ 2,\ TMath::Pi()\ *\ 2);\ \ \ \ \ \ \ \textcolor{comment}{//\ -\/pi\ to\ pi\ times\ 2}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00261}00261\ \ \ \ \ minuit.DefineParameter(2,\ \textcolor{stringliteral}{"{}A"{}},\ maxL,\ 0.1,\ 0,\ 1000);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00262}00262\ \ \ \ \ minuit.DefineParameter(3,\ \textcolor{stringliteral}{"{}B"{}},\ 30,\ 0.1,\ 0,\ 100);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00263}00263\ \ \ \ \ \textcolor{comment}{//\ minuit.DefineParameter(4,\ "{}C"{},\ 5.5,\ 0.1,\ 3,\ 10);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00264}00264\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00265}00265\ \ \ \ \ \textcolor{comment}{//\ No\ need\ for\ t\_light\ here\ as\ it\ is\ a\ loop\ variable}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00266}00266\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00267}00267\ \ \ \ \ \textcolor{comment}{//\ Start\ the\ fitting\ process}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00268}00268\ \ \ \ \ \textcolor{keywordtype}{int}\ status\ =\ minuit.Migrad();}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00269}00269\ \ \ \ \ minuit.GetParameter(0,\ fit\_theta,\ err\_theta);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00270}00270\ \ \ \ \ minuit.GetParameter(1,\ fit\_phi,\ err\_phi);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00271}00271\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00272}00272\ \ \ \ \ \textcolor{keywordtype}{double}\ fval,\ fedm,\ errdef;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00273}00273\ \ \ \ \ \textcolor{keywordtype}{int}\ nvpar,\ nparx,\ istat;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00274}00274\ \ \ \ \ minuit.mnstat(fval,\ fedm,\ errdef,\ nvpar,\ nparx,\ istat);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00275}00275\ \ \ \ \ minimized\ =\ fval;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00276}00276\ \ \ \ \ \textcolor{comment}{//\ std::cout\ <<\ "{}minimized\ is\ "{}\ <<\ minimized\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00277}00277\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00278}00278\ \ \ \ \ minuit.Clear();}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00279}00279\ \ \ \ \ \textcolor{keywordflow}{return}\ status;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00280}00280\ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00281}00281\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00282}00282\ \textcolor{comment}{//\ Function\ to\ perform\ the\ fitting\ process}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00283}\mbox{\hyperlink{onemPMTfit_8cc_ac9ecc9bfc02574be9a8df31a594f792f}{00283}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{onemPMTfit_8cc_ac9ecc9bfc02574be9a8df31a594f792f}{FitPosition}}(std::vector<PMTData>\ \&pmtData,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00284}00284\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ \&fit\_theta,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00285}00285\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ \&fit\_phi,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00286}00286\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ \&err\_theta,}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00287}00287\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ \&err\_phi)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00288}00288\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\_pmtData}}\ =\ pmtData;\ \textcolor{comment}{//\ グローバル変数にデータをセット}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00289}00289\ \ \ \ \ \textcolor{comment}{//\ ori\_mPMTを得る}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00290}00290\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\_pmtData}}.empty())\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00291}00291\ \ \ \ \ \ \ \ \ std::cerr\ <<\ \textcolor{stringliteral}{"{}Error:\ No\ PMT\ data\ available\ for\ fitting."{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00292}00292\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00293}00293\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00294}00294\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00295}00295\ \ \ \ \ \textcolor{keywordtype}{double}\ minimized\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00296}00296\ \ \ \ \ \textcolor{keywordtype}{int}\ status\ =\ \mbox{\hyperlink{onemPMTfit_8cc_ac365ff640b676f542adfd77fb96d7d4e}{fitting}}(fit\_theta,\ fit\_phi,\ err\_theta,\ err\_phi,\ minimized);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00297}00297\ \ \ \ \ \textcolor{keywordflow}{if}\ (status\ !=\ 0)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00298}00298\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ std::cout\ <<\ "{}Fitting\ failed\ with\ status:\ "{}\ <<\ status\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00299}00299\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00300}00300\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00301}00301\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_a037ebc409ff7e3e33ebb210b503c7e2e}{NormalizeAngles}}(fit\_theta,\ fit\_phi);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00302}00302\ \ \ \ \ \textcolor{comment}{//\ std::cout\ <<\ "{}fits\ is\ "{}\ <<\ fit\_theta\ <<\ "{}\ "{}\ <<\ fit\_phi\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00303}00303\ \ \ \ \ \textcolor{comment}{//\ std::cout\ <<\ "{}err\ is\ "{}\ <<\ err\_theta\ <<\ "{}\ "{}\ <<\ err\_phi\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00304}00304\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00305}00305\ \ \ \ \ \textcolor{comment}{//\ outputrootfile-\/>cd();}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00306}00306\ \ \ \ \ \textcolor{comment}{//\ std::vector<double>\ fits\ =\ \{0,\ fit\_theta,\ fit\_phi\};}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00307}00307\ \ \ \ \ \textcolor{comment}{//\ std::vector<double>\ errors\ =\ \{0,\ err\_theta,\ err\_phi\};}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00308}00308\ \ \ \ \ \textcolor{comment}{//\ double\ t\_light\ =\ 0;\ //\ t\_light\ is\ not\ used\ in\ this\ context,\ set\ to\ 0}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00309}00309\ \ \ \ \ \textcolor{comment}{//\ writeToRoot(outputtree,\ fits,\ t\_light,\ errors,\ 0,\ minimized,\ pmtData.size());}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00310}00310\ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00311}00311\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00312}\mbox{\hyperlink{onemPMTfit_8cc_a4d381345f638a85eae428a5c53be18f2}{00312}}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{onemPMTfit_8cc_a4d381345f638a85eae428a5c53be18f2}{onemPMTfit}}()\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00313}00313\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_a1f7faee2ef4fb527dac27e141049ee7e}{outputrootfile}}\ =\ \textcolor{keyword}{new}\ TFile(\textcolor{stringliteral}{"{}fittingResults.root"{}},\ \textcolor{stringliteral}{"{}RECREATE"{}});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00314}00314\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}}\ =\ \textcolor{keyword}{new}\ TTree(\textcolor{stringliteral}{"{}fitResults"{}},\ \textcolor{stringliteral}{"{}Fit\ results"{}});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00315}00315\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}}-\/>Branch(\textcolor{stringliteral}{"{}fits"{}},\ (\textcolor{keywordtype}{void}\ *)\textcolor{keyword}{nullptr},\ \textcolor{stringliteral}{"{}fits[3]/D"{}});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00316}00316\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}}-\/>Branch(\textcolor{stringliteral}{"{}t\_light"{}},\ (\textcolor{keywordtype}{void}\ *)\textcolor{keyword}{nullptr},\ \textcolor{stringliteral}{"{}t\_light/D"{}});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00317}00317\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}}-\/>Branch(\textcolor{stringliteral}{"{}errors"{}},\ (\textcolor{keywordtype}{void}\ *)\textcolor{keyword}{nullptr},\ \textcolor{stringliteral}{"{}errors[3]/D"{}});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00318}00318\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}}-\/>Branch(\textcolor{stringliteral}{"{}t\_error"{}},\ (\textcolor{keywordtype}{void}\ *)\textcolor{keyword}{nullptr},\ \textcolor{stringliteral}{"{}t\_error/D"{}});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00319}00319\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}}-\/>Branch(\textcolor{stringliteral}{"{}chi2"{}},\ (\textcolor{keywordtype}{void}\ *)\textcolor{keyword}{nullptr},\ \textcolor{stringliteral}{"{}G/D"{}});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00320}00320\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}}-\/>Branch(\textcolor{stringliteral}{"{}hitnumber"{}},\ (\textcolor{keywordtype}{void}\ *)\textcolor{keyword}{nullptr},\ \textcolor{stringliteral}{"{}hitnumber/D"{}});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00321}00321\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}}-\/>Branch(\textcolor{stringliteral}{"{}p"{}},\ (\textcolor{keywordtype}{void}\ *)\textcolor{keyword}{nullptr},\ \textcolor{stringliteral}{"{}p/D"{}});}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00322}00322\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00323}00323\ \ \ \ \ std::string\ inputfilename\ =\ \textcolor{stringliteral}{"{}/home/fukazawa/disk3/workdir\_1/MCprod/e-\//results/Spher-\/30-\/4-\/all"{}};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00324}00324\ \ \ \ \ TFile\ *file\ =\ TFile::Open((inputfilename\ +\ \textcolor{stringliteral}{"{}.root"{}}).c\_str());}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00325}00325\ \ \ \ \ \textcolor{keywordflow}{if}\ (!file\ ||\ file-\/>IsZombie())\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00326}00326\ \ \ \ \ \ \ \ \ std::cerr\ <<\ \textcolor{stringliteral}{"{}Error:\ Cannot\ open\ file\ pmtdata.root"{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00327}00327\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 1;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00328}00328\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00329}00329\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00330}00330\ \ \ \ \ TTree\ *tree\ =\ \textcolor{keyword}{dynamic\_cast<}TTree\ *\textcolor{keyword}{>}(file-\/>Get(\textcolor{stringliteral}{"{}PMTTree"{}}));}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00331}00331\ \ \ \ \ \textcolor{keywordflow}{if}\ (!tree)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00332}00332\ \ \ \ \ \ \ \ \ std::cerr\ <<\ \textcolor{stringliteral}{"{}Error:\ Cannot\ find\ TTree\ 'PMTTree'\ in\ file."{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00333}00333\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 1;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00334}00334\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00335}00335\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00336}00336\ \ \ \ \ \textcolor{comment}{//\ ブランチ変数の定義}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00337}00337\ \ \ \ \ \textcolor{keywordtype}{int}\ eventNumber,\ id,\ tubeid,\ mPMTid,\ mPMT\_pmtid;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00338}00338\ \ \ \ \ \textcolor{keywordtype}{double}\ x,\ y,\ z,\ L,\ t,\ ori\_x,\ ori\_y,\ ori\_z,\ center\_x,\ center\_y,\ center\_z;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00339}00339\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}eventNumber"{}},\ \&eventNumber);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00340}00340\ \ \ \ \ \textcolor{comment}{//\ tree-\/>SetBranchAddress("{}id"{},\ \&id);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00341}00341\ \ \ \ \ \textcolor{comment}{//\ \ \ tree-\/>SetBranchAddress("{}tubeid"{},\ \&tubeid);}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00342}00342\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}mPMTid"{}},\ \&mPMTid);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00343}00343\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}mPMT\_pmtid"{}},\ \&mPMT\_pmtid);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00344}00344\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}x"{}},\ \&x);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00345}00345\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}y"{}},\ \&y);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00346}00346\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}z"{}},\ \&z);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00347}00347\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}L"{}},\ \&L);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00348}00348\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}t"{}},\ \&t);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00349}00349\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}ori\_x"{}},\ \&ori\_x);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00350}00350\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}ori\_y"{}},\ \&ori\_y);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00351}00351\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}ori\_z"{}},\ \&ori\_z);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00352}00352\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}center\_x"{}},\ \&center\_x);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00353}00353\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}center\_y"{}},\ \&center\_y);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00354}00354\ \ \ \ \ tree-\/>SetBranchAddress(\textcolor{stringliteral}{"{}center\_z"{}},\ \&center\_z);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00355}00355\ }
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00356}00356\ \ \ \ \ Long64\_t\ nEntries\ =\ tree-\/>GetEntries();}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00357}00357\ \ \ \ \ \textcolor{keywordflow}{if}\ (nEntries\ ==\ 0)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00358}00358\ \ \ \ \ \ \ \ \ std::cerr\ <<\ \textcolor{stringliteral}{"{}Error:\ No\ entries\ in\ TTree."{}}\ <<\ std::endl;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00359}00359\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 1;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00360}00360\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00361}00361\ \ \ \ \ tree-\/>GetEntry(nEntries\ -\/\ 1);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00362}00362\ \ \ \ \ \textcolor{keywordtype}{int}\ eventNumber\_max\ =\ eventNumber\ +\ 1;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00363}00363\ \ \ \ \ \mbox{\hyperlink{structPMTData}{PMTData}}\ data;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00364}00364\ \ \ \ \ \textcolor{keywordtype}{int}\ data\_now\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00365}00365\ \ \ \ \ \textcolor{keywordtype}{int}\ hit\_PMT\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00366}00366\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ ev\ =\ 0;\ ev\ <\ 1000;\ ev++)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00367}00367\ \ \ \ \ \ \ \ \ hit\_PMT\ =\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00368}00368\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (Long64\_t\ i\ =\ data\_now;\ i\ <\ nEntries;\ ++i)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00369}00369\ \ \ \ \ \ \ \ \ \ \ \ \ tree-\/>GetEntry(i);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00370}00370\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ std::cout\ <<\ "{}tree-\/>GetEntry("{}\ <<\ i\ <<\ "{})\ done"{}\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00371}00371\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (eventNumber\ ==\ ev\ \&\&\ mPMTid\ ==\ 347)\ \{\ \textcolor{comment}{//\ 347\ is\ the\ mPMT\ ID\ for\ this\ example}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00372}00372\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ (eventNumber\ ==\ ev)\ \{}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00373}00373\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data\_now\ =\ i;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00374}00374\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ hit\_PMT++;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00375}00375\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ data.tubeid\ =\ tubeid;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00376}00376\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ data.mPMTid\ =\ mPMTid;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00377}00377\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_ac581a8365b1267b9450fd53aac5ff073}{mPMT\_pmtid}}\ =\ mPMT\_pmtid;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00378}00378\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ data.mPMT\_pmtid\ =\ id\ -\/\ 6574;\ //\ Assuming\ id\ is\ the\ PMT\ ID\ in\ m-\/PMT}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00379}00379\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a99887a40cf593092932441b9307ae54c}{t}}\ =\ t;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00380}00380\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_ac144ac5366990fb7c44a3d9f3ad0e059}{x}}\ =\ x;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00381}00381\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a7f873080261f5e18b7e405e7517b3530}{y}}\ =\ y;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00382}00382\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a7bf04c728bb5b89f095af6da2bd3e0e7}{z}}\ =\ z;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00383}00383\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a84818b99095d72414de9274030f4e767}{L}}\ =\ L;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00384}00384\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a3911aff0974f478ea90986b47da8342a}{ori\_x}}\ =\ ori\_x;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00385}00385\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_ab56c084462a51f96c603d7af1df48695}{ori\_y}}\ =\ ori\_y;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00386}00386\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a86751019f78c35a24c70b5ee112b2b7c}{ori\_z}}\ =\ ori\_z;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00387}00387\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_ad1aea84cdd4f5419acfb96081e07e0ce}{center\_x}}\ =\ center\_x;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00388}00388\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_a841ecbb2efac1058beda718e66d55283}{center\_y}}\ =\ center\_y;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00389}00389\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ data.\mbox{\hyperlink{structPMTData_aef8bc561dfd6403678c19c5b7819e0b8}{center\_z}}\ =\ center\_z;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00390}00390\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\_pmtData}}.push\_back(data);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00391}00391\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00392}00392\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (eventNumber\ >\ ev)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00393}00393\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00394}00394\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00395}00395\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00396}00396\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (hit\_PMT\ >\ 3)\ \{}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00397}00397\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ std::cout\ <<\ "{}hit\_PMT\ is\ "{}\ <<\ hit\_PMT\ <<\ std::endl;}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00398}00398\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\_pmtData}}\ =\ \mbox{\hyperlink{onemPMTfit_8cc_a0849c3a1ef2dc7b82ae2b4b5a0d115ed}{findExpandedGroups}}(\mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\_pmtData}},\ 5,\ 3,\ 0.5,\ 6);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00399}00399\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ fit\_theta,\ fit\_phi;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00400}00400\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ err\_theta,\ err\_phi;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00401}00401\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_ac9ecc9bfc02574be9a8df31a594f792f}{FitPosition}}(\mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\_pmtData}},\ fit\_theta,\ fit\_phi,\ err\_theta,\ err\_phi);}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00402}00402\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00403}00403\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_a96fa7263fa09a4c681c7c8521c56e2d1}{g\_pmtData}}.clear();}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00404}00404\ \ \ \ \ \}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00405}00405\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_a1f7faee2ef4fb527dac27e141049ee7e}{outputrootfile}}-\/>cd();}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00406}00406\ \ \ \ \ \mbox{\hyperlink{onemPMTfit_8cc_ace1858d10e7ff882a7a4b0b7263bbec3}{outputtree}}-\/>Write();}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00407}00407\ \ \ \ \ \textcolor{comment}{//\}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00408}00408\ \ \ \ \ \textcolor{comment}{//\}}}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00409}00409\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{\Hypertarget{onemPMTfit_8cc_source_l00410}00410\ \}}
+
+\end{DoxyCode}

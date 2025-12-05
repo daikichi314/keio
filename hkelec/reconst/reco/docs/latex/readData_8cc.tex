@@ -1,0 +1,82 @@
+\doxysection{read\+Data.\+cc ファイル}
+\hypertarget{readData_8cc}{}\label{readData_8cc}\index{readData.cc@{readData.cc}}
+{\ttfamily \#include "{}read\+Data.\+hh"{}}\newline
+{\ttfamily \#include "{}TFile.\+h"{}}\newline
+{\ttfamily \#include "{}TTree.\+h"{}}\newline
+{\ttfamily \#include "{}fittinginput.\+hh"{}}\newline
+{\ttfamily \#include $<$iostream$>$}\newline
+{\ttfamily \#include $<$map$>$}\newline
+{\ttfamily \#include $<$string$>$}\newline
+{\ttfamily \#include $<$vector$>$}\newline
+read\+Data.\+cc の依存先関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{readData_8cc__incl}
+\end{center}
+\end{figure}
+被依存関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=155pt]{readData_8cc__dep__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{関数}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{readData_8cc_ac3c8af7b5bc5576c180f3442e2ec87c8}{read\+Data}} (std\+::string \&inputfilename, std\+::map$<$ int, std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ $>$ \&PMTData\+Map)
+\begin{DoxyCompactList}\small\item\em Read PMT data from a ROOT file and store it in a map. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{readData_8cc_a5d7b99f5eee0993c4f156589721d53df}{read\+PMTinfo}} (std\+::string \&inputfilename, int \&target\+\_\+m\+PMT\+\_\+id, int \&target\+\_\+m\+PMT\+\_\+pmtid, double \&ori\+\_\+x\+\_\+return, double \&ori\+\_\+y\+\_\+return, double \&ori\+\_\+z\+\_\+return)
+\begin{DoxyCompactList}\small\item\em Find PMT orientation of target PMT. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{関数詳解}
+\Hypertarget{readData_8cc_ac3c8af7b5bc5576c180f3442e2ec87c8}\label{readData_8cc_ac3c8af7b5bc5576c180f3442e2ec87c8} 
+\index{readData.cc@{readData.cc}!readData@{readData}}
+\index{readData@{readData}!readData.cc@{readData.cc}}
+\doxysubsubsection{\texorpdfstring{readData()}{readData()}}
+{\footnotesize\ttfamily int read\+Data (\begin{DoxyParamCaption}\item[{std\+::string \&}]{inputfilename,  }\item[{std\+::map$<$ int, std\+::vector$<$ \mbox{\hyperlink{structPMTData}{PMTData}} $>$ $>$ \&}]{PMTData\+Map }\end{DoxyParamCaption})}
+
+
+
+Read PMT data from a ROOT file and store it in a map. 
+
+
+\begin{DoxyParams}{引数}
+{\em inputfilename} & The name of the input file (without extension). \\
+\hline
+{\em PMTData\+Map} & A map to store PMT data, keyed by m\+PMTid. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{戻り値}
+int Returns 0 on success, 1 on failure. 
+\end{DoxyReturn}
+
+
+ \mbox{\hyperlink{readData_8cc_source}{read\+Data.\+cc}} の \mbox{\hyperlink{readData_8cc_source_l00010}{10}} 行目に定義があります。
+
+被呼び出し関係図\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=219pt]{readData_8cc_ac3c8af7b5bc5576c180f3442e2ec87c8_icgraph}
+\end{center}
+\end{figure}
+\Hypertarget{readData_8cc_a5d7b99f5eee0993c4f156589721d53df}\label{readData_8cc_a5d7b99f5eee0993c4f156589721d53df} 
+\index{readData.cc@{readData.cc}!readPMTinfo@{readPMTinfo}}
+\index{readPMTinfo@{readPMTinfo}!readData.cc@{readData.cc}}
+\doxysubsubsection{\texorpdfstring{readPMTinfo()}{readPMTinfo()}}
+{\footnotesize\ttfamily int read\+PMTinfo (\begin{DoxyParamCaption}\item[{std\+::string \&}]{inputfilename,  }\item[{int \&}]{target\+\_\+m\+PMT\+\_\+id,  }\item[{int \&}]{target\+\_\+m\+PMT\+\_\+pmtid,  }\item[{double \&}]{ori\+\_\+x\+\_\+return,  }\item[{double \&}]{ori\+\_\+y\+\_\+return,  }\item[{double \&}]{ori\+\_\+z\+\_\+return }\end{DoxyParamCaption})}
+
+
+
+Find PMT orientation of target PMT. 
+
+
+
+ \mbox{\hyperlink{readData_8cc_source}{read\+Data.\+cc}} の \mbox{\hyperlink{readData_8cc_source_l00101}{101}} 行目に定義があります。
+
