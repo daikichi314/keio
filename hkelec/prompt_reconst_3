@@ -818,3 +818,855 @@ fit_results(ファイル名)の部分はコードの実行時に元のコード�
 以上、よろしくお願いいたします。
 
 
+ーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+
+1. コード内でテキストファイルを読み込み、CHごと（0~3）のhgain, lgainのペデスタルを取得しておいて、processed_hitsを読み込んで再構成に用いる光量を取得する際に、ADCをpCに変換する式を用いて光量を電荷として求め、これを再構成に使ってください。lgainを使用する条件は、hgainの値が4000以上の時に、サチュレーションしているとみなしてlgainを使用して再構成してください。
+2．フィッティングのモデルについてはこれは仮のもので後々より良いものに変更しようと思っています。むしろ様々なモデルを何度も試して、より良いモデルを探そうと思っているので、後々モデルを変更しやすいようにコードを設計してください。
+3．光源の探索空間は、x,y,z = -400cm ~ +400cmとしてください。
+4．単純和で実装し、後で調整できるようにお願いします。
+5．うまく動けばどちらでもいいです。いったん逐次処理する方式で作成して、うまくいかなかったら既存のものに戻してください。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+reconst/reco内のコード群はfukazawa内のコード群をもとに、以下のプロンプトによりGemini3により作成されたものである。これらのコードに問題点や改善電があれば指摘せよ。
+
+main.ccを中心としたこれらのfukazawaディレクトリ内のコード群は、複数のマルチPMTによる、光源の方向のみを推定するフィッティングを行うプログラムであると思われますが、これを参考に、4つの50 cm PMTを用いて、距離も含めた位置の再構成を行うことを考えています。とくに、onemPMTfit.ccを中心にコードを作成することになると思います。
+実験に用いるのは以下である。
+１． 光源
+    レーザーダイオードを5000 Hzで点滅させ、ディフューザーボールで散乱させ、点光源として扱います。
+２．PMT
+    4本の直径50 cmのPMTを用いて、光源からの光を検出し、その光の強さとPMTへの入射タイミングを測定します。
+３．デジタイザー(hkelec, エレキなどとも呼ぶ)
+    PMTからのアナログ信号をデジタル信号に変換します。得られる情報は、それぞれのヒットについてのhgain(光量), lgain(光量、光量が大きくてhgainがサチュレーションする場合に用いる), tot(hgainが閾値を超えている時間), tdc(しきい値を超えた時刻,単位は1 tdc = 0.25 ns), time(しきい値を超えた時刻,単位はns)である。
+
+デジタイザーにはチャンネルが0~11の12個があり、そのうちのCH0~3にPMTの出力信号を、CH4にレーザーダイオードの発光のタイミングと同期したNIM信号が入力されている。このCH4をトリガーチャンネルとして用い、
+time_diff = time - (トリガーチャンネルのtime)を用いて、CH0~3のヒットを特徴づけ、レーザーの発光による信号を選別している。
+具体的には以下のコードで結果を作成している。
+```cpp
+    /*id: eventtree2hist.C*/
+        /*Place: hkpd@hkdaq:~/hkelec/analysis_macro/ */
+        /*Last Edit: 2025-10-14 Gemini (two-pass analysis, full histogram block)*/
+        /* (修正: 2025-10-27 Gemini (ns単位に変更) ) */
+        /* (修正: 2025-10-30 Gemini (ヒストグラムのビン幅を最小単位に指定) ) */
+        /* (修正: 2025-11-21 Gemini (トリガーのhgain >= 850 の条件を追加) ) */
+        /*eventtree.root to triggered data TTree and optional histograms*/
+        /*コンパイル可能*/
+
+        #include <TFile.h>
+        #include <TTree.h>
+        #include <TH1D.h>
+        #include <TString.h>
+        #include <TMath.h>
+        #include <iostream>
+        #include <vector>
+        #include <set>
+
+        // 外部で定義されたHitクラスとMetaDataクラスのヘッダを読み込む
+        #include "RootInterface/Hit.h"
+        #include "RootInterface/MetaData.h"
+
+        void read_event_tree(TString input_file, TString output_file) {
+
+            // --- 1. ファイルの準備 ---
+            auto ifile = TFile::Open(input_file, "READ");
+            if (!ifile || ifile->IsZombie()) {
+                std::cerr << "Error: Could not open input file " << input_file << std::endl;
+                return;
+            }
+            auto ofile = TFile::Open(output_file, "RECREATE");
+            if (!ofile || ofile->IsZombie()) {
+                std::cerr << "Error: Could not create output file " << output_file << std::endl;
+                ifile->Close();
+                return;
+            }
+
+            // --- 2. 入力TTreeの準備 ---
+            auto tree = ifile->Get<TTree>("event");
+            if (!tree) {
+                std::cerr << "Error: Could not find TTree 'event' in " << input_file << std::endl;
+                ifile->Close();
+                ofile->Close();
+                return;
+            }
+            std::vector<Hit>* v_hit = nullptr;
+            std::vector<Hit>* v_trig = nullptr;
+            tree->SetBranchAddress("NormalHits", &v_hit);
+            tree->SetBranchAddress("TriggerHits", &v_trig);
+
+            // メタデータを読み込んで表示する
+            auto metadata = ifile->Get<MetaData>("metadata");
+            if (metadata) {
+                metadata->Print();
+            } else {
+                std::cout << "Warning: Could not find 'metadata' object in " << input_file << std::endl;
+            }
+            
+            long nEvents = tree->GetEntries();
+
+            // [追加設定] トリガー選別の閾値
+            const double TRIGGER_HGAIN_THRESHOLD = 850.0;
+
+            // ==============================================================================
+            // --- 3. 1回目のスキャン： time_diff のピーク位置を特定する ---
+            // ==============================================================================
+            std::cout << "\n--- Pass 1: Finding time_diff peak (Trigger hgain >= " << TRIGGER_HGAIN_THRESHOLD << ") ---" << std::endl;
+            
+            // ピーク特定用の仮ヒストグラム (0 ns から 1000 ns までを 1000 分割 => ビン幅 1 ns)
+            TH1D* h_time_prescan = new TH1D("h_time_prescan", "Pre-scan for time peak; Time Difference (s); Counts", 1000, 0, 1000e-9);
+
+            for (long iEvent = 0; iEvent < nEvents; ++iEvent) {
+                tree->GetEntry(iEvent);
+                if (iEvent % 10000 == 0) {
+                    std::cout << "Scanning event: " << iEvent << " / " << nEvents << std::endl;
+                }
+
+                if (v_trig->empty()) continue;
+
+                // [追加箇所] 1. トリガーのhgainによる選別 (Pass 1)
+                // トリガーヒットはTriggerHitsの0番目にあると仮定
+                if (v_trig->at(0).hgain < TRIGGER_HGAIN_THRESHOLD) {
+                    continue; // 条件を満たさないイベントはスキップ
+                }
+
+                double trigger_time = v_trig->at(0).time;
+
+                for (const Hit& hit : *v_hit) {
+                    double time_diff = hit.time - trigger_time;
+                    // 0 ns < time_diff < 1000 ns のヒットのみでヒストグラムを作成
+                    if (time_diff > 0 && time_diff < 1000e-9) {
+                        h_time_prescan->Fill(time_diff);
+                    }
+                }
+            }
+
+            // ピークのビンを探し、その中心値を time_peak として取得
+            int peak_bin = h_time_prescan->GetMaximumBin();
+            double time_peak = h_time_prescan->GetXaxis()->GetBinCenter(peak_bin);
+
+            // ピーク値からカット範囲を決定 (ピーク ± 50 ns)
+            double time_cut_low  = time_peak - 50.0e-9;
+            double time_cut_high = time_peak + 50.0e-9;
+            
+            std::cout << "Time peak found at: " << time_peak * 1e9 << " ns" << std::endl;
+            std::cout << "Applying new time window: " << time_cut_low * 1e9 << " ns to " << time_cut_high * 1e9 << " ns" << std::endl;
+
+            // --- 4. 出力用TTreeの定義 ---
+            TTree* new_tree = new TTree("processed_hits", "Processed Hit Data per Channel");
+            int eventID;
+            int ch;
+            double hgain, lgain, tot;
+            double tdc_diff, time_diff; // time_diff は ns 単位で保存されるように変更
+            new_tree->Branch("eventID", &eventID, "eventID/I");
+            new_tree->Branch("ch", &ch, "ch/I");
+            new_tree->Branch("hgain", &hgain, "hgain/D");
+            new_tree->Branch("lgain", &lgain, "lgain/D");
+            new_tree->Branch("tot", &tot, "tot/D");
+            new_tree->Branch("tdc_diff", &tdc_diff, "tdc_diff/D");
+            new_tree->Branch("time_diff", &time_diff, "time_diff/D"); // ブランチ名は gausfit.C のために "time_diff" のままにする
+
+            // ==============================================================================
+            // --- 5. 2回目のスキャン：決定した時間範囲でヒットを選択し、TTreeを作成 ---
+            // ==============================================================================
+            std::cout << "\n--- Pass 2: Processing hits with dynamic time cut (Trigger hgain >= " << TRIGGER_HGAIN_THRESHOLD << ") ---" << std::endl;
+            std::set<int> unique_channels;
+
+            for (long iEvent = 0; iEvent < nEvents; ++iEvent) {
+                tree->GetEntry(iEvent);
+                if (iEvent % 10000 == 0) {
+                    std::cout << "Processing event: " << iEvent << " / " << nEvents << std::endl;
+                }
+
+                if (v_trig->empty()) continue;
+
+                // [追加箇所] 2. トリガーのhgainによる選別 (Pass 2)
+                // Pass 1と同じ条件でフィルタリングしないと、ピーク位置の整合性が取れない可能性があるためここでも適用
+                if (v_trig->at(0).hgain < TRIGGER_HGAIN_THRESHOLD) {
+                    continue; 
+                }
+
+                double trigger_tdc = v_trig->at(0).tdc;
+                double trigger_time = v_trig->at(0).time;
+                eventID = iEvent;
+
+                for (const Hit& hit : *v_hit) {
+                    time_diff = hit.time - trigger_time; // この時点では (s) 単位
+
+                    // 1回目のスキャンで決定した動的な時間範囲でヒットを選択 (s 単位で比較)
+                    if (time_diff < time_cut_low || time_diff > time_cut_high) {
+                        continue; 
+                    }
+                    
+                    ch = hit.channel;
+                    hgain = hit.hgain;
+                    lgain = hit.lgain;
+                    to
+                    t = hit.tot;
+                    tdc_diff = hit.tdc - trigger_tdc;
+
+                    // 1. TTreeに保存する直前に (s) から (ns) へ単位を変換
+                    time_diff *= 1e9; 
+
+                    new_tree->Fill();
+                    unique_channels.insert(ch);
+                }
+            }
+
+            // ==============================================================================
+            // --- 6. (オプション) TTreeからチャンネルごとのヒストグラムを作成 ---
+            // ==============================================================================
+            // このブロックのコメントアウトを外して使用してください。
+            // /*
+            if(!unique_channels.empty()){
+                std::cout << "\nFound " << unique_channels.size() << " unique channels. Creating histograms..." << std::endl;
+                ofile->cd(); 
+                for (int ch_num : unique_channels) {
+                    TString selection = Form("ch==%d", ch_num);
+                    Long64_t n_selected = 0;
+
+                    // [変更箇所] --- hgain (ビン幅 1.0 で自動範囲設定) ---
+                    new_tree->Draw("hgain", selection, "goff");
+                    n_selected = new_tree->GetSelectedRows();
+                    if (n_selected > 0) {
+                        double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
+                        double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
+                        double margin = (max_val - min_val) * 0.05;
+                        if (margin == 0) margin = 1;
+
+                        // 1. ビン幅を 1.0 (adc) に設定
+                        const double bin_width = 1.0;
+                        // 2. ビンの境界が整数になるように調整
+                        double xlow = TMath::Floor(min_val - margin);
+                        double xup = TMath::Ceil(max_val + margin);
+                        // 3. ビン数を計算
+                        int nbins = TMath::Nint((xup - xlow) / bin_width);
+                        if (nbins <= 0) nbins = 1;
+                        
+                        TH1D* h_hgain = new TH1D(Form("h_hgain_ch%d", ch_num), Form("High Gain ADC Ch %d", ch_num), nbins, xlow + bin_width/2, xup + bin_width/2);
+                        new_tree->Draw(Form("hgain>>%s", h_hgain->GetName()), selection, "goff");
+                    }
+
+                    // [変更箇所] --- lgain (ビン幅 1.0 で自動範囲設定) ---
+                    new_tree->Draw("lgain", selection, "goff");
+                    n_selected = new_tree->GetSelectedRows();
+                    if (n_selected > 0) {
+                        double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
+                        double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
+                        double margin = (max_val - min_val) * 0.05;
+                        if (margin == 0) margin = 1;
+
+                        // 1. ビン幅を 1.0 (adc) に設定
+                        const double bin_width = 1.0;
+                        // 2. ビンの境界が整数になるように調整
+                        double xlow = TMath::Floor(min_val - margin);
+                        double xup = TMath::Ceil(max_val + margin);
+                        // 3. ビン数を計算
+                        int nbins = TMath::Nint((xup - xlow) / bin_width);
+                        if (nbins <= 0) nbins = 1;
+
+                        TH1D* h_lgain = new TH1D(Form("h_lgain_ch%d", ch_num), Form("Low Gain ADC Ch %d", ch_num), nbins, xlow + bin_width/2, xup + bin_width/2);
+                        new_tree->Draw(Form("lgain>>%s", h_lgain->GetName()), selection, "goff");
+                    }
+
+                    // [変更箇所] --- tot (ビン幅 1.0 で自動範囲設定) ---
+                    // (totもTDC値の一種である可能性が高いため、tdc_diffと同様にビン幅1.0に設定します)
+                    new_tree->Draw("tot", selection, "goff");
+                    n_selected = new_tree->GetSelectedRows();
+                    if (n_selected > 0) {
+                        double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
+                        double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
+                        double margin = (max_val - min_val) * 0.05;
+                        if (margin == 0) margin = 1;
+
+                        // 1. ビン幅を 1.0 (tdc) に設定
+                        const double bin_width = 1.0;
+                        // 2. ビンの境界が整数になるように調整
+                        double xlow = TMath::Floor(min_val - margin);
+                        double xup = TMath::Ceil(max_val + margin);
+                        // 3. ビン数を計算
+                        int nbins = TMath::Nint((xup - xlow) / bin_width);
+                        if (nbins <= 0) nbins = 1;
+
+                        TH1D* h_tot = new TH1D(Form("h_tot_ch%d", ch_num), Form("Time over Threshold Ch %d", ch_num), nbins, xlow + bin_width/2, xup + bin_width/2);
+                        new_tree->Draw(Form("tot>>%s", h_tot->GetName()), selection, "goff");
+                    }
+
+                    // [変更箇所] --- tdc_diff (ビン幅 1.0 で自動範囲設定) ---
+                    new_tree->Draw("tdc_diff", selection, "goff");
+                    n_selected = new_tree->GetSelectedRows();
+                    if (n_selected > 0) {
+                        double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
+                        double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
+                        double margin = (max_val - min_val) * 0.05;
+                        if (margin == 0) margin = 1;
+                        
+                        // 1. ビン幅を 1.0 (tdc) に設定
+                        const double bin_width = 1.0;
+                        // 2. ビンの境界が整数になるように調整
+                        double xlow = TMath::Floor(min_val - margin);
+                        double xup = TMath::Ceil(max_val + margin);
+                        // 3. ビン数を計算
+                        int nbins = TMath::Nint((xup - xlow) / bin_width);
+                        if (nbins <= 0) nbins = 1;
+
+                        TH1D* h_tdc_diff = new TH1D(Form("h_tdc_diff_ch%d", ch_num), Form("TDC - Trigger TDC Ch %d", ch_num), nbins, xlow+bin_width/2, xup+bin_width/2);
+                        new_tree->Draw(Form("tdc_diff>>%s", h_tdc_diff->GetName()), selection, "goff");
+                    }
+
+                    // [変更箇所] --- time_diff (ビン幅 0.25 ns で自動範囲設定) ---
+                    // TTreeの "time_diff" ブランチには (ns) 単位のデータが入っている
+                    new_tree->Draw("time_diff", selection, "goff");
+                    n_selected = new_tree->GetSelectedRows();
+                    if (n_selected > 0) {
+                        double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
+                        double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
+                        double margin = (max_val - min_val) * 0.05;
+                        
+                        // 2. マージンのデフォルト値を (ns) 単位に修正
+                        if (margin == 0) margin = 1.0; 
+
+                        // 1. ビン幅を 0.25 (ns) に設定
+                        const double bin_width = 0.25;
+                        double xlow_raw = min_val - margin;
+                        double xup_raw = max_val + margin;
+
+                        // 2. ビンの境界が 0.25 の倍数になるように調整
+                        double xlow = TMath::Floor(xlow_raw / bin_width) * bin_width;
+                        double xup = TMath::Ceil(xup_raw / bin_width) * bin_width;
+
+                        // 3. ビン数を計算
+                        int nbins = TMath::Nint((xup - xlow) / bin_width);
+                        if (nbins <= 0) nbins = 1;
+
+                        // 4. ヒストグラムのタイトルを (s) から (ns) に修正 (これは既に修正済み)
+                        TH1D* h_time_diff = new TH1D(Form("h_time_diff_ch%d", ch_num), Form("Time - Trigger Time (ns) Ch %d", ch_num), nbins, xlow+bin_width/2, xup+bin_width/2);
+                        new_tree->Draw(Form("time_diff>>%s", h_time_diff->GetName()), selection, "goff");
+                    }
+                }
+            }
+            // */
+            // ==============================================================================
+
+
+            // --- 7. ファイルの書き込みとクローズ ---
+            std::cout << "\nWriting TTree and histograms to " << output_file << std::endl;
+            h_time_prescan->Write(); // ピーク特定に使ったヒストグラムも参考として保存
+            ofile->Write(); // new_treeと、もし作成されていれば他のヒストグラムを保存
+            ofile->Close();
+            ifile->Close();
+        }
+
+        // --- スタンドアロン実行のためのmain関数 ---
+        int main(int argc, char* argv[]) {
+            if (argc != 3) {
+                std::cerr << "Usage: " << argv[0] << " <input_file.root> <output_file.root>" << std::endl;
+                return 1;
+            }
+            read_event_tree(argv[1], argv[2]);
+            return 0;
+        }
+
+    // /*id: eventtree2hist.C*/
+    // /*Place: hkpd@hkdaq:~/hkelec/analysis_macro/ */
+    // /*Last Edit: 2025-10-14 Gemini (two-pass analysis, full histogram block)*/
+    // /* (修正: 2025-10-27 Gemini (ns単位に変更) ) */
+    // /* (修正: 2025-10-30 Gemini (ヒストグラムのビン幅を最小単位に指定) ) */
+    // /*eventtree.root to triggered data TTree and optional histograms*/
+    // /*コンパイル可能*/
+
+    // #include <TFile.h>
+    // #include <TTree.h>
+    // #include <TH1D.h>
+    // #include <TString.h>
+    // #include <TMath.h>
+    // #include <iostream>
+    // #include <vector>
+    // #include <set>
+
+    // // 外部で定義されたHitクラスとMetaDataクラスのヘッダを読み込む
+    // #include "RootInterface/Hit.h"
+    // #include "RootInterface/MetaData.h"
+
+    // void read_event_tree(TString input_file, TString output_file) {
+
+    //     // --- 1. ファイルの準備 ---
+    //     auto ifile = TFile::Open(input_file, "READ");
+    //     if (!ifile || ifile->IsZombie()) {
+    //         std::cerr << "Error: Could not open input file " << input_file << std::endl;
+    //         return;
+    //     }
+    //     auto ofile = TFile::Open(output_file, "RECREATE");
+    //     if (!ofile || ofile->IsZombie()) {
+    //         std::cerr << "Error: Could not create output file " << output_file << std::endl;
+    //         ifile->Close();
+    //         return;
+    //     }
+
+    //     // --- 2. 入力TTreeの準備 ---
+    //     auto tree = ifile->Get<TTree>("event");
+    //     if (!tree) {
+    //         std::cerr << "Error: Could not find TTree 'event' in " << input_file << std::endl;
+    //         ifile->Close();
+    //         ofile->Close();
+    //         return;
+    //     }
+    //     std::vector<Hit>* v_hit = nullptr;
+    //     std::vector<Hit>* v_trig = nullptr;
+    //     tree->SetBranchAddress("NormalHits", &v_hit);
+    //     tree->SetBranchAddress("TriggerHits", &v_trig);
+
+    //     // メタデータを読み込んで表示する
+    //     auto metadata = ifile->Get<MetaData>("metadata");
+    //     if (metadata) {
+    //         metadata->Print();
+    //     } else {
+    //         std::cout << "Warning: Could not find 'metadata' object in " << input_file << std::endl;
+    //     }
+        
+    //     long nEvents = tree->GetEntries();
+
+    //     // ==============================================================================
+    //     // --- 3. 1回目のスキャン： time_diff のピーク位置を特定する ---
+    //     // ==============================================================================
+    //     std::cout << "\n--- Pass 1: Finding time_diff peak ---" << std::endl;
+        
+    //     // ピーク特定用の仮ヒストグラム (0 ns から 1000 ns までを 1000 分割 => ビン幅 1 ns)
+    //     TH1D* h_time_prescan = new TH1D("h_time_prescan", "Pre-scan for time peak; Time Difference (s); Counts", 1000, 0, 1000e-9);
+
+    //     for (long iEvent = 0; iEvent < nEvents; ++iEvent) {
+    //         tree->GetEntry(iEvent);
+    //         if (iEvent % 10000 == 0) {
+    //             std::cout << "Scanning event: " << iEvent << " / " << nEvents << std::endl;
+    //         }
+
+    //         if (v_trig->empty()) continue;
+    //         double trigger_time = v_trig->at(0).time;
+
+    //         for (const Hit& hit : *v_hit) {
+    //             double time_diff = hit.time - trigger_time;
+    //             // 0 ns < time_diff < 1000 ns のヒットのみでヒストグラムを作成
+    //             if (time_diff > 0 && time_diff < 1000e-9) {
+    //                 h_time_prescan->Fill(time_diff);
+    //             }
+    //         }
+    //     }
+
+    //     // ピークのビンを探し、その中心値を time_peak として取得
+    //     int peak_bin = h_time_prescan->GetMaximumBin();
+    //     double time_peak = h_time_prescan->GetXaxis()->GetBinCenter(peak_bin);
+
+    //     // ピーク値からカット範囲を決定 (ピーク ± 50 ns)
+    //     double time_cut_low  = time_peak - 50.0e-9;
+    //     double time_cut_high = time_peak + 50.0e-9;
+        
+    //     std::cout << "Time peak found at: " << time_peak * 1e9 << " ns" << std::endl;
+    //     std::cout << "Applying new time window: " << time_cut_low * 1e9 << " ns to " << time_cut_high * 1e9 << " ns" << std::endl;
+
+    //     // --- 4. 出力用TTreeの定義 ---
+    //     TTree* new_tree = new TTree("processed_hits", "Processed Hit Data per Channel");
+    //     int eventID;
+    //     int ch;
+    //     double hgain, lgain, tot;
+    //     double tdc_diff, time_diff; // time_diff は ns 単位で保存されるように変更
+    //     new_tree->Branch("eventID", &eventID, "eventID/I");
+    //     new_tree->Branch("ch", &ch, "ch/I");
+    //     new_tree->Branch("hgain", &hgain, "hgain/D");
+    //     new_tree->Branch("lgain", &lgain, "lgain/D");
+    //     new_tree->Branch("tot", &tot, "tot/D");
+    //     new_tree->Branch("tdc_diff", &tdc_diff, "tdc_diff/D");
+    //     new_tree->Branch("time_diff", &time_diff, "time_diff/D"); // ブランチ名は gausfit.C のために "time_diff" のままにする
+
+    //     // ==============================================================================
+    //     // --- 5. 2回目のスキャン：決定した時間範囲でヒットを選択し、TTreeを作成 ---
+    //     // ==============================================================================
+    //     std::cout << "\n--- Pass 2: Processing hits with dynamic time cut ---" << std::endl;
+    //     std::set<int> unique_channels;
+
+    //     for (long iEvent = 0; iEvent < nEvents; ++iEvent) {
+    //         tree->GetEntry(iEvent);
+    //         if (iEvent % 10000 == 0) {
+    //             std::cout << "Processing event: " << iEvent << " / " << nEvents << std::endl;
+    //         }
+
+    //         if (v_trig->empty()) continue;
+    //         double trigger_tdc = v_trig->at(0).tdc;
+    //         double trigger_time = v_trig->at(0).time;
+    //         eventID = iEvent;
+
+    //         for (const Hit& hit : *v_hit) {
+    //             time_diff = hit.time - trigger_time; // この時点では (s) 単位
+
+    //             // 1回目のスキャンで決定した動的な時間範囲でヒットを選択 (s 単位で比較)
+    //             if (time_diff < time_cut_low || time_diff > time_cut_high) {
+    //                 continue; 
+    //             }
+                
+    //             ch = hit.channel;
+    //             hgain = hit.hgain;
+    //             lgain = hit.lgain;
+    //             tot = hit.tot;
+    //             tdc_diff = hit.tdc - trigger_tdc;
+
+    //             // 1. TTreeに保存する直前に (s) から (ns) へ単位を変換
+    //             time_diff *= 1e9; 
+
+    //             new_tree->Fill();
+    //             unique_channels.insert(ch);
+    //         }
+    //     }
+
+    //     // ==============================================================================
+    //     // --- 6. (オプション) TTreeからチャンネルごとのヒストグラムを作成 ---
+    //     // ==============================================================================
+    //     // このブロックのコメントアウトを外して使用してください。
+    //     // /*
+    //     if(!unique_channels.empty()){
+    //         std::cout << "\nFound " << unique_channels.size() << " unique channels. Creating histograms..." << std::endl;
+    //         ofile->cd(); 
+    //         for (int ch_num : unique_channels) {
+    //             TString selection = Form("ch==%d", ch_num);
+    //             Long64_t n_selected = 0;
+
+    //             // [変更箇所] --- hgain (ビン幅 1.0 で自動範囲設定) ---
+    //             new_tree->Draw("hgain", selection, "goff");
+    //             n_selected = new_tree->GetSelectedRows();
+    //             if (n_selected > 0) {
+    //                 double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
+    //                 double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
+    //                 double margin = (max_val - min_val) * 0.05;
+    //                 if (margin == 0) margin = 1;
+
+    //                 // 1. ビン幅を 1.0 (adc) に設定
+    //                 const double bin_width = 1.0;
+    //                 // 2. ビンの境界が整数になるように調整
+    //                 double xlow = TMath::Floor(min_val - margin);
+    //                 double xup = TMath::Ceil(max_val + margin);
+    //                 // 3. ビン数を計算
+    //                 int nbins = TMath::Nint((xup - xlow) / bin_width);
+    //                 if (nbins <= 0) nbins = 1;
+                    
+    //                 TH1D* h_hgain = new TH1D(Form("h_hgain_ch%d", ch_num), Form("High Gain ADC Ch %d", ch_num), nbins, xlow + bin_width/2, xup + bin_width/2);
+    //                 new_tree->Draw(Form("hgain>>%s", h_hgain->GetName()), selection, "goff");
+    //             }
+
+    //             // [変更箇所] --- lgain (ビン幅 1.0 で自動範囲設定) ---
+    //             new_tree->Draw("lgain", selection, "goff");
+    //             n_selected = new_tree->GetSelectedRows();
+    //             if (n_selected > 0) {
+    //                 double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
+    //                 double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
+    //                 double margin = (max_val - min_val) * 0.05;
+    //                 if (margin == 0) margin = 1;
+
+    //                 // 1. ビン幅を 1.0 (adc) に設定
+    //                 const double bin_width = 1.0;
+    //                 // 2. ビンの境界が整数になるように調整
+    //                 double xlow = TMath::Floor(min_val - margin);
+    //                 double xup = TMath::Ceil(max_val + margin);
+    //                 // 3. ビン数を計算
+    //                 int nbins = TMath::Nint((xup - xlow) / bin_width);
+    //                 if (nbins <= 0) nbins = 1;
+
+    //                 TH1D* h_lgain = new TH1D(Form("h_lgain_ch%d", ch_num), Form("Low Gain ADC Ch %d", ch_num), nbins, xlow + bin_width/2, xup + bin_width/2);
+    //                 new_tree->Draw(Form("lgain>>%s", h_lgain->GetName()), selection, "goff");
+    //             }
+
+    //             // [変更箇所] --- tot (ビン幅 1.0 で自動範囲設定) ---
+    //             // (totもTDC値の一種である可能性が高いため、tdc_diffと同様にビン幅1.0に設定します)
+    //             new_tree->Draw("tot", selection, "goff");
+    //             n_selected = new_tree->GetSelectedRows();
+    //             if (n_selected > 0) {
+    //                 double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
+    //                 double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
+    //                 double margin = (max_val - min_val) * 0.05;
+    //                 if (margin == 0) margin = 1;
+
+    //                 // 1. ビン幅を 1.0 (tdc) に設定
+    //                 const double bin_width = 1.0;
+    //                 // 2. ビンの境界が整数になるように調整
+    //                 double xlow = TMath::Floor(min_val - margin);
+    //                 double xup = TMath::Ceil(max_val + margin);
+    //                 // 3. ビン数を計算
+    //                 int nbins = TMath::Nint((xup - xlow) / bin_width);
+    //                 if (nbins <= 0) nbins = 1;
+
+    //                 TH1D* h_tot = new TH1D(Form("h_tot_ch%d", ch_num), Form("Time over Threshold Ch %d", ch_num), nbins, xlow + bin_width/2, xup + bin_width/2);
+    //                 new_tree->Draw(Form("tot>>%s", h_tot->GetName()), selection, "goff");
+    //             }
+
+    //             // [変更箇所] --- tdc_diff (ビン幅 1.0 で自動範囲設定) ---
+    //             new_tree->Draw("tdc_diff", selection, "goff");
+    //             n_selected = new_tree->GetSelectedRows();
+    //             if (n_selected > 0) {
+    //                 double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
+    //                 double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
+    //                 double margin = (max_val - min_val) * 0.05;
+    //                 if (margin == 0) margin = 1;
+                    
+    //                 // 1. ビン幅を 1.0 (tdc) に設定
+    //                 const double bin_width = 1.0;
+    //                 // 2. ビンの境界が整数になるように調整
+    //                 double xlow = TMath::Floor(min_val - margin);
+    //                 double xup = TMath::Ceil(max_val + margin);
+    //                 // 3. ビン数を計算
+    //                 int nbins = TMath::Nint((xup - xlow) / bin_width);
+    //                 if (nbins <= 0) nbins = 1;
+
+    //                 TH1D* h_tdc_diff = new TH1D(Form("h_tdc_diff_ch%d", ch_num), Form("TDC - Trigger TDC Ch %d", ch_num), nbins, xlow+bin_width/2, xup+bin_width/2);
+    //                 new_tree->Draw(Form("tdc_diff>>%s", h_tdc_diff->GetName()), selection, "goff");
+    //             }
+
+    //             // [変更箇所] --- time_diff (ビン幅 0.25 ns で自動範囲設定) ---
+    //             // TTreeの "time_diff" ブランチには (ns) 単位のデータが入っている
+    //             new_tree->Draw("time_diff", selection, "goff");
+    //             n_selected = new_tree->GetSelectedRows();
+    //             if (n_selected > 0) {
+    //                 double min_val = TMath::MinElement(n_selected, new_tree->GetV1());
+    //                 double max_val = TMath::MaxElement(n_selected, new_tree->GetV1());
+    //                 double margin = (max_val - min_val) * 0.05;
+                    
+    //                 // 2. マージンのデフォルト値を (ns) 単位に修正
+    //                 if (margin == 0) margin = 1.0; 
+
+    //                 // 1. ビン幅を 0.25 (ns) に設定
+    //                 const double bin_width = 0.25;
+    //                 double xlow_raw = min_val - margin;
+    //                 double xup_raw = max_val + margin;
+
+    //                 // 2. ビンの境界が 0.25 の倍数になるように調整
+    //                 double xlow = TMath::Floor(xlow_raw / bin_width) * bin_width;
+    //                 double xup = TMath::Ceil(xup_raw / bin_width) * bin_width;
+
+    //                 // 3. ビン数を計算
+    //                 int nbins = TMath::Nint((xup - xlow) / bin_width);
+    //                 if (nbins <= 0) nbins = 1;
+
+    //                 // 4. ヒストグラムのタイトルを (s) から (ns) に修正 (これは既に修正済み)
+    //                 TH1D* h_time_diff = new TH1D(Form("h_time_diff_ch%d", ch_num), Form("Time - Trigger Time (ns) Ch %d", ch_num), nbins, xlow+bin_width/2, xup+bin_width/2);
+    //                 new_tree->Draw(Form("time_diff>>%s", h_time_diff->GetName()), selection, "goff");
+    //             }
+    //         }
+    //     }
+    //     // */
+    //     // ==============================================================================
+
+
+    //     // --- 7. ファイルの書き込みとクローズ ---
+    //     std::cout << "\nWriting TTree and histograms to " << output_file << std::endl;
+    //     h_time_prescan->Write(); // ピーク特定に使ったヒストグラムも参考として保存
+    //     ofile->Write(); // new_treeと、もし作成されていれば他のヒストグラムを保存
+    //     ofile->Close();
+    //     ifile->Close();
+    // }
+
+    // // --- スタンドアロン実行のためのmain関数 ---
+    // int main(int argc, char* argv[]) {
+    //     if (argc != 3) {
+    //         std::cerr << "Usage: " << argv[0] << " <input_file.root> <output_file.root>" << std::endl;
+    //         return 1;
+    //     }
+    //     read_event_tree(argv[1], argv[2]);
+    //     return 0;
+    // }
+```
+ここで作成されるTTreeのprocessed_hitsが主要な結果といえるだろう。
+
+ここで一つ重要なのは得られたhgain, lgainからクーロン単位の光量への変換である。hgain, lgainはとくに入力信号を入れていなくても0より大きい値を取り、これをペデスタルと呼ぶ。これを考慮して、さらに1 adcをクーロンに変換しなければならない。変換の式を以下に示す。
+charge [pC] = (charge [ADC] - pedestal [ADC]) * k [pC/ADC]
+k = 0.073 pC/ADC (high gain), 0.599 pC/ADC (low gain)
+
+さて、作成されるコードで想定される必要な入力情報としては以下がある。
+１．ペデスタルのファイル: hkelec_pedestal_hithist_means.txt
+    CH0~11(使うのは0~3)のhgain, lgainなどのペデスタルのデータがcsv形式で含まれる。今回の測定ではCH0がPMT#1に、... 、CH3がPMT#4に対応している。
+    以下に具体的な例を示す。
+
+```txt
+    # ch,type,ped_mean,ped_mean_err
+    0,hgain,513.918,0.0670746
+    0,lgain,219.535,0.0331483
+    0,tot,117.58,0.0946867
+    1,hgain,476.164,0.00747256
+    1,lgain,217.547,0.00132033
+    1,tot,69.2494,0.259498
+    2,hgain,511.773,0.00606361
+    2,lgain,218.879,0.00104085
+    2,tot,0,0
+    3,hgain,483.717,0.00596289
+    3,lgain,218.31,0.00120767
+    3,tot,0,0
+    4,hgain,474.726,0.0578717
+    4,lgain,217.441,0.00693469
+    4,tot,305.71,4.16821
+    5,hgain,484.952,0.00592285
+    5,lgain,218.049,0.00100923
+    5,tot,0,0
+    6,hgain,477.163,0.00591742
+    6,lgain,217.054,0.00100467
+    6,tot,0,0
+    7,hgain,435.254,0.00581396
+    7,lgain,211.295,0.00121571
+    7,tot,0,0
+    8,hgain,465.622,0.00578818
+    8,lgain,216.978,0.000982116
+    8,tot,0,0
+    9,hgain,486.301,0.00594978
+    9,lgain,218.086,0.00103917
+    9,tot,0,0
+    10,hgain,459.371,0.00583048
+    10,lgain,218.029,0.000967862
+    10,tot,0,0
+    11,hgain,466.267,0.00594926
+    11,lgain,215.737,0.00118104
+    11,tot,0,0
+```
+２．データのROOTファイル: *eventhist.root
+*eventhist.rootに含まれるオブジェクトおよびその一つであるTTree, processed_hitsの内容を以下に示す。
+```sh
+    root [0]
+    Attaching file LDhkelec_0pt_diag_no1-001-13.00dB_eventhist.root as _file0...
+    (TFile *) 0x5b370e64c710
+    root [1] .ls
+    TFile**         LDhkelec_0pt_diag_no1-001-13.00dB_eventhist.root
+    TFile*         LDhkelec_0pt_diag_no1-001-13.00dB_eventhist.root
+    KEY: TH1D     h_time_prescan;2        Pre-scan for time peak [current cycle]
+    KEY: TH1D     h_time_prescan;1        Pre-scan for time peak [backup cycle]
+    KEY: TTree    processed_hits;1        Processed Hit Data per Channel
+    KEY: TH1D     h_hgain_ch0;1   High Gain ADC Ch 0
+    KEY: TH1D     h_lgain_ch0;1   Low Gain ADC Ch 0
+    KEY: TH1D     h_tot_ch0;1     Time over Threshold Ch 0
+    KEY: TH1D     h_tdc_diff_ch0;1        TDC - Trigger TDC Ch 0
+    KEY: TH1F     htemp;1 time_diff {ch==0}
+    KEY: TH1D     h_time_diff_ch0;1       Time - Trigger Time (ns) Ch 0
+    root [2] processed_hits->Draw("hgain:time_diff", "ch==1", "colz");
+    Info in <TCanvas::MakeDefCanvas>:  created default TCanvas with name c1
+    root [3] processed_hits->Print();
+    ******************************************************************************
+    *Tree    :processed_hits: Processed Hit Data per Channel                         *
+    *Entries :    81365 : Total =         3921249 bytes  File  Size =     758565 *
+    *        :          : Tree compression factor =   5.18                       *
+    ******************************************************************************
+    *Br    0 :eventID   : eventID/I                                              *
+    *Entries :    81365 : Total  Size=     326917 bytes  File Size  =     116255 *
+    *Baskets :       11 : Basket Size=      32000 bytes  Compression=   2.81     *
+    *............................................................................*
+    *Br    1 :ch        : ch/I                                                   *
+    *Entries :    81365 : Total  Size=     326886 bytes  File Size  =       2649 *
+    *Baskets :       11 : Basket Size=      32000 bytes  Compression= 123.19     *
+    *............................................................................*
+    *Br    2 :hgain     : hgain/D                                                *
+    *Entries :    81365 : Total  Size=     653375 bytes  File Size  =      10924 *
+    *Baskets :       21 : Basket Size=      32000 bytes  Compression=  59.74     *
+    *............................................................................*
+    *Br    3 :lgain     : lgain/D                                                *
+    *Entries :    81365 : Total  Size=     653375 bytes  File Size  =     177410 *
+    *Baskets :       21 : Basket Size=      32000 bytes  Compression=   3.68     *
+    *............................................................................*
+    *Br    4 :tot       : tot/D                                                  *
+    *Entries :    81365 : Total  Size=     653325 bytes  File Size  =     160151 *
+    *Baskets :       21 : Basket Size=      32000 bytes  Compression=   4.07     *
+    *............................................................................*
+    *Br    5 :tdc_diff  : tdc_diff/D                                             *
+    *Entries :    81365 : Total  Size=     653450 bytes  File Size  =     125545 *
+    *Baskets :       21 : Basket Size=      32000 bytes  Compression=   5.20     *
+    *............................................................................*
+    *Br    6 :time_diff : time_diff/D                                            *
+    *Entries :    81365 : Total  Size=     653475 bytes  File Size  =     163769 *
+    *Baskets :       21 : Basket Size=      32000 bytes  Compression=   3.99     *
+    *............................................................................*
+```
+このeventIDはどのトリガーヒットに対応するかを表しており、eventIDが同じヒットのグループを一つのイベントとみなしてイベント単位で再構成を行いたい。つまり理想的にはeventIDが同じ4つのヒットからそれらのヒットを引き起こした発光の位置を特定する、ということを繰り返し行いたい。
+
+その他、コードの書き換えに必要と思われる情報を以下に示す。
+１．PMT, 光源の位置、向きについて。
+今回の測定ではPMTは4つしか使わないため、位置などの情報は直接コードに書き込むことを考えている。mPMTとは異なり、向きはすべてそろって真上を向く。
+具体的な位置は以下である。
+まず、原点を部屋の床面の中心とする（0, 0, 0）。
+次に、PMT#1(の表面の中心の点)の位置は(-35.0, 35.0, 80.5)である。単位は cm である。
+同様にPMT#2, #3, #4の位置はそれぞれ(35.0, 35.0, 80.5), (-35.0, -35.0, 80.5), (35.0, -35.0, 80.5)である。
+光源は今後たびたび動かすことが想定される。ひとまず(0, 0, 177.3)とする。
+のちにこれらはのちにまとめて書き換える可能性があるのでコード内で同じ位置に書くか、やはりのちのちPMTを増やすことも考えて、別のファイルで管理するようにするかのどちらかでお願いしたい。
+
+２．光の速度について
+本実験は通常の空気中で行う。したがって光の速度は c/n で計算したい。n = 1.0003 とする。すると、cm単位での光の速度は
+299792458/1.0003 / 1e7 = 29.970255 cm/ns である。
+c = 29.970255 cm/ns としてコード内で使用してほしい。
+
+３．時刻について
+以下はonemPMTfit.cc内の再構成の方法を決定する関数である。
+```cpp
+    double CalculateError(double *params) {
+        double maxL = 0;
+        double chi2 = 0.0;
+        for (const auto &pmt : g_pmtData) {
+            NormalizeAngles(params[0], params[1]);
+            std::array<double, 3> Cartesian = ConvertToCartesian(100, params[0], params[1], pmt.center_x, pmt.center_y, pmt.center_z);
+            double dx, dy, dz;
+            // 無限遠光源の場合
+            dx = std::sin(params[0]) * std::cos(params[1]);
+            dy = -std::cos(params[0]);
+            dz = std::sin(params[0]) * std::sin(params[1]);
+            // dx = -pmt.x + Cartesian[0];
+            // dy = -pmt.y + Cartesian[1];
+            // dz = -pmt.z + Cartesian[2]; // rを使う場合はこっち
+            int id = pmt.mPMT_pmtid;
+            // int id =
+            if (id < 0 || id > 19) {
+                std::cout << "Error: PMT ID out of range." << std::endl;
+                continue; // Skip this PMT if the ID is invalid
+            }
+            double ori_x = pmtDirections[id][0];
+            double ori_y = pmtDirections[id][1];
+            double ori_z = pmtDirections[id][2];
+            double cosalpha = CalculateAngle(ori_x, ori_y, ori_z, dx, dy, dz); // Angle between the PMT orientation and the light direction
+            double distance2 = 60;
+            double expectedTime;
+            double model = 0;
+            model = (params[2] / 10000 / (1 + std::exp(-6 * (cosalpha - 1))) + params[3] / 100000);// -6は測定結果によって変更が必要かも N_model
+            if (model < 0) {
+                model = 0;
+            }
+            chi2 += (pmt.L - model * distance2) * (pmt.L - model * distance2) / pmt.L;// chi2
+            // chi2 += (pmt.L - model) * (pmt.L - model) / pmt.L;
+        }
+        return chi2;
+    }
+```
+ここで計算されるchi2が小さくなるようにパラメータparamsを最適化している。params[0], params[1]が光源の方向、params[2], params[3]が光量に関するパラメータである。
+onemPMTfit.ccでは、時刻の情報は再構成に用いていないが、今回は組み込みたい。onemPMTfit.ccでは、
+chi2 = sum((pmt.L - model * distance2) * (pmt.L - model * distance2) / pmt.L)
+(ただし、pmt.Lは光量、distance2は光源からPMTまでの距離の2乗、model = (params[2] / 10000 / (1 + std::exp(-6 * (cosalpha - 1))) + params[3] / 100000)であり、cosalphaは光源からPMTへのベクトルとPMTの向きのなす角の余弦である)としている。
+これに加えて、時刻に関する項を追加したい。具体的には、
+chi2 += sum(((time_diff-補正値) - time_exp)^2 / sigma_time^2)
+()ただし、time_diffはTTreeのtime_diffブランチの値、補正値は各PMTごとに定まる定数(今回はひとまずすべて200 nsとする)、time_expは光源からPMTまでの距離を光の速度cで割ったものであるに発光時刻の値を足したもの(time_exp = distance/c + t)である。sigma_timeは時刻に関する測定誤差であり、各PMTごとに定まる定数であるが、今回はひとまず1.0 nsとする。
+
+４．光量によるフィットについて
+onemPMTfit.ccではcosalphaの計算では光源を無限遠とし、distance2は60と固定している。また、フィットされるパラメータは光源の方向(params[0], params[1])と光量に関するパラメータ(params[2], params[3])である。
+今回の測定では光源は有限距離にあるため、distance2は光源からPMTまでの距離の2乗に変更する。cosalphaの計算も、光源との位置関係から適切に計算する（コメントアウトされている方を使う?）こととする。
+また、params[0], params[1]は光源の位置を表すパラメータに変更する。具体的には、params[0]が発光時刻t、params[1], params[2], params[3]が光源の位置(x, y, z)を表し、params[4], params[5]が光量に関するパラメータとなるように変更してほしい。
+これでうまくいかない場合、t=0を固定して、params[0], params[1], params[2]が光源の位置(x, y, z)、params[3], params[4]が光量に関するパラメータとなるように変更するかもしれないのでそう考えるとt=params[5]としたほうがいいかもしれないがこのあたりは任せる。
+
+最後に出力について以下で指定する。
+もとのコードと同様にfit_x,fit_y,fit_z,t_light,err_x,err_y,err_z,t_error,chi2のブランチをもつTTree, fit_results および、csvファイルfit_results.csvを出力してほしい。
+fit_results(ファイル名)の部分はコードの実行時に元のコードと同様に指定できるようにしたい。
+以上、よろしくお願いいたします。
+
+なお以下は追加の情報である。
+1. コード内でテキストファイルを読み込み、CHごと（0~3）のhgain, lgainのペデスタルを取得しておいて、processed_hitsを読み込んで再構成に用いる光量を取得する際に、ADCをpCに変換する式を用いて光量を電荷として求め、これを再構成に使ってください。lgainを使用する条件は、hgainの値が4000以上の時に、サチュレーションしているとみなしてlgainを使用して再構成してください。
+2．フィッティングのモデルについてはこれは仮のもので後々より良いものに変更しようと思っています。むしろ様々なモデルを何度も試して、より良いモデルを探そうと思っているので、後々モデルを変更しやすいようにコードを設計してください。
+3．光源の探索空間は、x,y,z = -400cm ~ +400cmとしてください。
+4．単純和で実装し、後で調整できるようにお願いします。
+5．うまく動けばどちらでもいいです。いったん逐次処理する方式で作成して、うまくいかなかったら既存のものに戻してください。

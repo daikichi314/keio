@@ -1,33 +1,39 @@
-# 1. コンパイラの設定
-# 通常は g++ を使用します
+# コンパイラの指定 (g++)
 CXX = g++
 
-# 2. コンパイルオプションの設定
+# コンパイルオプション
 # -O2: 最適化レベル2
-# -Wall: 警告を表示
-# root-config --cflags: ROOTのヘッダファイルのパスなどを自動設定
+# -Wall: 警告を全て表示
+# root-config --cflags: ROOTライブラリのインクルードパスなどを展開
 CXXFLAGS = -O2 -Wall $(shell root-config --cflags)
 
-# 3. リンクオプションの設定
-# root-config --libs: ROOTのライブラリを自動設定
-# -lMinuit: TMinuitクラスを使用するために明示的にリンク
+# リンクオプション
+# root-config --libs: ROOTライブラリのリンク設定を展開
+# -lMinuit: Minuitライブラリを明示的にリンク
 LDFLAGS = $(shell root-config --libs) -lMinuit
 
-# 4. 生成する実行ファイル名
-# 任意の名前で構いませんが、ここでは reconstructor としています
+# 生成する実行ファイルの名前
 TARGET = reconstructor
 
-# 5. ソースファイル
-# main.cc 内で他の .cc ファイルを include しているため、
-# コンパイル対象は main.cc のみとなります
-SRCS = main.cc
+# ソースファイルのリスト
+SRCS = main.cc readData.cc onemPMTfit.cc
 
-# 6. ビルドターゲット (make コマンドで実行される部分)
+# オブジェクトファイル名 (.cc を .o に置換)
+OBJS = $(SRCS:.cc=.o)
+
+# デフォルトターゲット (make と打つとここが実行される)
 all: $(TARGET)
 
-$(TARGET): $(SRCS)
+# 実行ファイルの生成ルール
+# $@ はターゲット名(reconstructor), $^ は依存ファイルリスト(OBJS)
+$(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-# 7. クリーンアップ (make clean で生成物を削除)
+# 各ソースファイルのコンパイルルール
+# $< は最初の依存ファイル(.cc), $@ はターゲット(.o)
+%.o: %.cc
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# 生成ファイルを削除するターゲット
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(OBJS)

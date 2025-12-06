@@ -1,146 +1,174 @@
 #include "readData.hh"
-#include "TFile.h"
-#include "TTree.h"
-#include "fittinginput.hh"
-#include <iostream>
-#include <map>
-#include <string>
-#include <vector>
-#include <sstream>
-#include <set>
 
-int readData(std::string &inputfilename,  std::map<int, std::vector<PMTData>> &PMTDataMap) {
-    int ev=0;
-    int firstentry=0;
-    int lastentry; 
-    int eventNumber=0;
-    TFile *file = TFile::Open((inputfilename + ".root").c_str());
-	std::cout << "open file "<<file<<std::endl;
-    if (!file || file->IsZombie()) {
-        std::cout << "Error: Cannot open file pmtdata.root" << std::endl;
-        return 1;
-    }
+// ADCから電荷(pC)への変換係数
+const double K_HGAIN = 0.073; // High Gain用 pC/ADC
+const double K_LGAIN = 0.599; // Low Gain用 pC/ADC
+const double SATURATION_THRESHOLD = 4000.0; // High Gainが飽和したとみなす閾値
 
-    TTree *tree = dynamic_cast<TTree *>(file->Get("PMTTree"));
-    if (!tree) {
-        std::cout << "Error: Cannot find TTree 'PMTTree' in file." << std::endl;
-        return 1;
-    }
-
-    // ブランチ変数の定義
-    int tubeid, mPMTid, mPMT_pmtid;
-    double x, y, z, L, t, ori_x, ori_y, ori_z, center_x, center_y, center_z;
-    tree->SetBranchAddress("eventNumber", &eventNumber);
-    tree->SetBranchAddress("tubeid", &tubeid);
-    tree->SetBranchAddress("mPMTid", &mPMTid);
-    tree->SetBranchAddress("mPMT_pmtid", &mPMT_pmtid);
-    tree->SetBranchAddress("x", &x);// PMTnoiti
-    tree->SetBranchAddress("y", &y);
-    tree->SetBranchAddress("z", &z);
-    tree->SetBranchAddress("L", &L);
-    tree->SetBranchAddress("t", &t);
-    tree->SetBranchAddress("ori_x", &ori_x);
-    tree->SetBranchAddress("ori_y", &ori_y);
-    tree->SetBranchAddress("ori_z", &ori_z);
-    tree->SetBranchAddress("center_x", &center_x);
-    tree->SetBranchAddress("center_y", &center_y);
-    tree->SetBranchAddress("center_z", &center_z);
-
-    // エントリー数の取得
-    std::cout << "branch is read" << std::endl;
-    Long64_t nEntries = tree->GetEntries();
-    if (nEntries == 0) {
-        std::cout << "Error: No entries in TTree." << std::endl;
-        return 1;
-    }
-    tree->GetEntry(nEntries - 1);
-    int eventNumber_max = eventNumber + 1; // 最大イベント番号を取得
-    // もし全イベントを読み終えたら終了
-    if (ev >= eventNumber_max) {
-        std::cout << "all event is readed, eventNumber_max is " << eventNumber_max << std::endl;
-        return 3;
-    }
-    PMTData data; // PMTData構造体のインスタンスを作成
-
-    // イベントループ データの読み込み 
-    for (Long64_t i =0 ; i < nEntries; ++i) {
-        tree->GetEntry(i);
-        // use mPMT id is {338, 339,340, 346, 347,348, 354,355,356}; the case of the data 30-4-all center is 40,40
-        if (eventNumber == ev && (mPMTid == 338 || mPMTid == 339 || mPMTid == 340 || mPMTid == 346 || mPMTid == 347 || mPMTid == 348 || mPMTid == 354 || mPMTid == 355 || mPMTid == 356)) {
-            // use uPMT id is {330, 331,332,339, 340,341, 347, 348,349}
-            // if (eventNumber == ev && (mPMTid == 330 || mPMTid == 331 || mPMTid == 332 || mPMTid == 339 || mPMTid == 340 || mPMTid == 341 || mPMTid == 347 || mPMTid == 348 || mPMTid == 349)) {
-            // if (eventNumber == ev && mPMTid > 317) {
-            //  if (eventNumber == ev) {
-            data.tubeid = tubeid;
-            data.mPMTid = mPMTid;
-            data.mPMT_pmtid = mPMT_pmtid;
-            data.t = t;
-            data.x = x;
-            data.y = y;
-            data.z = z;
-            data.L = L;
-            data.ori_x = ori_x;
-            data.ori_y = ori_y;
-            data.ori_z = ori_z;
-            data.center_x = center_x;
-            data.center_y = center_y;
-            data.center_z = center_z;
-            PMTDataMap[mPMTid].push_back(data);
-        }
-        if (eventNumber > ev) {
-			lastentry = i;
-            break;
-        }
-    }
-    // PMTDataMap[i]が空かどうかを確認
-    for (const auto &pair : PMTDataMap) {
-        if (pair.second.empty()) {
-            std::cout << "No data for mPMTid: " << pair.first << std::endl;
-        }
-    }
-    std::cout << "PMTDataMap size: " << PMTDataMap.size() << std::endl;
-	file->Close();
-	if(PMTDataMap.size() == 0) return 2;
-    return 0;
-}
-
-int readPMTinfo(std::string &inputfilename, int &target_mPMT_id, int &target_mPMT_pmtid, double &ori_x_return, double &ori_y_return, double &ori_z_return) {
-    std::ifstream infile(inputfilename);
-    if (!infile) {
-        std::cerr << "Error: Cannot open file " << inputfilename << std::endl;
+// ペデスタル読み込み関数の実装
+int readPedestals(const std::string &filename, std::map<int, PedestalData> &pedestalMap) {
+    std::ifstream infile(filename); // ファイルを開く
+    if (!infile) { // 開けなかった場合
+        std::cerr << "Error: Cannot open pedestal file " << filename << std::endl;
         return 1;
     }
 
     std::string line;
-    int line_num = 0;
-
-    // skip the first 5 lines
-    for (int i = 0; i < 5 && std::getline(infile, line); ++i)
-        ;
-
-    bool found = false;
-
+    // ファイルを1行ずつ読み込む
     while (std::getline(infile, line)) {
-        std::istringstream iss(line);
-        int tube_id, mPMT_id, mPMT_pmtid, info;
-        double x, y, z, ori_x, ori_y, ori_z;
+        if (line.empty() || line[0] == '#') continue; // 空行やコメント行(#で開始)はスキップ
+        
+        // カンマ区切りCSVをスペース区切りに変換して扱いやすくする
+        for (char &c : line) if (c == ',') c = ' ';
+        
+        std::istringstream iss(line); // 文字列ストリームを作成
+        int ch;
+        std::string type;
+        double mean, err;
+        
+        // チャンネル、タイプ、平均値、誤差を読み取る
+        if (!(iss >> ch >> type >> mean >> err)) continue; // 読み取り失敗ならスキップ
 
-        if (!(iss >> tube_id >> mPMT_id >> mPMT_pmtid >> x >> y >> z >> ori_x >> ori_y >> ori_z >> info)) {
-            std::cerr << "読み取りエラー： " << line << std::endl;
-            continue;
-        }
-
-        if (mPMT_id == target_mPMT_id && mPMT_pmtid == target_mPMT_pmtid) {
-            ori_x_return = ori_x;
-            ori_y_return = ori_y;
-            ori_z_return = ori_z;
-            found = true;
-            break; // 最初に一致したものだけを取得する場合
+        // タイプに応じてマップに値をセット
+        if (type == "hgain") {
+            pedestalMap[ch].hgain_mean = mean;
+        } else if (type == "lgain") {
+            pedestalMap[ch].lgain_mean = mean;
         }
     }
+    return 0; // 成功
+}
 
-    if (!found) {
-        std::cout << "一致するデータが見つかりませんでした。" << std::endl;
+// DataReaderコンストラクタの実装
+DataReader::DataReader(const std::string &filename, const std::map<int, PedestalData> &pedMap) 
+    : pedestalMap(pedMap), currentEntry(0), hasBufferedHit(false) { // 初期化子リスト
+    
+    file = TFile::Open(filename.c_str()); // ROOTファイルを開く
+    if (!file || file->IsZombie()) { // 開けなかった、または壊れている場合
+        std::cerr << "Error: Cannot open ROOT file " << filename << std::endl;
+        tree = nullptr;
+        return;
     }
-    return found ? 0 : 1; // 成功なら0、失敗なら1を返す
+
+    tree = dynamic_cast<TTree*>(file->Get("processed_hits")); // TTreeを取得
+    if (!tree) {
+        std::cerr << "Error: Cannot find 'processed_hits' tree" << std::endl;
+        return;
+    }
+
+    // ブランチのアドレスをメンバ変数にセット
+    tree->SetBranchAddress("eventID", &b_eventID);
+    tree->SetBranchAddress("ch", &b_ch);
+    tree->SetBranchAddress("hgain", &b_hgain);
+    tree->SetBranchAddress("lgain", &b_lgain);
+    tree->SetBranchAddress("tot", &b_tot);
+    tree->SetBranchAddress("time_diff", &b_time_diff);
+
+    nEntries = tree->GetEntries(); // 総エントリー数を取得
+}
+
+// DataReaderデストラクタの実装
+DataReader::~DataReader() {
+    if (file) file->Close(); // ファイルが開いていれば閉じる
+}
+
+// 1ヒット分のデータを作成する内部関数
+PMTData DataReader::createPMTData() {
+    PMTData data;
+    data.eventID = b_eventID; // イベントIDをセット
+    data.ch = b_ch; // チャンネルをセット
+    
+    // processed_hitsのtime_diffブランチの値を時刻としてセット
+    data.time = b_time_diff; 
+
+    // ペデスタル値を取得
+    double ped_h = 0, ped_l = 0;
+    auto it = pedestalMap.find(b_ch); // マップからチャンネルを検索
+    if (it != pedestalMap.end()) { // 見つかった場合
+        ped_h = it->second.hgain_mean;
+        ped_l = it->second.lgain_mean;
+    }
+
+    // High Gainが飽和しているかチェック
+    if (b_hgain >= SATURATION_THRESHOLD) {
+        // 飽和時はLow Gainを使用: (ADC - ペデスタル) * 係数
+        data.charge = (b_lgain - ped_l) * K_LGAIN;
+    } else {
+        // 通常時はHigh Gainを使用
+        data.charge = (b_hgain - ped_h) * K_HGAIN;
+    }
+
+    // 負の電荷は物理的にあり得ないので0にする（ノイズ対策）
+    if (data.charge < 0) data.charge = 0;
+
+    // PMTの位置情報を定数配列から取得してセット
+    if (b_ch >= 0 && b_ch < 4) {
+        data.x = PMT_POSITIONS[b_ch][0];
+        data.y = PMT_POSITIONS[b_ch][1];
+        data.z = PMT_POSITIONS[b_ch][2];
+        data.dir_x = PMT_DIR[0];
+        data.dir_y = PMT_DIR[1];
+        data.dir_z = PMT_DIR[2];
+    } else {
+        // 想定外のチャンネルの場合 (0,0,0) にする
+        data.x = 0; data.y = 0; data.z = 0;
+    }
+
+    return data;
+}
+
+// 次のイベントを取得する関数の実装
+bool DataReader::nextEvent(std::vector<PMTData> &eventHits) {
+    eventHits.clear(); // ベクトルをクリア
+    
+    if (!tree) return false; // ツリーが無ければ終了
+
+    // 前回のループで「次のイベントの先頭」を読み込んでバッファしていた場合
+    if (hasBufferedHit) {
+        // バッファの値を現在のブランチ変数に戻す
+        b_eventID = buf_eventID;
+        b_ch = buf_ch;
+        b_hgain = buf_hgain;
+        b_lgain = buf_lgain;
+        b_tot = buf_tot;
+        b_time_diff = buf_time_diff;
+        
+        // データを作成して追加
+        eventHits.push_back(createPMTData());
+        hasBufferedHit = false; // バッファ使用済み
+    }
+
+    int currentEventID = -1;
+    if (!eventHits.empty()) {
+        currentEventID = eventHits[0].eventID; // 現在処理中のイベントIDを記録
+    }
+
+    // TTreeを読み進めるループ
+    while (currentEntry < nEntries) {
+        tree->GetEntry(currentEntry); // エントリーを読み込む
+        currentEntry++; // カウンタを進める
+
+        // まだヒットがない場合、このヒットがイベントの開始
+        if (eventHits.empty()) {
+            currentEventID = b_eventID;
+        }
+
+        // イベントIDが変わった場合（＝次のイベントのデータが来た）
+        if (b_eventID != currentEventID) {
+            hasBufferedHit = true; // このデータをバッファに保存
+            buf_eventID = b_eventID;
+            buf_ch = b_ch;
+            buf_hgain = b_hgain;
+            buf_lgain = b_lgain;
+            buf_tot = b_tot;
+            buf_time_diff = b_time_diff;
+            return true; // 現在のイベント収集完了としてリターン
+        }
+
+        // 現在のイベントと同じIDなら、リストに追加して次へ
+        eventHits.push_back(createPMTData());
+    }
+
+    // ファイルの最後まで読み終わった場合、リストにデータがあればtrueを返す
+    return !eventHits.empty();
 }

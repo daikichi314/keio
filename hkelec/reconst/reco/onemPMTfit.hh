@@ -1,17 +1,32 @@
-// 1mPMTfit.hh
-#ifndef ONE_MPMT_FIT_HH
-#define ONE_MPMT_FIT_HH
+#ifndef ONEMPMTFIT_HH
+#define ONEMPMTFIT_HH // インクルードガード
+
 #include "fittinginput.hh"
-#include "fstream"
-int onemPMTfit(const std::string &inputfilename);
-std::vector<PMTData> findExpandedGroups(const std::vector<PMTData> &pmtData,
-                                        double tau,
-                                        int n,
-                                        double expand_before,
-                                        double expand_after);
-void FitPosition(std::vector<PMTData> &pmtData, // defined in fittinginput.hh
-                 double &fit_theta,
-                 double &fit_phi,
-                 double &err_theta,
-                 double &err_phi);
-#endif
+#include <vector>
+#include <TMinuit.h> // ROOTの最小化ライブラリ
+
+// フィッティングを行うクラス
+class LightSourceFitter {
+public:
+    LightSourceFitter();  // コンストラクタ
+    ~LightSourceFitter(); // デストラクタ
+
+    // イベントごとのフィットを実行する関数
+    // hits: 入力データのリスト, result: 結果格納用構造体
+    bool FitEvent(const std::vector<PMTData> &hits, FitResult &result);
+
+    // Minuitから呼び出される静的関数 (目的関数FCN)
+    // 引数の形式はTMinuitの仕様で決まっている
+    static void FcnForMinuit(Int_t &npar, Double_t *grad, Double_t &fval, Double_t *par, Int_t flag);
+
+private:
+    static std::vector<PMTData> g_hits; // Minuitに渡すためにデータを保持する静的変数
+
+    // 予想される光量を計算するモデル関数
+    static double CalculateExpectedCharge(const double* params, double distance, double cos_angle);
+    
+    // カイ二乗値を計算するヘルパー関数
+    static double CalculateChi2(double *par);
+};
+
+#endif // ONEMPMTFIT_HH
