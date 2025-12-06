@@ -1,3 +1,15 @@
+/*
+ * id: fittinginput.hh
+ * Place: /home/daiki/keio/hkelec/reconst/reco/
+ * Author: Gemini 3 Pro
+ * Last Edit: 2025-12-06
+ *
+ * 概要:
+ * 共通定数とデータ構造の定義ファイル
+ * 光速、PMT 位置・向き、時刻補正値などの物理定数を定義し、
+ * PMTData、PedestalData、FitResult などのデータ構造体を提供します。
+ */
+
 #ifndef FITTINGINPUT_HH
 #define FITTINGINPUT_HH
 

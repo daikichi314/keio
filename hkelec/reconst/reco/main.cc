@@ -1,3 +1,19 @@
+/*
+ * id: main.cc
+ * Place: /home/daiki/keio/hkelec/reconst/reco/
+ * Author: Gemini 3 Pro
+ * Last Edit: 2025-12-06
+ *
+ * 概要:
+ * 4つの50cm PMTを用いた光源位置・発光時刻の再構成プログラム (メイン処理)
+ * processed_hits TTree からイベント単位でヒットデータを読み込み、
+ * Minuit による χ² 最小化フィットで光源位置(x,y,z)と発光時刻(t)を推定します。
+ * 結果は ROOT TTree と CSV ファイルに出力されます。
+ *
+ * コンパイル:
+ * make (Makefile を使用)
+ */
+
 #include "readData.hh"
 #include "onemPMTfit.hh"
 #include "fittinginput.hh"
@@ -42,8 +58,7 @@ int main(int argc, char** argv) {
     }
 
     std::string inputBinFile = argv[1];
-    std::string outputBaseName = "fit_results";
-    if (argc >= 3) outputBaseName = argv[2];
+    std::string outputBaseName = (argc >= 3) ? argv[2] : "fit_results";
 
     // 入力ファイルのディレクトリを取得し、ペデスタルファイルのパスを作成
     std::string dirPath = "./";
@@ -92,32 +107,41 @@ int main(int argc, char** argv) {
     tOut->Branch("B", &res.B, "B/D");
 
     // CSVファイルの準備
-    std::ofstream ofs(outputCsvFile);
+    std::ofstream ofs(outputCsvFile.c_str());
     ofs << "fit_x,fit_y,fit_z,t_light,err_x,err_y,err_z,t_error,chi2,ndf,A,B\n";
 
     // 4. フィッターの準備
     LightSourceFitter fitter;
     std::vector<PMTData> eventHits;
-    int eventCount = 0;
+    
+    // 統計用カウンタ
+    int n_total = 0;
+    int n_skip  = 0;
+    int n_fail  = 0;
+    int n_success = 0;
 
-    // 5. イベントループ
+    // メインループ
     while (reader.nextEvent(eventHits)) {
-        // ヒット数が少ないイベントはスキップ（最低でもデータがあること）
-        if (eventHits.empty()) continue;
+        n_total++;
 
-        // フィット実行
+        // ヒット数不足のチェック (4本未満ならスキップ)
+        if (eventHits.size() < 4) {
+            n_skip++;
+            continue;
+        }
+
         if (fitter.FitEvent(eventHits, res)) {
             // 成功したら保存
             tOut->Fill();
             ofs << res.x << "," << res.y << "," << res.z << "," << res.t << ","
                 << res.err_x << "," << res.err_y << "," << res.err_z << "," << res.err_t << ","
                 << res.chi2 << "," << res.ndf << "," << res.A << "," << res.B << "\n";
+            n_success++;
+        } else {
+            n_fail++;
         }
 
-        eventCount++;
-        if (eventCount % 1000 == 0) {
-            std::cout << "Processed " << eventCount << " events." << std::endl;
-        }
+        if (n_total % 1000 == 0) std::cout << "Processed " << n_total << " events..." << std::endl;
     }
 
     // 終了処理
@@ -125,7 +149,13 @@ int main(int argc, char** argv) {
     fOut->Close();
     ofs.close();
 
-    std::cout << "Done. Results saved to " << outputRootFile << " and " << outputCsvFile << std::endl;
+    // 統計情報の表示
+    std::cout << "\n=== Processing Summary ===" << std::endl;
+    std::cout << " Total Events:    " << n_total << std::endl;
+    std::cout << " Skipped (<4hits):" << n_skip << std::endl;
+    std::cout << " Fit Failed:      " << n_fail << std::endl;
+    std::cout << " Fit Success:     " << n_success << std::endl;
+    std::cout << " Saved to: " << outputRootFile << std::endl;
 
     return 0;
 }

@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# id: run_reconstruction_batch.sh
+# Place: /home/daiki/keio/hkelec/reconst/reco/
+# Author: Gemini 3 Pro
+# Last Edit: 2025-12-06
+#
+# 概要:
+# 指定ディレクトリ内の *eventhist.root ファイルに対して
+# reconstructor を一括実行するバッチスクリプト
+
 # --- スクリプトの使い方を表示する関数 ---
 usage() {
     echo "=========================================================================="

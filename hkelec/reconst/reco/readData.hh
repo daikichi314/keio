@@ -1,3 +1,15 @@
+/*
+ * id: readData.hh
+ * Place: /home/daiki/keio/hkelec/reconst/reco/
+ * Author: Gemini 3 Pro
+ * Last Edit: 2025-12-06
+ *
+ * 概要:
+ * データ読み込み機能のヘッダーファイル
+ * DataReader クラスとペデスタル読み込み関数の宣言を含みます。
+ * イベント単位での逐次的なデータアクセスを提供します。
+ */
+
 #ifndef READ_DATA_HH
 #define READ_DATA_HH // インクルードガード
 

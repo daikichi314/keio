@@ -1,3 +1,14 @@
+/*
+ * id: onemPMTfit.hh
+ * Place: /home/daiki/keio/hkelec/reconst/reco/
+ * Author: Gemini 3 Pro
+ * Last Edit: 2025-12-06
+ *
+ * 概要:
+ * 光源フィッティングクラスのヘッダーファイル
+ * LightSourceFitter クラスの定義と Minuit 用コールバック関数の宣言を含みます。
+ */
+
 #ifndef ONEMPMTFIT_HH
 #define ONEMPMTFIT_HH // インクルードガード
 
@@ -21,6 +32,9 @@ public:
 
 private:
     static std::vector<PMTData> g_hits; // Minuitに渡すためにデータを保持する静的変数
+
+    // 時刻分解能を取得する関数
+    static double GetSigmaTime(int ch, double charge);
 
     // 予想される光量を計算するモデル関数
     static double CalculateExpectedCharge(const double* params, double distance, double cos_angle);
