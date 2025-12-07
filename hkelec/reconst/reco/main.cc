@@ -58,7 +58,6 @@ int main(int argc, char** argv) {
     }
 
     std::string inputBinFile = argv[1];
-    std::string outputBaseName = (argc >= 3) ? argv[2] : "fit_results";
 
     // 入力ファイルのディレクトリを取得し、ペデスタルファイルのパスを作成
     std::string dirPath = "./";
@@ -68,9 +67,10 @@ int main(int argc, char** argv) {
     }
     std::string pedestalFile = dirPath + "hkelec_pedestal_hithist_means.txt";
 
-    // 出力ファイル名
-    std::string outputRootFile = outputBaseName + ".root";
-    std::string outputCsvFile = outputBaseName + ".csv";
+    // 出力ファイル名を入力ファイルと同じディレクトリに生成
+    std::string outputBaseName = (argc >= 3) ? argv[2] : "fit_results";
+    std::string outputRootFile = dirPath + outputBaseName + ".root";
+    std::string outputCsvFile = dirPath + outputBaseName + ".csv";
 
     // 1. ペデスタルの読み込み
     std::map<int, PedestalData> pedMap;
