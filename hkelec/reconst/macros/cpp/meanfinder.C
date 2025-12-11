@@ -414,6 +414,35 @@ void fit_time(TString input_filename, bool save_pdf) {
     infile->Close();
 }
 
+// 8.5 時間平均、標準偏差計算関数 
+void calculate_time_stats(TString input_filename) {
+    auto infile = TFile::Open(input_filename, "READ");
+    if (!infile || infile->IsZombie()) return;
+
+    TString output_txt_filename = input_filename;
+    output_txt_filename.ReplaceAll("_eventhist.root", "_timestats.txt");
+    std::ofstream outfile(output_txt_filename.Data());
+
+    // ヘッダー
+    outfile << "# ch,mean,mean_err,rms,rms_err" << std::endl;
+
+    std::vector<std::string> hist_types = {"time_diff"};
+
+    for (int ch = 0; ch < 12; ++ch) {
+        for (const auto& type : hist_types) {
+            TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
+            auto hist = infile->Get<TH1D>(hist_name);
+            
+            if (!hist || hist->GetEntries() < 100) continue;
+            
+            if (hist && hist->GetEntries() > 0) {
+                outfile << ch << ","
+                        << hist->GetMean() << "," << hist->GetMeanError() << ","
+                        << hist->GetRMS() << "," << (hist->GetRMS() / TMath::Sqrt(2 * hist->GetEntries())) << std::endl;
+            }
+        }
+    }
+
 // 9. main関数
 int main(int argc, char* argv[]) {
     if (argc < 2) {

@@ -69,8 +69,17 @@ int main(int argc, char** argv) {
 
     // 出力ファイル名を入力ファイルと同じディレクトリに生成
     std::string outputBaseName = (argc >= 3) ? argv[2] : "fit_results";
-    std::string outputRootFile = dirPath + outputBaseName + ".root";
-    std::string outputCsvFile = dirPath + outputBaseName + ".csv";
+    // outputBaseNameが絶対パス（'/'で始まる）ならそのまま、相対パスならdirPathを付加
+    std::string outputRootFile, outputCsvFile;
+    if (outputBaseName[0] == '/') {
+        // 絶対パスの場合はそのまま使用
+        outputRootFile = outputBaseName + ".root";
+        outputCsvFile = outputBaseName + ".csv";
+    } else {
+        // 相対パスの場合は入力ファイルと同じディレクトリに配置
+        outputRootFile = dirPath + outputBaseName + ".root";
+        outputCsvFile = dirPath + outputBaseName + ".csv";
+    }
 
     // 1. ペデスタルの読み込み
     std::map<int, PedestalData> pedMap;

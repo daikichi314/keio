@@ -17,16 +17,19 @@ usage() {
     echo " 再構成プログラム (reconstructor) を実行します。"
     echo ""
     echo " [使い方]"
-    echo " $0 <TargetDirectory>"
+    echo " $0 <TargetDirectory> [Suffix]"
     echo ""
     echo " [引数]"
     echo " <TargetDirectory> : 処理対象のディレクトリパス"
     echo "                     この中にROOTファイルとペデスタルファイルが必要です。"
+    echo " [Suffix]          : 出力ファイル名のサフィックス（省略可）"
+    echo "                     指定時: *_eventhist.root → *_reconst_<Suffix>.root"
+    echo "                     省略時: *_eventhist.root → *_reconst.root"
     echo ""
     echo " [前提条件]"
     echo " 1. ディレクトリ内に 'hkelec_pedestal_hithist_means.txt' が存在すること。"
-    echo " 2. 同じディレクトリに実行ファイル 'reconstructor' が存在するか、"
-    echo "    パスが通っていること (このスクリプトではカレントの ./reconstructor を想定)。"
+    echo " 2. このスクリプトと同じディレクトリに実行ファイル 'reconstructor' が存在すること。"
+    echo "    スクリプト位置から絶対パスを解決して実行します。"
     echo "=========================================================================="
 }
 
@@ -37,6 +40,7 @@ if [ "$#" -lt 1 ]; then
 fi
 
 TARGET_DIR="$1"
+SUFFIX="${2:-}"
 
 # --- ディレクトリの存在チェック ---
 if [ ! -d "$TARGET_DIR" ]; then
@@ -51,10 +55,11 @@ if [ ! -f "$PEDESTAL_FILE" ]; then
     exit 1
 fi
 
-# --- 実行ファイルの場所 (カレントディレクトリを想定) ---
-RECONSTRUCTOR="./reconstructor"
+# --- 実行ファイルの場所 (スクリプト位置から絶対パスを解決) ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RECONSTRUCTOR="${SCRIPT_DIR}/reconstructor"
 if [ ! -f "$RECONSTRUCTOR" ]; then
-    echo "Error: Executable '$RECONSTRUCTOR' not found in current directory."
+    echo "Error: Executable not found: $RECONSTRUCTOR"
     echo "Please compile the code using 'make' first."
     exit 1
 fi
@@ -65,10 +70,14 @@ echo "Start processing in: $TARGET_DIR"
 # findコマンドで *eventhist.root を検索して処理
 find "$TARGET_DIR" -name "*eventhist.root" | while read input_file; do
     
-    # 出力ファイル名の生成 (拡張子を除去して _reconst を付与)
-    # 例: run001_eventhist.root -> run001_eventhist_reconst
-    base_name=$(basename "$input_file" .root)
-    output_base="${TARGET_DIR}/${base_name}_reconst"
+    # 出力ファイル名の生成 (_eventhist.root を除去して _reconst[_SUFFIX] を付与)
+    # 例: run001_eventhist.root -> run001_reconst または run001_reconst_XXX
+    base_name=$(basename "$input_file" _eventhist.root)
+    if [ -n "$SUFFIX" ]; then
+        output_base="${TARGET_DIR}/${base_name}_reconst_${SUFFIX}"
+    else
+        output_base="${TARGET_DIR}/${base_name}_reconst"
+    fi
     
     echo "--------------------------------------------------------"
     echo "Processing: $input_file"

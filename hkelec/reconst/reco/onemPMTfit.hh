@@ -38,6 +38,9 @@ private:
 
     // 予想される光量を計算するモデル関数
     static double CalculateExpectedCharge(const double* params, double distance, double cos_angle);
+
+    // タイムウォーク補正値を取得 (電荷の7次関数を予定)
+    static double GetTimeWalkCorrection(int ch, double charge);
     
     // カイ二乗値を計算するヘルパー関数
     static double CalculateChi2(double *par);

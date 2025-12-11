@@ -26,9 +26,16 @@ std::vector<PMTData> LightSourceFitter::g_hits;
 LightSourceFitter::LightSourceFitter() {}
 LightSourceFitter::~LightSourceFitter() {}
 
-// 時刻分解能
+// 時刻分解能 // 仮実装: 定数1.0ns
 double LightSourceFitter::GetSigmaTime(int ch, double charge) {
     return 1.0; 
+}
+
+// タイムウォーク補正値 (現在は0を返す)
+double LightSourceFitter::GetTimeWalkCorrection(int ch, double charge) {
+    // 将来的にはここで電荷(charge)を用いた7次関数の計算を行う
+    // double val = p0 + p1*Q + ... + p7*Q^7;
+    return 0.0;
 }
 
 // 光量モデル
@@ -59,24 +66,42 @@ double LightSourceFitter::CalculateChi2(double *par) {
         double dist = std::sqrt(dx*dx + dy*dy + dz*dz);
         if (dist < 1e-3) continue;
 
-        // 1. 光量項
+        // 1. 光量項（ガウス分布）
         double cos_theta = ((-dx)*hit.dir_x + (-dy)*hit.dir_y + (-dz)*hit.dir_z) / dist;
         double exp_Q = CalculateExpectedCharge(par, dist, cos_theta);
         double obs_Q = hit.charge;
-        
+        //----------------------------------------------------------------------
         double sigma_Q2 = obs_Q;
-        if (sigma_Q2 < 1.0) sigma_Q2 = 1.0;
+        if (sigma_Q2 < 0.1) sigma_Q2 = 0.1; // 最小分散を設定
         
         double chi2_Q = (obs_Q - exp_Q)*(obs_Q - exp_Q) / sigma_Q2;
+        //----------------------------------------------------------------------
 
-        // 2. 時刻項
-        double exp_T = (dist / C_LIGHT) + t0;
-        double obs_T = hit.time - TIME_CORRECTION_VAL[hit.ch];
-        double sigma_T = GetSigmaTime(hit.ch, hit.charge);
+        // // 1. 光量項 (ポアソン分布 / Baker-Cousins Chi2)
+        // // ゼロ割やlog(負)を防ぐための保護
+        // if (exp_Q < 1e-5) exp_Q = 1e-5; 
+        // if (obs_Q < 0) obs_Q = 0;
 
-        double chi2_T = (obs_T - exp_T)*(obs_T - exp_T) / (sigma_T * sigma_T);
+        // double chi2_Q;
+        // if (obs_Q > 0) {
+        //     // Baker-Cousins Chi2の式: 2 * (E - O + O * log(O/E))
+        //     chi2_Q = 2.0 * (exp_Q - obs_Q + obs_Q * std::log(obs_Q / exp_Q));
+        // } else {
+        //     // obs_Qが0の場合の極限値は 2 * E
+        //     chi2_Q = 2.0 * exp_Q;
+        // }
 
-        chi2_total += chi2_Q + chi2_T;
+        // 2. 時刻項  ////////////////////////////////ここを消してminuit.DefineParameter(0, "t", 0.0, 0.0, -1000, 1000);とすると光量のみでのフィット
+        // double exp_T = (dist / C_LIGHT) + t0;
+        // double tw_correction = GetTimeWalkCorrection(hit.ch, hit.charge);
+        // double obs_T = hit.time - TIME_CORRECTION_VAL[hit.ch] - tw_correction;
+        // double sigma_T = GetSigmaTime(hit.ch, hit.charge);
+
+        // double chi2_T = (obs_T - exp_T)*(obs_T - exp_T) / (sigma_T * sigma_T);
+        ///////////////////////////////////////////////////////////////////////
+
+        // chi2_total += chi2_Q + chi2_T;
+        chi2_total += chi2_Q;
     }
     return chi2_total;
 }
@@ -98,16 +123,18 @@ bool LightSourceFitter::FitEvent(const std::vector<PMTData> &hits, FitResult &re
     for(const auto& h : hits) if(h.charge > max_q) max_q = h.charge;
     
     // パラメータ定義
-    // 【修正】Zの初期値を100から170に変更 (光源位置の事前情報に近づける)
-    minuit.DefineParameter(0, "t", 0.0, 0.1, -1000, 1000);
+    minuit.DefineParameter(0, "t", 0.0, 0.0, -1000, 1000);// ステップ幅を 0.0 にするとそのパラメータは固定(Fix)されます
+    // minuit.DefineParameter(0, "t", 0.0, 0.1, -1000, 1000);/////////////////////////////////////////
     minuit.DefineParameter(1, "x", 0.0, 1.0, -400, 400);
     minuit.DefineParameter(2, "y", 0.0, 1.0, -400, 400);
     minuit.DefineParameter(3, "z", 170.0, 1.0, -400, 400); 
     minuit.DefineParameter(4, "A", max_q * 10000, max_q*100, 0, 0); 
     minuit.DefineParameter(5, "B", 0.0, 1.0, 0, 0);
 
+    // 最小化実行
     int status = minuit.Migrad();
 
+    // 結果取得
     double val, err;
     minuit.GetParameter(1, val, err); result.x = val; result.err_x = err;
     minuit.GetParameter(2, val, err); result.y = val; result.err_y = err;
@@ -116,6 +143,7 @@ bool LightSourceFitter::FitEvent(const std::vector<PMTData> &hits, FitResult &re
     minuit.GetParameter(4, val, err); result.A = val;
     minuit.GetParameter(5, val, err); result.B = val;
 
+    // χ² と NDF の計算     // Minuitの統計情報を取得
     double fmin, fedm, errdef;
     int nvpar, nparx, istat;
     minuit.mnstat(fmin, fedm, errdef, nvpar, nparx, istat);

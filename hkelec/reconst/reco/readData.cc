@@ -23,6 +23,11 @@ const double K_HGAIN = 0.073;
 const double K_LGAIN = 0.599; 
 const double SATURATION_THRESHOLD = 4000.0; // lgainに切り替える閾値
 
+/**
+ * charge [pC] = (charge [ADC] - pedestal [ADC]) * k [pC/ADC]
+ * k = 0.073 pC/ADC (high gain), 0.599 pC/ADC (low gain)
+ */
+
 // ペデスタル読み込み
 int readPedestals(const std::string &filename, std::map<int, PedestalData> &pedestalMap) {
     std::ifstream infile(filename);

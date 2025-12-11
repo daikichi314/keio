@@ -5,48 +5,73 @@ In hkpd@hkdaq
 
 1. hkpd@hkdaq:~$ . ~/setup_hkelec.sh  ## set up
 
-2. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/LDhkelec_xxx -l 20 --trgch 4 ... ## Masurement (make binary file)
+1.1. hkpd@hkdaq:~$ SyncPD.py
+
+2. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/LDhkelec_xxx -l 20 --trgch 4 --switch N ... ## Masurement (make binary file)
 
     usage: ScanManager.py [-h] [-i RUNID] [-l LENGTH] [--trgch TRGCH] [--dBlist [DBLIST ...]] [--dBstep DBSTEP DBSTEP DBSTEP]
-                        [--HVlist [HVLIST ...]] [--HVstep HVSTEP HVSTEP HVSTEP] [--threlist [THRELIST ...]]
-                        [--threstep THRESTEP THRESTEP THRESTEP] [--threpreset] [--threpreset2] [--threpreset3]
-                        [--gatelist [GATELIST ...]] [--gatestep GATESTEP GATESTEP GATESTEP] [--deadlist [DEADLIST ...]]
-                        [--deadstep DEADSTEP DEADSTEP DEADSTEP] [--dryrun]
+
+    [--HVlist [HVLIST ...]] [--HVstep HVSTEP HVSTEP HVSTEP] [--threlist [THRELIST ...]]
+    [--threstep THRESTEP THRESTEP THRESTEP] [--threpreset] [--threpreset2] [--threpreset3]
+    [--gatelist [GATELIST ...]] [--gatestep GATESTEP GATESTEP GATESTEP] [--deadlist [DEADLIST ...]]
+    [--deadstep DEADSTEP DEADSTEP DEADSTEP] [--freqlist [FREQLIST ...]]
+    [--freqstep FREQSTEP FREQSTEP FREQSTEP] [--chanlist [CHANLIST ...]] [--subdir] [--dryrun]
+
 
     Take series of runs while scanning HV/dB/threshold/gate width/veto width settings. Give the list or start/stop/step of
-    parameters you want to scan.
+    parameters you want to scan. After a HV scan, the script put the HV back to the default values.
+
 
     options:
-    -h, --help            show this help message and exit
+    -h, --help show this help message and exit
     -i RUNID, --runid RUNID
-                            Name or identification of this run
+    Name or identification of this run
     -l LENGTH, --length LENGTH
-                            Length of the data-taking in second.
-    --trgch TRGCH         Trigger Channel
+    Length of the data-taking in second.
+    --trgch TRGCH Trigger Channel
     --dBlist [DBLIST ...]
-                            list of attenuation factors (dB)
+    list of attenuation factors (dB)
     --dBstep DBSTEP DBSTEP DBSTEP
-                            [start, end, step] of attenuation factors (dB)
+    [start, end, step] of attenuation factors (dB)
     --HVlist [HVLIST ...]
-                            list of HV values (V)
+    list of HV values (V)
     --HVstep HVSTEP HVSTEP HVSTEP
-                            [start, end, step] of HV values (V)
+    [start, end, step] of HV values (V), e.g. [1000,2000,100] for 1000, 1100, ..., 2000; [2000, 1000, -100]
+    for 2000, 1900, ..., 1000.
     --threlist [THRELIST ...]
-                            list of threshold values (mV, absolute value)
+    list of threshold values (mV, absolute value)
     --threstep THRESTEP THRESTEP THRESTEP
-                            [start, end, step] of threshold values (mV)
-    --threpreset          Preset threshold scan values (30 runs)
-    --threpreset2         Preset threshold scan values #2 (20 runs, complementary to #1)
-    --threpreset3         Preset threshold scan values #3, in finer steps. (95 runs, includes #1&2)
+    [start, end, step] of threshold values (mV)
+    --threpreset Preset threshold scan values (30 runs, 0.1-20 mV)
+    --threpreset2 Preset threshold scan values #2 (20 runs, complementary to #1)
+    --threpreset3 Preset threshold scan values #3, in finer steps. (95 runs, includes #1&2)
     --gatelist [GATELIST ...]
-                            list of integration gate width in DAC (-> 9*DAC + 33 ns)
+    list of integration gate width in DAC (→ 9*DAC + 33 ns)
     --gatestep GATESTEP GATESTEP GATESTEP
-                            [start, end, step] of integration gate width in DAC
+    [start, end, step] of integration gate width in DAC
     --deadlist [DEADLIST ...]
-                            list of veto width in DAC (-> 10*DAC ns)
+    list of veto width in DAC (→ 10*DAC ns)
     --deadstep DEADSTEP DEADSTEP DEADSTEP
-                            [start, end, step] of veto width in DAC
-    --dryrun              Shows the list of runs to be taken without actually affecting the system
+    [start, end, step] of veto width in DAC
+    --freqlist [FREQLIST ...]
+    list of LD frequency [Hz]
+    --freqstep FREQSTEP FREQSTEP FREQSTEP
+    [start, end, step] of LD frequency [Hz]
+    --chanlist [CHANLIST ...]
+    Take separate runs for each of channels in this list. Trigger channel is also included if given.
+    --subdir Put the data files in a subdirectory
+    --dryrun Shows the list of runs to be taken without actually affecting the system
+
+    new
+    --freqlist [FREQLIST ...]
+                            list of LD frequency [Hz]
+    --freqstep FREQSTEP FREQSTEP FREQSTEP
+                            [start, end, step] of LD frequency [Hz]
+    --chanlist [CHANLIST ...]
+                            Take separate runs for each of channels in this list. Trigger channel is also included if given.
+
+    To deal with the noise in trigger channel, let’s set more strict threshold (-1 -> -5 mV) for the trigger channel.
+    This can be done by threshold.py --mV 5 --ch 4 (setting -5 mV for channel 4) or, by using --trgch-Vth option of ScanManager.py (--trgch 4 --trgch-Vth 5 for example). Note that ScanManager.py sets the threshold setting to default after each scan.
 
 2.5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/DiscreteSoftware/install/bin/RunManager.py -p -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal -l 40  
 
@@ -111,6 +136,10 @@ daiki@daisukekishita:~/keio/hkelec/reconst$ scp -r * hkpd@hkdaq:~/hkelec/Discret
 
 ### dB list for 0pt scan ###
 #3: --dBlist 13.00 15.00 21.00 24.50 33.50 46.00 59.00 
+
+
+### control the switcher ###
+~/hkelec/pmt-scan/scripts/fiber_switcher.py set 0 #(Attenuater) or set 8 (PD)
 
 memo
 - eventtree2hist.C
