@@ -1,49 +1,55 @@
-/*
- * id: onemPMTfit.hh
- * Place: /home/daiki/keio/hkelec/reconst/reco/
- * Author: Gemini 3 Pro
- * Last Edit: 2025-12-06
- *
- * 概要:
- * 光源フィッティングクラスのヘッダーファイル
- * LightSourceFitter クラスの定義と Minuit 用コールバック関数の宣言を含みます。
- */
-
 #ifndef ONEMPMTFIT_HH
-#define ONEMPMTFIT_HH // インクルードガード
+#define ONEMPMTFIT_HH
 
 #include "fittinginput.hh"
 #include <vector>
-#include <TMinuit.h> // ROOTの最小化ライブラリ
+#include <TMinuit.h>
+#include <cmath>
 
-// フィッティングを行うクラス
+// /////////////////////////////////////////////////////////
+// 追加: フィッティングモードの定義
+// /////////////////////////////////////////////////////////
+enum FitMode {
+    kChi2_Gaussian,      // [Default] 従来のカイ二乗法 (ガウス分布仮定)
+    kLikelihood_Poisson, // ポアソン尤度 (Unhit考慮 + Baker-Cousins Chi2)
+    kLikelihood_EMG,     // EMG時間項 + ポアソン電荷 (fiTQun風)
+    kCustom_Template     // 将来のためのカスタムテンプレート
+};
+// /////////////////////////////////////////////////////////
+
 class LightSourceFitter {
 public:
-    LightSourceFitter();  // コンストラクタ
-    ~LightSourceFitter(); // デストラクタ
+    LightSourceFitter();
+    ~LightSourceFitter();
 
-    // イベントごとのフィットを実行する関数
-    // hits: 入力データのリスト, result: 結果格納用構造体
+    // イベントを受け取ってフィットを実行するメイン関数
     bool FitEvent(const std::vector<PMTData> &hits, FitResult &result);
+    
+    // /////////////////////////////////////////////////////////
+    // 追加: フィッティングモードを切り替える静的関数
+    // 例: LightSourceFitter::SetFitMode(kLikelihood_EMG);
+    // /////////////////////////////////////////////////////////
+    static void SetFitMode(FitMode mode) { g_fitMode = mode; }
 
-    // Minuitから呼び出される静的関数 (目的関数FCN)
-    // 引数の形式はTMinuitの仕様で決まっている
+    // TMinuitが呼び出す関数 (staticである必要があります)
     static void FcnForMinuit(Int_t &npar, Double_t *grad, Double_t &fval, Double_t *par, Int_t flag);
 
 private:
-    static std::vector<PMTData> g_hits; // Minuitに渡すためにデータを保持する静的変数
+    // TMinuitからアクセスするための静的メンバ
+    static std::vector<PMTData> g_hits;
+    static FitMode g_fitMode; // 現在のモード
 
-    // 時刻分解能を取得する関数
+    // ヘルパー関数群
     static double GetSigmaTime(int ch, double charge);
-
-    // 予想される光量を計算するモデル関数
     static double CalculateExpectedCharge(const double* params, double distance, double cos_angle);
-
-    // タイムウォーク補正値を取得 (電荷の7次関数を予定)
-    static double GetTimeWalkCorrection(int ch, double charge);
     
-    // カイ二乗値を計算するヘルパー関数
+    // カイ二乗(または負の対数尤度)を計算するコア関数
     static double CalculateChi2(double *par);
+    
+    // /////////////////////////////////////////////////////////
+    // 追加: EMG分布の負の対数尤度 (-2lnL) を計算する関数
+    // /////////////////////////////////////////////////////////
+    static double CalculateNLL_EMG(double t, double mu, double sigma, double tau);
 };
 
-#endif // ONEMPMTFIT_HH
+#endif

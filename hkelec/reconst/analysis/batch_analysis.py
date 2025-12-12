@@ -1,0 +1,243 @@
+#!/home/daiki/keio/.venv/bin/python3
+# -*- coding: utf-8 -*-
+
+import sys
+import os
+import glob
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
+from mpl_toolkits.mplot3d import Axes3D
+
+# プロットのフォントサイズ設定
+plt.rcParams['font.size'] = 12
+
+# ------------------------------------------------------------------
+# 1. 使い方・仕様を表示する関数
+# ------------------------------------------------------------------
+def print_usage(prog_name):
+    print("=" * 70)
+    print(" [概要] ")
+    print(" 再構成結果CSVファイルから詳細な解析画像とフィット結果を出力するスクリプト")
+    print(" ")
+    print(" [処理内容] ")
+    print(" 1. 1次元分布 (X, Y, Z, t) のヒストグラムとガウスフィット")
+    print(" 2. カイ二乗 (chi2) 分布のヒストグラム")
+    print(" 3. 2次元分布 (XY, YZ, XZ) のヒストグラム")
+    print("    - 広域 (-400 ~ 400)")
+    print("    - 拡大 (フィット平均 ± 20)")
+    print(" 4. 3次元散布図 (カラー: 時間)")
+    print(" ")
+    print(" [使い方] ")
+    print(f" {prog_name} <InputPath>")
+    print(" ")
+    print(" [引数] ")
+    print(" <InputPath> : CSVファイルパス または ディレクトリパス")
+    print(" ")
+    print(" [出力] ")
+    print(" 入力ディレクトリ直下の 'reconst_images/' に画像(.pdf)と結果(.txt)を保存")
+    print("======================================================================")
+
+# ------------------------------------------------------------------
+# ガウス関数定義
+# ------------------------------------------------------------------
+def gaussian(x, a, mu, sigma):
+    return a * np.exp(-(x - mu)**2 / (2 * sigma**2))
+
+# ------------------------------------------------------------------
+# 1次元ヒストグラム + ガウスフィットを行う関数
+# ------------------------------------------------------------------
+def process_1d_fit(df, col, label, unit, output_dir, base_name, text_lines):
+    """
+    戻り値: (mean, sigma, success_flag)
+    """
+    plt.figure(figsize=(8, 6))
+    
+    data = df[col]
+    # ヒストグラムデータの作成
+    counts, bin_edges = np.histogram(data, bins=50)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    
+    # 初期パラメータ推定
+    p0 = [max(counts), np.mean(data), np.std(data)]
+    
+    fit_success = False
+    popt = [0, 0, 0]
+    perr = [0, 0, 0]
+
+    try:
+        popt, pcov = curve_fit(gaussian, bin_centers, counts, p0=p0, maxfev=5000)
+        perr = np.sqrt(np.diag(pcov))
+        fit_success = True
+    except:
+        pass # フィット失敗時はそのまま
+
+    # 描画
+    plt.hist(data, bins=50, color='skyblue', edgecolor='white', label='Data')
+    
+    if fit_success:
+        x_smooth = np.linspace(min(data), max(data), 200)
+        plt.plot(x_smooth, gaussian(x_smooth, *popt), 'r-', lw=2, label='Fit')
+        
+        # 図にパラメータ表示
+        info = (f"Mean: {popt[1]:.2f} {unit}\n"
+                f"Sigma: {abs(popt[2]):.2f} {unit}")
+        plt.gca().text(0.05, 0.95, info, transform=plt.gca().transAxes,
+                       verticalalignment='top', 
+                       bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # テキスト結果に追加
+        text_lines.append(f"[{label}]")
+        text_lines.append(f"  Mean  : {popt[1]:.4f} +/- {perr[1]:.4f} {unit}")
+        text_lines.append(f"  Sigma : {abs(popt[2]):.4f} +/- {perr[2]:.4f} {unit}\n")
+    else:
+        text_lines.append(f"[{label}]")
+        text_lines.append("  Fit Failed\n")
+
+    plt.title(f'{label} Distribution')
+    plt.xlabel(f'{label} [{unit}]')
+    plt.ylabel('Events')
+    plt.legend()
+    plt.tight_layout()
+    
+    save_path = os.path.join(output_dir, f"{base_name}_hist_{col}.pdf")
+    plt.savefig(save_path)
+    plt.close()
+    
+    # 次の処理(ズーム図)のために平均値を返す
+    mean_val = popt[1] if fit_success else 0
+    return mean_val, fit_success
+
+# ------------------------------------------------------------------
+# メイン処理: 1つのCSVファイルを解析
+# ------------------------------------------------------------------
+def process_csv_file(file_path):
+    print(f"Processing: {file_path}")
+
+    # 出力ディレクトリ準備
+    target_dir = os.path.dirname(file_path)
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
+    output_dir = os.path.join(target_dir, "reconst_images")
+    
+    if not os.path.exists(output_dir):
+        try:
+            os.makedirs(output_dir)
+        except OSError:
+            return
+
+    try:
+        df = pd.read_csv(file_path)
+        
+        # 必要なカラムの存在チェック
+        required = ['fit_x', 'fit_y', 'fit_z', 't_light', 'chi2']
+        if not all(c in df.columns for c in required):
+            print(f"Skipped {file_path}: Missing columns")
+            return
+
+        # 結果テキスト保存用リスト
+        fit_results_text = [f"=== Fit Results for {base_name} ===\n"]
+        
+        # --- 1. 1次元ヒストグラム & ガウスフィット ---
+        # 戻り値としてフィット結果の平均値を受け取る(2次元ズーム用)
+        mu_x, ok_x = process_1d_fit(df, 'fit_x', 'Position X', 'cm', output_dir, base_name, fit_results_text)
+        mu_y, ok_y = process_1d_fit(df, 'fit_y', 'Position Y', 'cm', output_dir, base_name, fit_results_text)
+        mu_z, ok_z = process_1d_fit(df, 'fit_z', 'Position Z', 'cm', output_dir, base_name, fit_results_text)
+        mu_t, ok_t = process_1d_fit(df, 't_light', 'Time', 'ns', output_dir, base_name, fit_results_text)
+
+        # --- 2. カイ二乗分布 ---
+        plt.figure(figsize=(8, 6))
+        plt.hist(df['chi2'], bins=50, color='orange', edgecolor='black')
+        plt.title('Chi-square Distribution')
+        plt.xlabel(r'$\chi^2$')
+        plt.ylabel('Events')
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, f"{base_name}_chi2.pdf"))
+        plt.close()
+
+        # --- 3. 2次元ヒストグラム (3ペア × 2パターン) ---
+        # ペアの定義: (xカラム, yカラム, xラベル, yラベル, x平均, y平均, x成功, y成功)
+        pairs = [
+            ('fit_x', 'fit_y', 'X', 'Y', mu_x, mu_y, ok_x, ok_y),
+            ('fit_y', 'fit_z', 'Y', 'Z', mu_y, mu_z, ok_y, ok_z),
+            ('fit_x', 'fit_z', 'X', 'Z', mu_x, mu_z, ok_x, ok_z)
+        ]
+
+        for col1, col2, lab1, lab2, m1, m2, s1, s2 in pairs:
+            # A. 広域 (-400 ~ 400)
+            plt.figure(figsize=(8, 6))
+            h = plt.hist2d(df[col1], df[col2], bins=50, 
+                           range=[[-400, 400], [-400, 400]], cmap='viridis', cmin=1)
+            plt.title(f'{lab1}-{lab2} Distribution (Wide)')
+            plt.xlabel(f'{lab1} [cm]')
+            plt.ylabel(f'{lab2} [cm]')
+            plt.colorbar(h[3], label='Counts')
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir, f"{base_name}_2d_{lab1}{lab2}_wide.pdf"))
+            plt.close()
+
+            # B. 拡大 (平均 ± 20) - フィット成功時のみ
+            if s1 and s2:
+                plt.figure(figsize=(8, 6))
+                range_zoom = [[m1 - 20, m1 + 20], [m2 - 20, m2 + 20]]
+                h = plt.hist2d(df[col1], df[col2], bins=50, 
+                               range=range_zoom, cmap='viridis', cmin=1)
+                plt.title(f'{lab1}-{lab2} Distribution (Zoom: Mean +/- 20)')
+                plt.xlabel(f'{lab1} [cm]')
+                plt.ylabel(f'{lab2} [cm]')
+                plt.colorbar(h[3], label='Counts')
+                plt.tight_layout()
+                plt.savefig(os.path.join(output_dir, f"{base_name}_2d_{lab1}{lab2}_zoom.pdf"))
+                plt.close()
+
+        # --- 4. 3次元散布図 ---
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        sc = ax.scatter(df['fit_x'], df['fit_y'], df['fit_z'], 
+                        c=df['t_light'], cmap='plasma', s=10, alpha=0.6)
+        ax.set_title('3D Reconstruction Position')
+        ax.set_xlabel('X [cm]')
+        ax.set_ylabel('Y [cm]')
+        ax.set_zlabel('Z [cm]')
+        cbar = fig.colorbar(sc, ax=ax, shrink=0.6)
+        cbar.set_label('Time [ns]')
+        plt.savefig(os.path.join(output_dir, f"{base_name}_3d_scatter.pdf"))
+        plt.close()
+
+        # --- 結果テキストの保存 ---
+        txt_path = os.path.join(output_dir, f"{base_name}_fit_results.txt")
+        with open(txt_path, "w") as f:
+            f.writelines("\n".join(fit_results_text))
+        
+        print(f"Saved results to: {output_dir}")
+
+    except Exception as e:
+        print(f"Error processing {file_path}: {e}")
+
+# ------------------------------------------------------------------
+# メイン処理
+# ------------------------------------------------------------------
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print_usage(sys.argv[0])
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+
+    if os.path.isdir(input_path):
+        search_pattern = os.path.join(input_path, "*.csv")
+        csv_files = glob.glob(search_pattern)
+        if not csv_files:
+            print(f"No CSV files found in {input_path}")
+        else:
+            print(f"Found {len(csv_files)} CSV files.")
+            for f in csv_files:
+                process_csv_file(f)
+
+    elif os.path.isfile(input_path):
+        if input_path.endswith(".csv"):
+            process_csv_file(input_path)
+        else:
+            print("Error: Not a CSV file.")
+    else:
+        print(f"Error: Invalid path: {input_path}")
