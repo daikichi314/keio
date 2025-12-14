@@ -5,7 +5,8 @@ In hkpd@hkdaq
 
 1. hkpd@hkdaq:~$ . ~/setup_hkelec.sh  ## set up
 
-1.1. hkpd@hkdaq:~$ SyncPD.py
+1.1. ロガーで記録を取り始める。
+1.2. hkpd@hkdaq:~$ SyncPD.py
 
 2. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/LDhkelec_xxx -l 20 --trgch 4 --switch N ... ## Masurement (make binary file)
 
@@ -96,6 +97,8 @@ In hkpd@hkdaq
     —trgch TRGCH Trigger Channel
     --dummy Flag to start a dummy run
 
+2.6．ロガーを止める
+
 3. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/data/analyze_multi.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX 1  ## .bin -> eventtree.root 
 
 3.5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/data/analyze.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal ## .bin -> hithist.root
@@ -109,12 +112,31 @@ In hkpd@hkdaq
 
 5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/Analysis/macro/reconst/macros/sh/run_analysis_batch.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/  ## 
 
+6. hkpd@hkdaq:~$ scp -r /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/ kishita@hep.phys.keio.ac.jp:~/data/  
 
+### 
+1. . ~/setup_ana.sh
+2. ~/hkelec/analysis/hkelec-analysis/scripts/pd_to_csv.py -d ~/hkelec/DiscreteSoftware/data/2025XXXX --pdcsv ~/hkelec/DiscreteSoftware/data/2025XXXX/PD_2025XXXX-X.CSV 
+    usage: pd_to_csv.py [-h] -d INDIR --pdcsv PDCSV --sync-hittree SYNC_HITTREE [--outcsv OUTCSV] [--outpdf OUTPDF] [--sync-search-start SYNC_SEARCH_START] [--sync-search-duration SYNC_SEARCH_DURATION]
+    [--pd-timescale PD_TIMESCALE]
 
+    Analyze Photodiode CSV data (taken by C9329). For each HK-digitizer run, calculate mean of PD voltage and save it into a CSV file.
 
-
-7. hkpd@hkdaq:~$ scp -r /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/ kishita@hep.phys.keio.ac.jp:~/data/  
-
+    options:
+    -h, --help show this help message and exit
+    -d INDIR, --indir INDIR
+    Input directory that contains hittree files.
+    --pdcsv PDCSV Input Photodiode csv file path
+    --sync-hittree SYNC_HITTREE
+    Input hittree file path for sync run
+    --outcsv OUTCSV Output csv file path
+    --outpdf OUTPDF Output pdf file path
+    --sync-search-start SYNC_SEARCH_START
+    Start time of sync search in second
+    --sync-search-duration SYNC_SEARCH_DURATION
+    Duration of sync search in second
+    --pd-timescale PD_TIMESCALE
+    Photodiode timescale
 
 
 ### How to upload macros from daiki to hkpd ###
@@ -155,5 +177,14 @@ memo
 /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251120kishita/LDhkelec_reconst_dBScan -l 20 --trgch 4 --dBlist 0.6 2 3 4.6 6.6 9 12 15 18 21 24 27 30 33 36 39 50
 
 /LDhkelec_0pt_diag_no4-005-33.50dB_eventhist.root # ノイズのせいかトリガーイベント多すぎ
+
+
+/home/hkpd/hkelec/DiscreteSoftware/install/bin/RunManager.py -p -i /home/hkpd/hkelec/DiscreteSoftware/data/20251212kishita/hkelec_pedestal -l 20
+
+/home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251212kishita/LDhkelec_x-35_y35_z160 -l 10 --trgch 4 --switch 2 --trgch-Vth 5 --dBlist 1 1.5 2 3 4 5 6 8 10 12 14 16 19 22 25 29 33 37 41
+
+/home/hkpd/hkelec/DiscreteSoftware/install/bin/RunManager.py -p -i /home/hkpd/hkelec/DiscreteSoftware/data/20251212kishita/no1/hkelec_pedestal -l 20
+
+/home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251212kishita/no1/LDhkelec_0pt_no1 -l 10 --trgch 4 --switch 2 --trgch-Vth 5 --dBlist 13 13.5 14 14.5 15 16 18 20 22 24 26 28 30 33 36 42 50 58
 
 

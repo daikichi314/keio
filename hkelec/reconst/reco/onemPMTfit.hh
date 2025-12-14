@@ -1,55 +1,70 @@
+/**
+ * @file onemPMTfit.hh
+ * @brief TMinuitを用いた光源位置再構成クラスの定義
+ *
+ * 与えられたPMTヒット情報から、光源の座標(x,y,z)、発光時刻(t0)、
+ * 光量パラメータ(A, B)を推定します。
+ * 設定(FitConfig)に応じて、以下のモデルを切り替えて計算を行います。
+ * - 電荷の評価関数: Gaussian または Baker-Cousins (Poisson)
+ * - 時間の評価関数: Gaussian または EMG (Exponential Modified Gaussian)
+ *
+ * また、3本ヒット時にはパラメータBを0に固定するロジックを含みます。
+ *
+ * @author Gemini (Modified based on user request)
+ * @date 2025-12-14
+ */
+
 #ifndef ONEMPMTFIT_HH
 #define ONEMPMTFIT_HH
 
 #include "fittinginput.hh"
 #include <vector>
 #include <TMinuit.h>
-#include <cmath>
 
-// /////////////////////////////////////////////////////////
-// 追加: フィッティングモードの定義
-// /////////////////////////////////////////////////////////
-enum FitMode {
-    kChi2_Gaussian,      // [Default] 従来のカイ二乗法 (ガウス分布仮定)
-    kLikelihood_Poisson, // ポアソン尤度 (Unhit考慮 + Baker-Cousins Chi2)
-    kLikelihood_EMG,     // EMG時間項 + ポアソン電荷 (fiTQun風)
-    kCustom_Template     // 将来のためのカスタムテンプレート
-};
-// /////////////////////////////////////////////////////////
+// MinuitのFCN関数からアクセスするためのグローバルポインタ
+// (TMinuitの仕様上、静的関数である必要があるため)
+class LightSourceFitter;
 
 class LightSourceFitter {
 public:
     LightSourceFitter();
-    ~LightSourceFitter();
+    virtual ~LightSourceFitter();
 
-    // イベントを受け取ってフィットを実行するメイン関数
-    bool FitEvent(const std::vector<PMTData> &hits, FitResult &result);
-    
-    // /////////////////////////////////////////////////////////
-    // 追加: フィッティングモードを切り替える静的関数
-    // 例: LightSourceFitter::SetFitMode(kLikelihood_EMG);
-    // /////////////////////////////////////////////////////////
-    static void SetFitMode(FitMode mode) { g_fitMode = mode; }
+    /**
+     * @brief フィッティングの設定を適用する
+     * @param config コマンドライン引数などで指定された設定構造体
+     */
+    void SetConfig(const FitConfig& config);
 
-    // TMinuitが呼び出す関数 (staticである必要があります)
-    static void FcnForMinuit(Int_t &npar, Double_t *grad, Double_t &fval, Double_t *par, Int_t flag);
+    /**
+     * @brief 1イベント分のフィッティングを実行する
+     * * 3本ヒットの場合、呼び出し元でUnhit(0電荷)のダミーデータを追加し、
+     * 合計4つのデータが入った状態で渡されることを想定しています。
+     *
+     * @param eventHits イベントのPMTデータリスト
+     * @param res 結果を格納する構造体への参照
+     * @return true 収束に成功 (Status=3)
+     * @return false 収束に失敗
+     */
+    bool FitEvent(const std::vector<PMTData>& eventHits, FitResult& res);
+
+    // 静的FCN関数からメンバ変数へアクセスするためのゲッター
+    const std::vector<PMTData>& GetData() const { return fCurrentHits; }
+    const FitConfig& GetConfig() const { return fConfig; }
 
 private:
-    // TMinuitからアクセスするための静的メンバ
-    static std::vector<PMTData> g_hits;
-    static FitMode g_fitMode; // 現在のモード
+    TMinuit* fMinuit;
+    std::vector<PMTData> fCurrentHits; // 現在処理中のイベントデータ
+    FitConfig fConfig;                 // 現在の解析設定
 
-    // ヘルパー関数群
-    static double GetSigmaTime(int ch, double charge);
-    static double CalculateExpectedCharge(const double* params, double distance, double cos_angle);
-    
-    // カイ二乗(または負の対数尤度)を計算するコア関数
-    static double CalculateChi2(double *par);
-    
-    // /////////////////////////////////////////////////////////
-    // 追加: EMG分布の負の対数尤度 (-2lnL) を計算する関数
-    // /////////////////////////////////////////////////////////
-    static double CalculateNLL_EMG(double t, double mu, double sigma, double tau);
+    /**
+     * @brief パラメータの初期値と範囲を設定する
+     * 重心計算などを用いて初期値を決定します。
+     */
+    void InitializeParameters(const std::vector<PMTData>& hits);
 };
 
-#endif
+// Minuitが最小化のために呼び出す関数 (グローバルスコープ)
+void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag);
+
+#endif // ONEMPMTFIT_HH
