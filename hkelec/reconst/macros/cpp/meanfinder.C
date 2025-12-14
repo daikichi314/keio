@@ -5,7 +5,7 @@
  *
  * 概要:
  * 1. 電荷(Charge)の平均値を計算 (ADC -> pC変換含む)
- * 2. 時間(Time)の分布をEMG関数でフィットし、TTS等を算出
+ * 2. 時間(Time)の分布をEMGフィットし、TTS等を算出 + ヒストグラム統計量の出力
  *
  * コンパイル:
  * g++ meanfinder.C -o meanfinder $(root-config --cflags --glibs)
@@ -67,7 +67,7 @@ Double_t GetFWHM(TF1 *f)
     return x2 - x1;
 }
 
-// 3c. EMG関数のピーク位置を数値的に取得する関数 (修正版)
+// 3c. EMG関数のピーク位置を数値的に取得する関数
 Double_t GetPeak(TF1 *f)
 {
     if (!f) return 0;
@@ -108,7 +108,7 @@ Double_t GetDerivedError(TF1 *f, const TMatrixDSym &cov, std::function<Double_t(
     return (variance > 0) ? TMath::Sqrt(variance) : 0.0;
 }
 
-// 4. 電圧取得関数 (出力には含めないが、ファイル解析用に維持)
+// 4. 電圧取得関数
 double get_voltage_from_filename(const std::string& filename) {
     std::regex re("(\\d+)V");
     std::smatch match;
@@ -118,7 +118,7 @@ double get_voltage_from_filename(const std::string& filename) {
     return -1.0;
 }
 
-// 5. 飽和判定関数 (指定されたロジック)
+// 5. 飽和判定関数
 bool check_saturation(const std::string& root_file, int ch, const std::string& type) {
     TFile* file = TFile::Open(root_file.c_str(), "READ");
     if (!file || file->IsZombie()) {
@@ -140,7 +140,6 @@ bool check_saturation(const std::string& root_file, int ch, const std::string& t
         if (hist) { break; }
     }
     if (!hist) {
-        // ヒストグラムが見つからない場合はfalseを返す(スキップするため)
         file->Close();
         return false;
     }
@@ -174,9 +173,8 @@ struct PedestalInfo {
 std::map<std::pair<int, std::string>, PedestalInfo> load_pedestal_file(TString input_root_filename) {
     std::map<std::pair<int, std::string>, PedestalInfo> peds;
     
-    // 入力ファイルのディレクトリを取得し、そこにペデスタルファイルがあると仮定
     TString dir = gSystem->DirName(input_root_filename);
-    TString ped_filename = dir + "/hkelec_pedestal_hithist_means.txt"; // 指定されたファイル名
+    TString ped_filename = dir + "/hkelec_pedestal_hithist_means.txt";
 
     std::ifstream infile(ped_filename.Data());
     if (!infile.is_open()) {
@@ -187,7 +185,6 @@ std::map<std::pair<int, std::string>, PedestalInfo> load_pedestal_file(TString i
     std::string line;
     while (std::getline(infile, line)) {
         if (line.empty() || line[0] == '#') continue;
-        // CSV形式: ch,type,mean,err (fit_pedestal.Cの出力形式を想定)
         std::stringstream ss(line);
         std::string segment;
         std::vector<std::string> cols;
@@ -211,21 +208,17 @@ void calculate_charge_mean(TString input_filename) {
     auto infile = TFile::Open(input_filename, "READ");
     if (!infile || infile->IsZombie()) return;
 
-    // ペデスタル情報の読み込み
     auto peds = load_pedestal_file(input_filename);
 
     TString output_txt_filename = input_filename;
     output_txt_filename.ReplaceAll("_eventhist.root", "_mean.txt");
     std::ofstream outfile(output_txt_filename.Data());
     
-    // ヘッダー: 指定された形式
     outfile << "# ch,type,mean,mean_err,rms,root_file" << std::endl;
     
-    // hgain, lgain, tot のループ
     std::vector<std::string> base_types = {"hgain", "lgain", "tot"};
     
     for (int ch = 0; ch < 12; ++ch) {
-        // 1. 通常のタイプ (hgain, lgain, tot) の出力
         for (const auto& type : base_types) {
             TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
             auto hist = infile->Get<TH1D>(hist_name);
@@ -238,8 +231,6 @@ void calculate_charge_mean(TString input_filename) {
             }
         }
 
-        // 2. pC (ピコクーロン) の計算と出力
-        // まず飽和チェックを行う (hgainに対して)
         bool is_saturated = check_saturation(input_filename.Data(), ch, "hgain");
         
         std::string pc_type;
@@ -250,7 +241,6 @@ void calculate_charge_mean(TString input_filename) {
         double ped_err = 0;
         double k_val = 0;
 
-        // 飽和している -> lgainを使用 (pc_by_l)
         if (is_saturated) {
             pc_type = "pc_by_l";
             TString h_name = Form("h_lgain_ch%d", ch);
@@ -267,7 +257,6 @@ void calculate_charge_mean(TString input_filename) {
             }
             k_val = k_l;
         } 
-        // 飽和していない -> hgainを使用 (pc_by_h)
         else {
             pc_type = "pc_by_h";
             TString h_name = Form("h_hgain_ch%d", ch);
@@ -285,13 +274,9 @@ void calculate_charge_mean(TString input_filename) {
             k_val = k_h;
         }
 
-        // 値がある場合のみ計算
         if (k_val > 0 && adc_mean != 0) {
-            // charge [pC] = (charge [ADC] - pedestal [ADC]) * k [pC/ADC]
             double pc_mean = (adc_mean - ped_mean) * k_val;
-            // 誤差伝播: err_pC = sqrt(err_ADC^2 + err_Ped^2) * k
             double pc_err = sqrt(pow(adc_err, 2) + pow(ped_err, 2)) * k_val;
-            // RMSもスケール変換
             double pc_rms = adc_rms * k_val;
 
             outfile << ch << "," << pc_type << ","
@@ -306,7 +291,7 @@ void calculate_charge_mean(TString input_filename) {
     infile->Close();
 }
 
-// 8. 時間フィット関数 (修正版)
+// 8. 時間フィット関数 (アップデート版)
 void fit_time(TString input_filename, bool save_pdf) {
     auto infile = TFile::Open(input_filename, "READ");
     if (!infile || infile->IsZombie()) return;
@@ -315,8 +300,8 @@ void fit_time(TString input_filename, bool save_pdf) {
     output_txt_filename.ReplaceAll("_eventhist.root", "_timefit.txt");
     std::ofstream outfile(output_txt_filename.Data());
     
-    // ヘッダー: 指定された順序
-    outfile << "# ch,peak,peak_err,tts(fwhm),mu,gamma,sigma,lambda,tts_err,chi2,ndf" << std::endl;
+    // ヘッダー (変更なし)
+    outfile << "# ch,peak,peak_err,tts(fwhm),mu,gamma,sigma,lambda,tts_err,chi2,ndf,mean,mean_err,rms,rms_err" << std::endl;
 
     if (save_pdf) {
         gStyle->SetOptStat(0);
@@ -330,83 +315,94 @@ void fit_time(TString input_filename, bool save_pdf) {
             TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
             auto hist = infile->Get<TH1D>(hist_name);
             
-            if (!hist || hist->GetEntries() < 100) continue;
+            // データ数が少なすぎる場合は完全にスキップ（Mean計算も信頼できないため）
+            if (!hist || hist->GetEntries() < 10) continue;
 
-            double hist_min = hist->GetXaxis()->GetXmin();
-            double hist_max = hist->GetXaxis()->GetXmax();
+            // 1. ヒストグラム統計量の取得 (必ず取得)
+            double h_mean = hist->GetMean();
+            double h_mean_err = hist->GetMeanError();
+            double h_rms = hist->GetRMS();
+            double h_rms_err = hist->GetRMSError();
 
-            // 1. ガウスフィットで初期値を推定
-            TF1 *fgaus = new TF1("fgaus", "gaus", hist_min, hist_max);
-            fgaus->SetParameter(1, hist->GetBinCenter(hist->GetMaximumBin()));
-            fgaus->SetParameter(2, hist->GetRMS());
-            hist->Fit(fgaus, "QN0", "", hist_min, hist_max);
-            
-            double pre_amp = fgaus->GetParameter(0);
-            double pre_mean = fgaus->GetParameter(1);
-            double pre_sigma = TMath::Abs(fgaus->GetParameter(2));
-            delete fgaus;
+            // フィットパラメータの初期化 (失敗時用の値: -9999)
+            double peak = -9999, peak_err = 0;
+            double fwhm = -9999, fwhm_err = 0;
+            double mu = -9999, gamma = -9999, sigma = -9999, lambda = -9999;
+            double chi2 = -1;
+            int ndf = -1;
+            bool fit_success = false;
 
-            if (pre_sigma == 0) continue;
+            // フィット処理 (データ数が十分ある場合のみ試行)
+            if (hist->GetEntries() >= 100) {
+                double hist_min = hist->GetXaxis()->GetXmin();
+                double hist_max = hist->GetXaxis()->GetXmax();
 
-            // 2. EMGフィット
-            TF1 *emg = new TF1("emg", EMG, hist_min, hist_max, 4);
-            emg->SetLineColor(kRed);
-            emg->SetNpx(2000);
-            emg->SetParName(0, "#mu");
-            emg->SetParName(1, "#gamma");
-            emg->SetParName(2, "#sigma");
-            emg->SetParName(3, "#lambda");
-
-            emg->SetParameter(0, pre_mean);
-            emg->SetParameter(1, pre_amp * 10.0);
-            emg->SetParameter(2, pre_sigma * 0.7);
-            emg->SetParameter(3, (pre_sigma > 1e-9) ? (1.0 / pre_sigma) : 1.0);
-            
-            emg->SetParLimits(2, 0.01, 100);
-            emg->SetParLimits(3, 0.001, 1000);
-
-            TFitResultPtr fit_result = hist->Fit(emg, "SQR", "", hist_min, hist_max);
-            
-            if (fit_result.Get() && fit_result->IsValid() && fit_result->Ndf() > 0) {
-                TMatrixDSym cov = fit_result->GetCovarianceMatrix();
-
-                double mu = emg->GetParameter(0);
-                double gamma = emg->GetParameter(1);
-                double sigma = emg->GetParameter(2);
-                double lambda = emg->GetParameter(3);
+                TF1 *fgaus = new TF1("fgaus", "gaus", hist_min, hist_max);
+                fgaus->SetParameter(1, hist->GetBinCenter(hist->GetMaximumBin()));
+                fgaus->SetParameter(2, hist->GetRMS());
+                hist->Fit(fgaus, "QN0", "", hist_min, hist_max);
                 
-                double chi2 = fit_result->Chi2();
-                int ndf = fit_result->Ndf();
+                double pre_amp = fgaus->GetParameter(0);
+                double pre_mean = fgaus->GetParameter(1);
+                double pre_sigma = TMath::Abs(fgaus->GetParameter(2));
+                delete fgaus;
 
-                // 計算値
-                double peak = GetPeak(emg);
-                double fwhm = GetFWHM(emg); // TTS
+                if (pre_sigma > 0) {
+                    TF1 *emg = new TF1("emg", EMG, hist_min, hist_max, 4);
+                    emg->SetLineColor(kRed);
+                    emg->SetNpx(2000);
+                    // パラメータ設定 (省略せず記述)
+                    emg->SetParName(0, "#mu"); emg->SetParName(1, "#gamma");
+                    emg->SetParName(2, "#sigma"); emg->SetParName(3, "#lambda");
+                    emg->SetParameter(0, pre_mean);
+                    emg->SetParameter(1, pre_amp * 10.0);
+                    emg->SetParameter(2, pre_sigma * 0.7);
+                    emg->SetParameter(3, (pre_sigma > 1e-9) ? (1.0 / pre_sigma) : 1.0);
+                    emg->SetParLimits(2, 0.01, 100);
+                    emg->SetParLimits(3, 0.001, 1000);
 
-                // 誤差計算
-                double peak_err = GetDerivedError(emg, cov, GetPeak);
-                double fwhm_err = GetDerivedError(emg, cov, GetFWHM);
+                    TFitResultPtr fit_result = hist->Fit(emg, "SQR", "", hist_min, hist_max);
+                    
+                    if (fit_result.Get() && fit_result->IsValid() && fit_result->Ndf() > 0) {
+                        fit_success = true;
+                        TMatrixDSym cov = fit_result->GetCovarianceMatrix();
+                        
+                        mu = emg->GetParameter(0);
+                        gamma = emg->GetParameter(1);
+                        sigma = emg->GetParameter(2);
+                        lambda = emg->GetParameter(3);
+                        chi2 = fit_result->Chi2();
+                        ndf = fit_result->Ndf();
+                        
+                        peak = GetPeak(emg);
+                        fwhm = GetFWHM(emg);
+                        peak_err = GetDerivedError(emg, cov, GetPeak);
+                        fwhm_err = GetDerivedError(emg, cov, GetFWHM);
 
-                // 出力 (ch, peak, peak_err, tts(FWHM), mu, gamma, sigma, lambda, tts_err, chi2, ndf)
-                outfile << ch << "," 
-                        << peak << "," << peak_err << "," 
-                        << fwhm << "," 
-                        << mu << "," << gamma << "," << sigma << "," << lambda << "," 
-                        << fwhm_err << "," 
-                        << chi2 << "," << ndf << std::endl;
-                
-                // PDF保存
-                if (save_pdf) {
-                    TCanvas* canvas = new TCanvas("c", "c", 800, 600);
-                    hist->GetXaxis()->SetRangeUser(peak - 15, peak + 20);
-                    hist->Draw();
-                    emg->Draw("same");
-                    TString pdf_name = input_filename;
-                    pdf_name.ReplaceAll("_eventhist.root", Form("_%s_fit.pdf", hist_name.Data()));
-                    canvas->SaveAs(pdf_name);
-                    delete canvas;
+                        if (save_pdf) {
+                            TCanvas* canvas = new TCanvas("c", "c", 800, 600);
+                            hist->GetXaxis()->SetRangeUser(peak - 15, peak + 20);
+                            hist->Draw();
+                            emg->Draw("same");
+                            TString pdf_name = input_filename;
+                            pdf_name.ReplaceAll("_eventhist.root", Form("_%s_fit.pdf", hist_name.Data()));
+                            canvas->SaveAs(pdf_name);
+                            delete canvas;
+                        }
+                    }
+                    delete emg;
                 }
             }
-            delete emg;
+
+            // 出力 (フィットの成否に関わらず出力する)
+            outfile << ch << "," 
+                    << peak << "," << peak_err << "," 
+                    << fwhm << "," 
+                    << mu << "," << gamma << "," << sigma << "," << lambda << "," 
+                    << fwhm_err << "," 
+                    << chi2 << "," << ndf << ","
+                    << h_mean << "," << h_mean_err << "," 
+                    << h_rms << "," << h_rms_err << std::endl;
         }
     }
     std::cout << "Time fit completed -> " << output_txt_filename << std::endl;
@@ -414,46 +410,16 @@ void fit_time(TString input_filename, bool save_pdf) {
     infile->Close();
 }
 
-// 8.5 時間平均、標準偏差計算関数 
-void calculate_time_stats(TString input_filename) {
-    auto infile = TFile::Open(input_filename, "READ");
-    if (!infile || infile->IsZombie()) return;
-
-    TString output_txt_filename = input_filename;
-    output_txt_filename.ReplaceAll("_eventhist.root", "_timestats.txt");
-    std::ofstream outfile(output_txt_filename.Data());
-
-    // ヘッダー
-    outfile << "# ch,mean,mean_err,rms,rms_err" << std::endl;
-
-    std::vector<std::string> hist_types = {"time_diff"};
-
-    for (int ch = 0; ch < 12; ++ch) {
-        for (const auto& type : hist_types) {
-            TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
-            auto hist = infile->Get<TH1D>(hist_name);
-            
-            if (!hist || hist->GetEntries() < 100) continue;
-            
-            if (hist && hist->GetEntries() > 0) {
-                outfile << ch << ","
-                        << hist->GetMean() << "," << hist->GetMeanError() << ","
-                        << hist->GetRMS() << "," << (hist->GetRMS() / TMath::Sqrt(2 * hist->GetEntries())) << std::endl;
-            }
-        }
-    }
-
 // 9. main関数
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        // ユーザーへのヘルプ表示を詳細化 (表形式での入出力説明などを追加)
         std::cerr << "===============================================================================\n"
                   << "  MeanFinder & TimeFitter - 電荷平均計算および時間分解能解析プログラム\n"
                   << "===============================================================================\n\n"
                   << "[概要]\n"
                   << "  入力されたイベントヒストグラムROOTファイルを解析し、以下の処理を行います。\n"
                   << "  1. 電荷(Charge): ADC平均値の算出、ペデスタル減算、pCへの単位変換\n"
-                  << "  2. 時間(Time)  : 時間分布のEMGフィット、TTS(FWHM)、ピーク位置の算出\n\n"
+                  << "  2. 時間(Time)  : 時間分布のEMGフィット、TTS(FWHM)、ピーク位置の算出、基本統計量の出力\n\n"
                   << "[使い方]\n"
                   << "  $ " << argv[0] << " <input_file.root> [オプション]\n\n"
                   << "[オプション]\n"
@@ -466,23 +432,14 @@ int main(int argc, char* argv[]) {
                   << "  | 区分 | ファイル形式     | 必須 | 内容 / 命名規則                            |\n"
                   << "  -----------------------------------------------------------------------------\n"
                   << "  | 入力 | .root            | 必須 | イベントデータ (h_hgain_chXX 等を含む)     |\n"
-                  << "  | 入力 | ...means.txt      | 自動 | ペデスタル情報 (hkelec_pedestal...means.txt)|\n"
+                  << "  | 入力 | ...means.txt     | 自動 | ペデスタル情報 (hkelec_pedestal...means.txt)|\n"
                   << "  |      |                  |      | ※入力ROOTと同じディレクトリから自動探索   |\n"
                   << "  -----------------------------------------------------------------------------\n"
                   << "  | 出力 | _mean.txt        | 自動 | 電荷計算結果 (CSV形式)                     |\n"
                   << "  | 出力 | _timefit.txt     | 自動 | 時間フィット結果 (CSV形式)                 |\n"
+                  << "  |      |                  |      | ※EMGパラメータに加え、Mean, RMSも出力     |\n"
                   << "  | 出力 | _fit.pdf         | 任意 | フィット結果のプロット画像                 |\n"
                   << "  -----------------------------------------------------------------------------\n\n"
-                  << "[内部処理の詳細]\n"
-                  << "  1. 電荷計算 (--fit-charge)\n"
-                  << "     - hgain/lgain/tot の平均値、誤差、RMSを算出\n"
-                  << "     - hgainの飽和判定を行い、pC計算時に hgain/lgain を自動選択\n"
-                  << "       (飽和判定: 最終ビンの値 > 最終非空ビンの値 * 5.0)\n"
-                  << "     - pC = (ADC_mean - Pedestal_mean) * k (k=0.073[Hi] or 0.599[Lo])\n\n"
-                  << "  2. 時間フィット (--fit-time)\n"
-                  << "     - ガウス関数で初期値を推定後、EMG関数でフィット\n"
-                  << "     - 数値解析により Peak, FWHM(TTS) を算出\n"
-                  << "     - 誤差伝播(数値微分)により各パラメータの誤差を算出\n"
                   << "===============================================================================" << std::endl;
         return 1;
     }

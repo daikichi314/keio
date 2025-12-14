@@ -2,12 +2,17 @@
 
 # id: run_reconstruction_batch.sh
 # Place: /home/daiki/keio/hkelec/reconst/reco/
-# Author: Gemini 3 Pro
-# Last Edit: 2025-12-06
+# Author: Gemini (Modified based on user request)
+# Last Edit: 2025-12-14
 #
 # 概要:
 # 指定ディレクトリ内の *eventhist.root ファイルに対して
 # reconstructor を一括実行するバッチスクリプト
+#
+# [重要]
+# 出力ファイル名はC++プログラム側で、指定されたオプション(-m, -q, -tなど)
+# に基づいて自動的に決定されます（例: run01_reconst_3hits_bc_zeroB_goodness.root）。
+# これにより、条件違いでの結果の上書きを防ぎます。
 
 # --- スクリプトの使い方を表示する関数 ---
 usage() {
@@ -17,19 +22,33 @@ usage() {
     echo " 再構成プログラム (reconstructor) を実行します。"
     echo ""
     echo " [使い方]"
-    echo " $0 <TargetDirectory> [Suffix]"
+    echo " $0 <TargetDirectory> [Options...]"
     echo ""
     echo " [引数]"
-    echo " <TargetDirectory> : 処理対象のディレクトリパス"
+    echo " <TargetDirectory> : 処理対象のディレクトリパス (必須)"
     echo "                     この中にROOTファイルとペデスタルファイルが必要です。"
-    echo " [Suffix]          : 出力ファイル名のサフィックス（省略可）"
-    echo "                     指定時: *_eventhist.root → *_reconst_<Suffix>.root"
-    echo "                     省略時: *_eventhist.root → *_reconst.root"
+    echo " [Options...]      : reconstructor にそのまま渡されるオプション群"
+    echo ""
+    echo "   -u <0/1>        : 0=4本必須(default), 1=3本許容(Unhit補完)"
+    echo "   -m <model>      : standard=通常(default), zeroB=B固定, cos=角度依存(推奨)"
+    echo "   -q <model>      : gaus=ガウス(default), bc=Baker-Cousins"
+    echo "                     none=電荷情報を使用しない (時間のみでフィット)"
+    echo "   -t <model>      : gaus=ガウス(default), emg=EMG, goodness=SK Goodness"
+    echo "                     none=時間情報を使用しない (電荷のみでフィット)"
+    echo ""
+    echo " [実行例]"
+    echo " 1. デフォルト設定 (4本, Standard, Gaussian):"
+    echo "    $0 ./data"
+    echo ""
+    echo " 2. 3本ヒット許容、B固定、Baker-Cousins、Goodness:"
+    echo "    $0 ./data -u 1 -m zeroB -q bc -t goodness"
+    echo ""
+    echo " 3. 時間情報のみを使ってフィット (電荷不使用):"
+    echo "    $0 ./data -q none"
     echo ""
     echo " [前提条件]"
     echo " 1. ディレクトリ内に 'hkelec_pedestal_hithist_means.txt' が存在すること。"
     echo " 2. このスクリプトと同じディレクトリに実行ファイル 'reconstructor' が存在すること。"
-    echo "    スクリプト位置から絶対パスを解決して実行します。"
     echo "=========================================================================="
 }
 
@@ -40,7 +59,10 @@ if [ "$#" -lt 1 ]; then
 fi
 
 TARGET_DIR="$1"
-SUFFIX="${2:-}"
+shift # ディレクトリ引数をずらす
+
+# 残りの引数をすべてオプションとして格納
+RECO_OPTIONS="$@"
 
 # --- ディレクトリの存在チェック ---
 if [ ! -d "$TARGET_DIR" ]; then
@@ -64,32 +86,28 @@ if [ ! -f "$RECONSTRUCTOR" ]; then
     exit 1
 fi
 
-echo "Start processing in: $TARGET_DIR"
+echo "========================================================"
+echo " Start Batch Reconstruction"
+echo " Directory : $TARGET_DIR"
+echo " Options   : ${RECO_OPTIONS:-(Default)}"
+echo "========================================================"
 
 # --- ループ処理 ---
-# findコマンドで *eventhist.root を検索して処理
-find "$TARGET_DIR" -name "*eventhist.root" | while read input_file; do
-    
-    # 出力ファイル名の生成 (_eventhist.root を除去して _reconst[_SUFFIX] を付与)
-    # 例: run001_eventhist.root -> run001_reconst または run001_reconst_XXX
-    base_name=$(basename "$input_file" _eventhist.root)
-    if [ -n "$SUFFIX" ]; then
-        output_base="${TARGET_DIR}/${base_name}_reconst_${SUFFIX}"
-    else
-        output_base="${TARGET_DIR}/${base_name}_reconst"
-    fi
+# findで検索し、ファイル名順にソートして処理
+find "$TARGET_DIR" -name "*eventhist.root" | sort | while read input_file; do
     
     echo "--------------------------------------------------------"
-    echo "Processing: $input_file"
-    echo "Output:     $output_base.root / .csv"
+    echo "Processing: $(basename "$input_file")"
     
     # reconstructor の実行
-    $RECONSTRUCTOR "$input_file" "$output_base"
+    # 引数: 入力ファイル オプション...
+    # ※出力ファイル名はプログラム内部で自動生成されるため指定不要
+    $RECONSTRUCTOR "$input_file" $RECO_OPTIONS
     
     if [ $? -eq 0 ]; then
-        echo "Done."
+        echo " -> Done."
     else
-        echo "Error occurred during processing $input_file"
+        echo " -> Error occurred!"
     fi
 
 done
