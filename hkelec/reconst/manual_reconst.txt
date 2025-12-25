@@ -6,7 +6,8 @@ In hkpd@hkdaq
 1. hkpd@hkdaq:~$ . ~/setup_hkelec.sh  ## set up
 
 1.1. ロガーで記録を取り始める。
-1.2. hkpd@hkdaq:~$ SyncPD.py
+1.2. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data/2025XXXX$ SyncPD.py
+1.3. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/data/analyze.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal
 
 2. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/LDhkelec_xxx -l 20 --trgch 4 --switch N ... ## Masurement (make binary file)
 
@@ -74,7 +75,7 @@ In hkpd@hkdaq
     To deal with the noise in trigger channel, let’s set more strict threshold (-1 -> -5 mV) for the trigger channel.
     This can be done by threshold.py --mV 5 --ch 4 (setting -5 mV for channel 4) or, by using --trgch-Vth option of ScanManager.py (--trgch 4 --trgch-Vth 5 for example). Note that ScanManager.py sets the threshold setting to default after each scan.
 
-2.5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/DiscreteSoftware/install/bin/RunManager.py -p -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal -l 40  
+2.5. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/DiscreteSoftware/install/bin/RunManager.py -p -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal -l 20  
 
     hkpd@hkdaq:~$ . setup_hkelec.sh
     hkpd@hkdaq:~/hkelec/DiscreteSoftware$ RunManager.py -h
@@ -187,4 +188,4 @@ memo
 
 /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251212kishita/no1/LDhkelec_0pt_no1 -l 10 --trgch 4 --switch 2 --trgch-Vth 5 --dBlist 13 13.5 14 14.5 15 16 18 20 22 24 26 28 30 33 36 42 50 58
 
-
+/home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251222kishita/LDhkelec_x-35_y-35_z157 -l 10 --trgch 4 --switch 2 --trgch-Vth 5 --dBlist 15 20 15 20

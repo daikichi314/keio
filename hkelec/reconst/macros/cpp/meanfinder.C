@@ -118,7 +118,7 @@ double get_voltage_from_filename(const std::string& filename) {
     return -1.0;
 }
 
-// 5. 飽和判定関数
+// 5. 飽和判定関数 (修正版: 最終データビンと直前データビンの比率で判定)
 bool check_saturation(const std::string& root_file, int ch, const std::string& type) {
     TFile* file = TFile::Open(root_file.c_str(), "READ");
     if (!file || file->IsZombie()) {
@@ -126,7 +126,7 @@ bool check_saturation(const std::string& root_file, int ch, const std::string& t
         return false;
     }
 
-    // try several common histogram name patterns
+    // ヒストグラム名の探索
     std::vector<TString> names_to_try;
     names_to_try.push_back(Form("h_%s_ch%d", type.c_str(), ch));
     names_to_try.push_back(Form("h_%s_ch%02d", type.c_str(), ch));
@@ -139,27 +139,48 @@ bool check_saturation(const std::string& root_file, int ch, const std::string& t
         hist = (TH1*)file->Get(hn);
         if (hist) { break; }
     }
+    
     if (!hist) {
         file->Close();
         return false;
     }
 
-    int last_bin = hist->GetNbinsX();
-    double last_bin_content = hist->GetBinContent(last_bin);
+    // --- 修正ロジック ---
     
-    int reference_bin = last_bin - 1;
-    while(reference_bin > 0 && hist->GetBinContent(reference_bin) == 0) {
-        reference_bin--;
-    }
+    // 1. 中身が入っている「一番右のビン」（実質的な最終ビン）を探す
+    int last_filled_bin = hist->FindLastBinAbove(0);
     
-    if(reference_bin <= 0) {
+    // データが全くない場合は false
+    if (last_filled_bin < 0) {
         file->Close();
         return false;
     }
-    
-    double reference_content = hist->GetBinContent(reference_bin);
-    bool is_saturated = (last_bin_content > reference_content * 5.0);
-    
+
+    double last_content = hist->GetBinContent(last_filled_bin);
+
+    // 2. その手前にある「中身が入っているビン」（右から2番目のビン）を探す
+    //    (間に空のビンがあってもスキップして、データがあるところと比較する)
+    int second_last_filled_bin = -1;
+    for (int i = last_filled_bin - 1; i >= 1; --i) {
+        if (hist->GetBinContent(i) > 0) {
+            second_last_filled_bin = i;
+            break;
+        }
+    }
+
+    bool is_saturated = false;
+
+    // 3. 比較判定
+    if (second_last_filled_bin > 0) {
+        double second_last_content = hist->GetBinContent(second_last_filled_bin);
+        
+        // 条件: 最後のビンのカウント数が、一つ手前のビンの5倍より大きい場合
+        if (last_content > second_last_content * 5.0) {
+            is_saturated = true;
+        }
+    }
+    // else: データが1ビンしか入っていない場合などは、比較対象がないため false (飽和とみなさない) とする
+
     file->Close();
     return is_saturated;
 }
