@@ -1,14 +1,15 @@
 /*
  * id: plot_summary.C
  * Place: /home/daiki/keio/hkelec/reconst/macros/cpp/
- * Last Edit: 2025-11-21 Gemini
+ * Last Edit: 2025-12-25 Gemini
  *
  * 概要: 指定ディレクトリ内の _mean.txt (電荷) と _timefit.txt (時間) を集計し、
  * Charge vs 各種パラメータのグラフを作成する。
- * * 作成されるグラフ:
+ * * * 作成されるグラフ:
  * - Hist統計量: Mean, RMS
- * - Fitパラメータ: Peak, TTS(FWHM), Mu, Sigma, Gamma, Tau(1/lambda)
- * * グラフは7次多項式でフィットし、結果をPDFとテキストに出力する。
+ * - Fitパラメータ(EMG) : Peak, TTS(FWHM), Mu, Sigma, Gamma, Tau(1/lambda)
+ * - Fitパラメータ(Gaus): GausAmp, GausMu, GausSigma
+ * * * グラフは7次多項式でフィットし、結果をPDFとテキストに出力する。
  * * フィット関数の最小値(min_val)とその時の電荷(at_charge)も算出して出力する。
  * * 描画範囲はデータに合わせて動的に決定する。
  *
@@ -40,16 +41,22 @@ struct ChargeData {
 };
 
 struct TimeData {
-    // フィット由来パラメータ
+    // フィット由来パラメータ (EMG)
     double peak_val, peak_err;
     double tts_val, tts_err;
     double mu, gamma, sigma, lambda;
-    bool fit_valid; // フィットが成功しているか
+    bool fit_valid; // EMGフィットが成功しているか
 
     // ヒストグラム統計量 (常に有効)
     double h_mean, h_mean_err;
     double h_rms, h_rms_err;
     bool hist_valid;
+
+    // ガウスフィットパラメータ
+    double g_amp, g_amp_err;
+    double g_mu, g_mu_err;
+    double g_sigma, g_sigma_err;
+    bool g_valid; // ガウスフィットが成功しているか
 };
 
 // 3. ヘルプ表示関数
@@ -130,35 +137,41 @@ void process_directory(TString target_dir, bool save_pdf) {
                 while(std::getline(ss, segment, ',')) cols.push_back(segment);
 
                 // format: 
-                // 0:ch, 1:peak, 2:peak_err, 3:tts, 4:mu, 5:gamma, 6:sigma, 7:lambda, 
-                // 8:tts_err, 9:chi2, 10:ndf, 11:mean, 12:mean_err, 13:rms, 14:rms_err
-                if (cols.size() >= 15) {
+                // 0-10: EMG, 11-14: Hist, 15-22: Gaus
+                if (cols.size() >= 23) {
                     int ch = std::stoi(cols[0]);
                     std::string key = get_root_key(filename.Data());
 
                     TimeData td;
-                    // ヒストグラム統計量 (常に有効と仮定)
-                    td.h_mean = std::stod(cols[11]);
-                    td.h_mean_err = std::stod(cols[12]);
-                    td.h_rms = std::stod(cols[13]);
-                    td.h_rms_err = std::stod(cols[14]);
-                    td.hist_valid = true;
-
-                    // フィットパラメータ (失敗時は -9999)
-                    double check_val = std::stod(cols[1]); // peak
-                    if (check_val > -9000) { 
-                        td.peak_val = std::stod(cols[1]);
-                        td.peak_err = std::stod(cols[2]);
-                        td.tts_val = std::stod(cols[3]);
-                        td.tts_err = std::stod(cols[8]);
-                        td.mu = std::stod(cols[4]);
-                        td.gamma = std::stod(cols[5]);
-                        td.sigma = std::stod(cols[6]);
-                        td.lambda = std::stod(cols[7]);
+                    
+                    // --- EMG Parameters ---
+                    double check_emg = std::stod(cols[1]); // peak
+                    if (check_emg > -9000) { 
+                        td.peak_val = std::stod(cols[1]); td.peak_err = std::stod(cols[2]);
+                        td.tts_val  = std::stod(cols[3]); td.tts_err  = std::stod(cols[8]);
+                        td.mu = std::stod(cols[4]); td.gamma = std::stod(cols[5]);
+                        td.sigma = std::stod(cols[6]); td.lambda = std::stod(cols[7]);
                         td.fit_valid = true;
                     } else {
                         td.fit_valid = false;
                     }
+
+                    // --- Hist Stats ---
+                    td.h_mean = std::stod(cols[11]); td.h_mean_err = std::stod(cols[12]);
+                    td.h_rms  = std::stod(cols[13]); td.h_rms_err  = std::stod(cols[14]);
+                    td.hist_valid = true;
+
+                    // --- Gaussian Parameters ---
+                    double check_gaus = std::stod(cols[17]); // g_mu
+                    if (check_gaus > -9000) {
+                        td.g_amp   = std::stod(cols[15]); td.g_amp_err   = std::stod(cols[16]);
+                        td.g_mu    = std::stod(cols[17]); td.g_mu_err    = std::stod(cols[18]);
+                        td.g_sigma = std::stod(cols[19]); td.g_sigma_err = std::stod(cols[20]);
+                        td.g_valid = true;
+                    } else {
+                        td.g_valid = false;
+                    }
+
                     time_map[ch][key] = td;
                 }
             }
@@ -172,7 +185,8 @@ void process_directory(TString target_dir, bool save_pdf) {
     csv_outfile << "ch,key,charge,charge_err,"
                 << "h_mean,h_mean_err,h_rms,h_rms_err,"
                 << "peak,peak_err,tts,tts_err,"
-                << "mu,gamma,sigma,tau,fit_valid" << std::endl;
+                << "g_amp,g_amp_err,g_mu,g_mu_err,g_sigma,g_sigma_err," // 追加
+                << "mu,gamma,sigma,tau,fit_valid,g_valid" << std::endl;
 
     TString out_txt_path = target_dir + "/fit_results_summary.txt";
     std::ofstream outfile(out_txt_path.Data());
@@ -187,7 +201,11 @@ void process_directory(TString target_dir, bool save_pdf) {
             std::vector<double> x, ex, y, ey;
         };
         std::map<std::string, GraphSet> graphs;
-        std::vector<std::string> graph_types = {"Mean", "RMS", "Peak", "TTS", "Mu", "Sigma", "Gamma", "Tau"};
+        // グラフタイプのリスト (Gaussian parameters を追加)
+        std::vector<std::string> graph_types = {
+            "Mean", "RMS", "Peak", "TTS", "Mu", "Sigma", "Gamma", "Tau",
+            "GausAmp", "GausMu", "GausSigma"
+        };
 
         for (auto const& [key, c_data] : charge_map[ch]) {
             if (time_map[ch].count(key)) {
@@ -202,13 +220,17 @@ void process_directory(TString target_dir, bool save_pdf) {
                             << t.h_rms << "," << t.h_rms_err << ","
                             << (t.fit_valid ? t.peak_val : -9999) << "," << (t.fit_valid ? t.peak_err : 0) << ","
                             << (t.fit_valid ? t.tts_val : -9999) << "," << (t.fit_valid ? t.tts_err : 0) << ","
+                            << (t.g_valid ? t.g_amp : -9999) << "," << (t.g_valid ? t.g_amp_err : 0) << ","
+                            << (t.g_valid ? t.g_mu : -9999) << "," << (t.g_valid ? t.g_mu_err : 0) << ","
+                            << (t.g_valid ? t.g_sigma : -9999) << "," << (t.g_valid ? t.g_sigma_err : 0) << ","
                             << (t.fit_valid ? t.mu : -9999) << "," 
                             << (t.fit_valid ? t.gamma : -9999) << "," 
                             << (t.fit_valid ? t.sigma : -9999) << "," 
                             << tau << ","
-                            << t.fit_valid << std::endl;
+                            << t.fit_valid << "," << t.g_valid << std::endl;
 
                 // グラフデータ蓄積
+                // 1. ヒストグラム統計量 (常にプロット)
                 if (t.hist_valid) {
                     graphs["Mean"].x.push_back(c_data.val); graphs["Mean"].ex.push_back(c_data.err);
                     graphs["Mean"].y.push_back(t.h_mean);   graphs["Mean"].ey.push_back(t.h_mean_err);
@@ -217,6 +239,7 @@ void process_directory(TString target_dir, bool save_pdf) {
                     graphs["RMS"].y.push_back(t.h_rms);     graphs["RMS"].ey.push_back(t.h_rms_err);
                 }
 
+                // 2. EMGフィットパラメータ (成功時のみプロット)
                 if (t.fit_valid) {
                     graphs["Peak"].x.push_back(c_data.val); graphs["Peak"].ex.push_back(c_data.err);
                     graphs["Peak"].y.push_back(t.peak_val); graphs["Peak"].ey.push_back(t.peak_err);
@@ -236,6 +259,18 @@ void process_directory(TString target_dir, bool save_pdf) {
                     graphs["Tau"].x.push_back(c_data.val);   graphs["Tau"].ex.push_back(c_data.err);
                     graphs["Tau"].y.push_back(tau);          graphs["Tau"].ey.push_back(0);
                 }
+
+                // 3. Gaussianフィットパラメータ (成功時のみプロット)
+                if (t.g_valid) {
+                    graphs["GausAmp"].x.push_back(c_data.val);   graphs["GausAmp"].ex.push_back(c_data.err);
+                    graphs["GausAmp"].y.push_back(t.g_amp);      graphs["GausAmp"].ey.push_back(t.g_amp_err);
+
+                    graphs["GausMu"].x.push_back(c_data.val);    graphs["GausMu"].ex.push_back(c_data.err);
+                    graphs["GausMu"].y.push_back(t.g_mu);        graphs["GausMu"].ey.push_back(t.g_mu_err);
+
+                    graphs["GausSigma"].x.push_back(c_data.val); graphs["GausSigma"].ex.push_back(c_data.err);
+                    graphs["GausSigma"].y.push_back(t.g_sigma);  graphs["GausSigma"].ey.push_back(t.g_sigma_err);
+                }
             }
         }
 
@@ -249,22 +284,22 @@ void process_directory(TString target_dir, bool save_pdf) {
             double x_max_data = *std::max_element(g.x.begin(), g.x.end());
 
             // 2. 描画・フィット範囲の決定 (マージン10%程度)
-            // 下限: データが負なら拡張、正なら基本的に0から (ただしデータが0から遠い場合は要調整だが、現状は0-start基準)
             double range_min = (x_min_data < 0) ? x_min_data * 1.1 : 0.0;
-            double range_max = (x_max_data > 0) ? x_max_data * 1.1 : 100.0; // データがない場合等の保護
+            double range_max = (x_max_data > 0) ? x_max_data * 1.1 : 100.0;
 
             TGraphErrors* gr = new TGraphErrors(g.x.size(), g.x.data(), g.y.data(), g.ex.data(), g.ey.data());
             
             // 軸ラベル設定
             std::string y_unit = "[ns]";
-            if (type == "Gamma") y_unit = "[arb. units]";
-            if (type == "Mean" || type == "Peak") y_unit = "[ns (abs)]";
+            if (type == "Gamma" || type.find("Amp") != std::string::npos) y_unit = "[arb. units]";
+            if (type == "Mean" || type == "Peak" || type == "GausMu") y_unit = "[ns (abs)]";
             gr->SetTitle(Form("Ch%d %s;Charge [pC];%s %s", ch, type.c_str(), type.c_str(), y_unit.c_str()));
             gr->SetMarkerStyle(20);
             gr->SetMarkerSize(0.8);
 
             // 7次関数フィッティング (動的範囲)
             TF1* f7 = new TF1("f7", "pol7", range_min, range_max); 
+            f7->SetLineColor(kRed);
             gr->Fit(f7, "Q", "", range_min, range_max);
 
             // 最小値の算出 (fit範囲内で)
@@ -284,9 +319,9 @@ void process_directory(TString target_dir, bool save_pdf) {
             if (save_pdf) {
                 TCanvas* c = new TCanvas("c", "c", 800, 600);
                 c->SetGrid();
-                // 軸範囲も設定するとより見やすい
                 gr->GetXaxis()->SetLimits(range_min, range_max);
-                gr->Draw("AP");
+                gr->Draw("APE"); // エラーバー付きで描画
+                f7->Draw("same"); // フィット曲線を上書き
                 
                 TString pdf_name = Form("%s/Charge_vs_%s_ch%02d.pdf", target_dir.Data(), type.c_str(), ch);
                 c->SaveAs(pdf_name);

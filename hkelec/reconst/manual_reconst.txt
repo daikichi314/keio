@@ -7,7 +7,30 @@ In hkpd@hkdaq
 
 1.1. ロガーで記録を取り始める。
 1.2. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data/2025XXXX$ SyncPD.py
-1.3. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/data/analyze.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/hkelec_pedestal
+1.3. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ ~/hkelec/DiscreteSoftware/data/analyze.sh /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/Sync...
+1.4  ~/hkelec/analysis/hkelec-analysis/scripts/pd_to_csv.py
+    usage: pd_to_csv.py [-h] -d INDIR --pdcsv PDCSV --sync-hittree SYNC_HITTREE [--outcsv OUTCSV] [--outpdf OUTPDF] [--sync-search-start SYNC_SEARCH_START] [--sync-search-duration SYNC_SEARCH_DURATION]
+    [--pd-timescale PD_TIMESCALE]
+
+    Analyze Photodiode CSV data (taken by C9329). For each HK-digitizer run, calculate mean of PD voltage and save it into a CSV file.
+
+    options:
+    -h, --help show this help message and exit
+    -d INDIR, --indir INDIR
+    Input directory that contains hittree files.
+    --pdcsv PDCSV Input Photodiode csv file path
+    --sync-hittree SYNC_HITTREE
+    Input hittree file path for sync run
+    --outcsv OUTCSV Output csv file path
+    --outpdf OUTPDF Output pdf file path
+    --sync-search-start SYNC_SEARCH_START
+    Start time of sync search in second
+    --sync-search-duration SYNC_SEARCH_DURATION
+    Duration of sync search in second
+    --pd-timescale PD_TIMESCALE
+    Photodiode timescale
+
+ex) ~/hkelec/analysis/hkelec-analysis/scripts/pd_to_csv.py -d ~/hkelec/DiscreteSoftware/data/20251225kishita/ --pdcsv ~/hkelec/DiscreteSoftware/data/20251225kishita/PD_20251225kishita-1.CSV --sync-hittree ~/hkelec/DiscreteSoftware/data/20251225kishita/SyncRun-20251225-143936_hittree.root --outcsv ~/hkelec/DiscreteSoftware/data/20251225kishita/PD_summary20251225.CSV --second
 
 2. hkpd@hkdaq:~/hkelec/DiscreteSoftware/data$ /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/2025XXXX/LDhkelec_xxx -l 20 --trgch 4 --switch N ... ## Masurement (make binary file)
 
@@ -189,3 +212,5 @@ memo
 /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251212kishita/no1/LDhkelec_0pt_no1 -l 10 --trgch 4 --switch 2 --trgch-Vth 5 --dBlist 13 13.5 14 14.5 15 16 18 20 22 24 26 28 30 33 36 42 50 58
 
 /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251222kishita/LDhkelec_x-35_y-35_z157 -l 10 --trgch 4 --switch 2 --trgch-Vth 5 --dBlist 15 20 15 20
+
+/home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251226kishita/LDhkelec_x35_y50_z127 -l 12 --trgch 4 --switch 2 --trgch-Vth 5 --dBlist 15 20

@@ -1,11 +1,13 @@
 /*
  * id: meanfinder.C
  * Place: /home/daiki/keio/hkelec/reconst/macros/cpp/
- * Last Edit: 2025-11-20 Gemini
+ * Last Edit: 2025-12-25 Gemini
  *
  * 概要:
  * 1. 電荷(Charge)の平均値を計算 (ADC -> pC変換含む)
- * 2. 時間(Time)の分布をEMGフィットし、TTS等を算出 + ヒストグラム統計量の出力
+ * 2. 時間(Time)の分布に対し、以下の2種類のフィットを行う
+ * - ガウスフィット (範囲: Mean ± 3*RMS)
+ * - EMGフィット (全範囲, Hits>100の場合のみ)
  *
  * コンパイル:
  * g++ meanfinder.C -o meanfinder $(root-config --cflags --glibs)
@@ -118,7 +120,7 @@ double get_voltage_from_filename(const std::string& filename) {
     return -1.0;
 }
 
-// 5. 飽和判定関数 (修正版: 最終データビンと直前データビンの比率で判定)
+// 5. 飽和判定関数 (修正版: ヒストグラムの末尾形状から判定)
 bool check_saturation(const std::string& root_file, int ch, const std::string& type) {
     TFile* file = TFile::Open(root_file.c_str(), "READ");
     if (!file || file->IsZombie()) {
@@ -126,7 +128,6 @@ bool check_saturation(const std::string& root_file, int ch, const std::string& t
         return false;
     }
 
-    // ヒストグラム名の探索
     std::vector<TString> names_to_try;
     names_to_try.push_back(Form("h_%s_ch%d", type.c_str(), ch));
     names_to_try.push_back(Form("h_%s_ch%02d", type.c_str(), ch));
@@ -139,14 +140,11 @@ bool check_saturation(const std::string& root_file, int ch, const std::string& t
         hist = (TH1*)file->Get(hn);
         if (hist) { break; }
     }
-    
     if (!hist) {
         file->Close();
         return false;
     }
 
-    // --- 修正ロジック ---
-    
     // 1. 中身が入っている「一番右のビン」（実質的な最終ビン）を探す
     int last_filled_bin = hist->FindLastBinAbove(0);
     
@@ -159,7 +157,6 @@ bool check_saturation(const std::string& root_file, int ch, const std::string& t
     double last_content = hist->GetBinContent(last_filled_bin);
 
     // 2. その手前にある「中身が入っているビン」（右から2番目のビン）を探す
-    //    (間に空のビンがあってもスキップして、データがあるところと比較する)
     int second_last_filled_bin = -1;
     for (int i = last_filled_bin - 1; i >= 1; --i) {
         if (hist->GetBinContent(i) > 0) {
@@ -173,14 +170,12 @@ bool check_saturation(const std::string& root_file, int ch, const std::string& t
     // 3. 比較判定
     if (second_last_filled_bin > 0) {
         double second_last_content = hist->GetBinContent(second_last_filled_bin);
-        
         // 条件: 最後のビンのカウント数が、一つ手前のビンの5倍より大きい場合
         if (last_content > second_last_content * 5.0) {
             is_saturated = true;
         }
     }
-    // else: データが1ビンしか入っていない場合などは、比較対象がないため false (飽和とみなさない) とする
-
+    
     file->Close();
     return is_saturated;
 }
@@ -312,7 +307,7 @@ void calculate_charge_mean(TString input_filename) {
     infile->Close();
 }
 
-// 8. 時間フィット関数 (アップデート版)
+// 8. 時間フィット関数 (アップデート版: EMG + Gaussian Fit)
 void fit_time(TString input_filename, bool save_pdf) {
     auto infile = TFile::Open(input_filename, "READ");
     if (!infile || infile->IsZombie()) return;
@@ -321,12 +316,17 @@ void fit_time(TString input_filename, bool save_pdf) {
     output_txt_filename.ReplaceAll("_eventhist.root", "_timefit.txt");
     std::ofstream outfile(output_txt_filename.Data());
     
-    // ヘッダー (変更なし)
-    outfile << "# ch,peak,peak_err,tts(fwhm),mu,gamma,sigma,lambda,tts_err,chi2,ndf,mean,mean_err,rms,rms_err" << std::endl;
+    // ヘッダー: 
+    // 0-10: EMG結果 (peak, tts, mu, gamma, sigma, lambda等)
+    // 11-14: ヒストグラム統計量 (mean, rms等)
+    // 15-22: ガウスフィット結果 (amp, mu, sigma, chi2等)
+    outfile << "# ch,peak,peak_err,tts(fwhm),mu,gamma,sigma,lambda,tts_err,chi2,ndf," 
+            << "mean,mean_err,rms,rms_err,"
+            << "g_amp,g_amp_err,g_mu,g_mu_err,g_sigma,g_sigma_err,g_chi2,g_ndf" << std::endl;
 
     if (save_pdf) {
         gStyle->SetOptStat(0);
-        gStyle->SetOptFit(1);
+        gStyle->SetOptFit(0); // 複数のフィット線を描くため、統計ボックスは一旦消す
     }
 
     std::vector<std::string> hist_types = {"time_diff"};
@@ -336,94 +336,141 @@ void fit_time(TString input_filename, bool save_pdf) {
             TString hist_name = Form("h_%s_ch%d", type.c_str(), ch);
             auto hist = infile->Get<TH1D>(hist_name);
             
-            // データ数が少なすぎる場合は完全にスキップ（Mean計算も信頼できないため）
+            // データ数が少なすぎる場合はスキップ
             if (!hist || hist->GetEntries() < 10) continue;
 
-            // 1. ヒストグラム統計量の取得 (必ず取得)
+            // 1. ヒストグラム統計量の取得
             double h_mean = hist->GetMean();
             double h_mean_err = hist->GetMeanError();
             double h_rms = hist->GetRMS();
             double h_rms_err = hist->GetRMSError();
 
-            // フィットパラメータの初期化 (失敗時用の値: -9999)
-            double peak = -9999, peak_err = 0;
-            double fwhm = -9999, fwhm_err = 0;
-            double mu = -9999, gamma = -9999, sigma = -9999, lambda = -9999;
-            double chi2 = -1;
-            int ndf = -1;
-            bool fit_success = false;
+            // 変数の初期化 (失敗時用の値: -9999)
+            // -- EMG用 --
+            double emg_peak = -9999, emg_peak_err = 0;
+            double emg_fwhm = -9999, emg_fwhm_err = 0;
+            double emg_mu = -9999, emg_gamma = -9999, emg_sigma = -9999, emg_lambda = -9999;
+            double emg_chi2 = -1;
+            int emg_ndf = -1;
 
-            // フィット処理 (データ数が十分ある場合のみ試行)
-            if (hist->GetEntries() >= 100) {
-                double hist_min = hist->GetXaxis()->GetXmin();
-                double hist_max = hist->GetXaxis()->GetXmax();
+            // -- Gaussian用 --
+            double g_amp = -9999, g_amp_err = 0;
+            double g_mu = -9999, g_mu_err = 0;
+            double g_sigma = -9999, g_sigma_err = 0;
+            double g_chi2 = -1;
+            int g_ndf = -1;
 
-                TF1 *fgaus = new TF1("fgaus", "gaus", hist_min, hist_max);
-                fgaus->SetParameter(1, hist->GetBinCenter(hist->GetMaximumBin()));
-                fgaus->SetParameter(2, hist->GetRMS());
-                hist->Fit(fgaus, "QN0", "", hist_min, hist_max);
+            TF1 *fgaus = nullptr;
+            TF1 *femg = nullptr;
+
+            // データがある程度ある場合のみフィットを実行
+            if (hist->GetEntries() >= 50) {
+
+                // --- 2. ガウスフィット (範囲: Mean ± 3*RMS) ---
+                double fit_min = h_mean - 3.0 * h_rms;
+                double fit_max = h_mean + 3.0 * h_rms;
                 
-                double pre_amp = fgaus->GetParameter(0);
-                double pre_mean = fgaus->GetParameter(1);
-                double pre_sigma = TMath::Abs(fgaus->GetParameter(2));
-                delete fgaus;
+                // ヒストグラムの範囲内に収める
+                if (fit_min < hist->GetXaxis()->GetXmin()) fit_min = hist->GetXaxis()->GetXmin();
+                if (fit_max > hist->GetXaxis()->GetXmax()) fit_max = hist->GetXaxis()->GetXmax();
 
-                if (pre_sigma > 0) {
-                    TF1 *emg = new TF1("emg", EMG, hist_min, hist_max, 4);
-                    emg->SetLineColor(kRed);
-                    emg->SetNpx(2000);
-                    // パラメータ設定 (省略せず記述)
-                    emg->SetParName(0, "#mu"); emg->SetParName(1, "#gamma");
-                    emg->SetParName(2, "#sigma"); emg->SetParName(3, "#lambda");
-                    emg->SetParameter(0, pre_mean);
-                    emg->SetParameter(1, pre_amp * 10.0);
-                    emg->SetParameter(2, pre_sigma * 0.7);
-                    emg->SetParameter(3, (pre_sigma > 1e-9) ? (1.0 / pre_sigma) : 1.0);
-                    emg->SetParLimits(2, 0.01, 100);
-                    emg->SetParLimits(3, 0.001, 1000);
+                fgaus = new TF1("fgaus", "gaus", fit_min, fit_max);
+                fgaus->SetLineColor(kBlue);
+                fgaus->SetLineWidth(2);
+                fgaus->SetParameter(1, h_mean); // 初期値: ヒストグラムMean
+                fgaus->SetParameter(2, h_rms);  // 初期値: ヒストグラムRMS
+                
+                TFitResultPtr g_res = hist->Fit(fgaus, "SQR", "", fit_min, fit_max);
+                
+                if (g_res.Get() && g_res->IsValid()) {
+                    g_amp = fgaus->GetParameter(0); g_amp_err = fgaus->GetParError(0);
+                    g_mu = fgaus->GetParameter(1);  g_mu_err = fgaus->GetParError(1);
+                    g_sigma = fgaus->GetParameter(2); g_sigma_err = fgaus->GetParError(2);
+                    g_chi2 = fgaus->GetChisquare();
+                    g_ndf = fgaus->GetNDF();
+                }
 
-                    TFitResultPtr fit_result = hist->Fit(emg, "SQR", "", hist_min, hist_max);
+                // --- 3. EMGフィット (全範囲) ---
+                double full_min = hist->GetXaxis()->GetXmin();
+                double full_max = hist->GetXaxis()->GetXmax();
+                
+                femg = new TF1("femg", EMG, full_min, full_max, 4);
+                femg->SetLineColor(kRed);
+                femg->SetLineWidth(2);
+                femg->SetParName(0, "#mu");
+                femg->SetParName(1, "#gamma");
+                femg->SetParName(2, "#sigma");
+                femg->SetParName(3, "#lambda");
+
+                // 初期値: ガウスが成功していればそれを利用、だめならHist統計量
+                double init_mu = (g_mu > -9000) ? g_mu : h_mean;
+                double init_sigma = (g_sigma > 0) ? fabs(g_sigma) : h_rms;
+                double init_amp = (g_amp > 0) ? g_amp : hist->GetMaximum();
+
+                femg->SetParameter(0, init_mu);
+                femg->SetParameter(1, init_amp * 10.0); // Gammaのスケール調整
+                femg->SetParameter(2, init_sigma * 0.7);
+                femg->SetParameter(3, (init_sigma > 1e-9) ? (1.0 / init_sigma) : 1.0);
+                
+                femg->SetParLimits(2, 0.01, 100);
+                femg->SetParLimits(3, 0.001, 1000);
+
+                // "+" オプションでフィット関数リストに追加 (ガウスを消さないため)
+                TFitResultPtr e_res = hist->Fit(femg, "SQR+", "", full_min, full_max);
+
+                if (e_res.Get() && e_res->IsValid() && e_res->Ndf() > 0) {
+                    TMatrixDSym cov = e_res->GetCovarianceMatrix();
+
+                    emg_mu = femg->GetParameter(0);
+                    emg_gamma = femg->GetParameter(1);
+                    emg_sigma = femg->GetParameter(2);
+                    emg_lambda = femg->GetParameter(3);
                     
-                    if (fit_result.Get() && fit_result->IsValid() && fit_result->Ndf() > 0) {
-                        fit_success = true;
-                        TMatrixDSym cov = fit_result->GetCovarianceMatrix();
-                        
-                        mu = emg->GetParameter(0);
-                        gamma = emg->GetParameter(1);
-                        sigma = emg->GetParameter(2);
-                        lambda = emg->GetParameter(3);
-                        chi2 = fit_result->Chi2();
-                        ndf = fit_result->Ndf();
-                        
-                        peak = GetPeak(emg);
-                        fwhm = GetFWHM(emg);
-                        peak_err = GetDerivedError(emg, cov, GetPeak);
-                        fwhm_err = GetDerivedError(emg, cov, GetFWHM);
+                    emg_chi2 = femg->GetChisquare();
+                    emg_ndf = femg->GetNDF();
+                    
+                    emg_peak = GetPeak(femg);
+                    emg_fwhm = GetFWHM(femg);
 
-                        if (save_pdf) {
-                            TCanvas* canvas = new TCanvas("c", "c", 800, 600);
-                            hist->GetXaxis()->SetRangeUser(peak - 15, peak + 20);
-                            hist->Draw();
-                            emg->Draw("same");
-                            TString pdf_name = input_filename;
-                            pdf_name.ReplaceAll("_eventhist.root", Form("_%s_fit.pdf", hist_name.Data()));
-                            canvas->SaveAs(pdf_name);
-                            delete canvas;
-                        }
-                    }
-                    delete emg;
+                    emg_peak_err = GetDerivedError(femg, cov, GetPeak);
+                    emg_fwhm_err = GetDerivedError(femg, cov, GetFWHM);
                 }
             }
 
-            // 出力 (フィットの成否に関わらず出力する)
+            // 出力 (各フィットの成否に関わらず、変数の値を出力)
             outfile << ch << "," 
-                    << peak << "," << peak_err << "," 
-                    << fwhm << "," 
-                    << mu << "," << gamma << "," << sigma << "," << lambda << "," 
-                    << fwhm_err << "," 
-                    << chi2 << "," << ndf << ","
+                    << emg_peak << "," << emg_peak_err << "," 
+                    << emg_fwhm << "," 
+                    << emg_mu << "," << emg_gamma << "," << emg_sigma << "," << emg_lambda << "," 
+                    << emg_fwhm_err << "," 
+                    << emg_chi2 << "," << emg_ndf << ","
                     << h_mean << "," << h_mean_err << "," 
-                    << h_rms << "," << h_rms_err << std::endl;
+                    << h_rms << "," << h_rms_err << ","
+                    << g_amp << "," << g_amp_err << ","
+                    << g_mu << "," << g_mu_err << ","
+                    << g_sigma << "," << g_sigma_err << ","
+                    << g_chi2 << "," << g_ndf
+                    << std::endl;
+            
+            // PDF保存
+            if (save_pdf) {
+                TCanvas* canvas = new TCanvas("c", "c", 800, 600);
+                
+                // 描画範囲を調整 (ガウスまたはEMGのピーク周辺)
+                double center = (g_mu > -9000) ? g_mu : (emg_peak > -9000 ? emg_peak : h_mean);
+                hist->GetXaxis()->SetRangeUser(center - 20, center + 25);
+                
+                hist->Draw();
+                if (fgaus) fgaus->Draw("same"); // 青
+                if (femg) femg->Draw("same");   // 赤
+                
+                TString pdf_name = input_filename;
+                pdf_name.ReplaceAll("_eventhist.root", Form("_%s_fit.pdf", hist_name.Data()));
+                canvas->SaveAs(pdf_name);
+                delete canvas;
+            }
+            if (fgaus) delete fgaus;
+            if (femg) delete femg;
         }
     }
     std::cout << "Time fit completed -> " << output_txt_filename << std::endl;
@@ -440,7 +487,7 @@ int main(int argc, char* argv[]) {
                   << "[概要]\n"
                   << "  入力されたイベントヒストグラムROOTファイルを解析し、以下の処理を行います。\n"
                   << "  1. 電荷(Charge): ADC平均値の算出、ペデスタル減算、pCへの単位変換\n"
-                  << "  2. 時間(Time)  : 時間分布のEMGフィット、TTS(FWHM)、ピーク位置の算出、基本統計量の出力\n\n"
+                  << "  2. 時間(Time)  : 時間分布のガウスフィット、EMGフィット、TTS(FWHM)、ピーク位置の算出\n\n"
                   << "[使い方]\n"
                   << "  $ " << argv[0] << " <input_file.root> [オプション]\n\n"
                   << "[オプション]\n"
@@ -458,9 +505,18 @@ int main(int argc, char* argv[]) {
                   << "  -----------------------------------------------------------------------------\n"
                   << "  | 出力 | _mean.txt        | 自動 | 電荷計算結果 (CSV形式)                     |\n"
                   << "  | 出力 | _timefit.txt     | 自動 | 時間フィット結果 (CSV形式)                 |\n"
-                  << "  |      |                  |      | ※EMGパラメータに加え、Mean, RMSも出力     |\n"
+                  << "  |      |                  |      | ※EMG, Hist統計量, ガウスパラメータを出力  |\n"
                   << "  | 出力 | _fit.pdf         | 任意 | フィット結果のプロット画像                 |\n"
                   << "  -----------------------------------------------------------------------------\n\n"
+                  << "[内部処理の詳細]\n"
+                  << "  1. 電荷計算 (--fit-charge)\n"
+                  << "     - hgain/lgain/tot の平均値、誤差、RMSを算出\n"
+                  << "     - hgainの飽和判定を行い、pC計算時に hgain/lgain を自動選択\n"
+                  << "     - pC = (ADC_mean - Pedestal_mean) * k (k=0.073[Hi] or 0.599[Lo])\n\n"
+                  << "  2. 時間フィット (--fit-time)\n"
+                  << "     - ガウスフィット: 範囲 [Mean - 3*RMS, Mean + 3*RMS], 初期値 Mean/RMS\n"
+                  << "     - EMGフィット   : 全範囲, ガウス結果を初期値に利用\n"
+                  << "     - 誤差伝播      : 共分散行列を用いた数値微分により Peak, FWHM の誤差を算出\n"
                   << "===============================================================================" << std::endl;
         return 1;
     }
