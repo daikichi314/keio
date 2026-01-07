@@ -1,19 +1,102 @@
-では、いったんここまでのプロジェクトに深く関連する別のプロジェクトとして、電荷の期待値モデル（Q_exp=A/r^2など）を実際の測定結果から予想していきたいです。
-１．まず、すでにあるコード群として、keio/hkelec/reconst/macros/内のコードを順番に実行すると、meanfinderにより、ある測定についての電荷の測定結果をpC単位で計算してテキストファイルに出力します。
-出力結果の例は以下のようになります。
-000000000000000000000000000000000000000000000
+では、いったんここまでのプロジェクトに深く関連する別のプロジェクトとして、電荷の期待値モデル（Q_exp=A*f(r_i)*\epsilon(\alpha_i)など）を実際の測定結果から予想していきたいです。
+そのためにまず、以下の流れで実際の光量と、観測光量、光源位置、r_i、cos(\alpha_i)などをまとめたCSVファイルを作成するコードを作成してください。
+１．まず、すでにあるコード群として、keio/hkelec/reconst/macros/内のコードを順番に実行すると、meanfinderにより、ある測定についての電荷の測定結果をpC単位で計算してテキストファイルに出力されます。
+出力結果の例は以下のようになります。pc_by_hはhgainから得た電荷、
+pc_by_lはlgainから得た電荷です。これらの値とPMT番号を抽出します（type=pc_by_hまたはpc_by_lの列について、ch,mean,mean_errを抽出する）。また、ch0~3がPMT_num1~4に対応しています。
+    # ch,type,mean,mean_err,rms,root_file
+    0,hgain,537.2,1.53583,11.8965,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    0,lgain,222.2,0.186786,1.44684,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    0,tot,120.233,2.97072,23.0111,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    0,pc_by_h,1.88873,0.112118,0.868444,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    1,hgain,535.909,35.6488,118.234,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    1,lgain,224.273,3.9857,13.2191,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    1,tot,146.455,25.9899,86.1989,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    1,pc_by_h,4.55535,2.60236,8.63105,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    2,hgain,529.75,1.84077,11.6421,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    2,lgain,220.8,0.215639,1.36382,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    2,tot,106.7,5.15087,32.577,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    2,pc_by_h,1.52278,0.134379,0.84987,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    3,hgain,951.531,0.811049,114.786,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    3,lgain,270.329,0.0938524,13.2827,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    3,tot,433.004,0.377158,53.3782,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
+    3,pc_by_h,34.3518,0.0592159,8.37935,/home/daiki/lab/data/20251225/LDhkelec_x80_y-35_z127-002-20.00dB_eventhist.root
 
-２．上記の電荷の結果に加えて、その結果が得られた際の実際の光源位置及び、実際の光の強さを知る必要があります。これらはファイル名に含まれているため、これを取り出す必要があります。位置及び光の減衰量はファイル名に以下の例のように含まれます。
+
+２．上記の電荷の結果に加えて、その結果が得られた際の実際の光源位置及び、実際の光の強さを知る必要があります。これらはファイル名に含まれているため、これを取り出す必要があります。位置及び光の減衰量はファイル名に以下の例のように含まれます。ただし、減衰量は10dBで1/10倍に、20dBで1/100倍に対応します。
 例: LDhkelec_x-35_y-35_z147-003-15.00dB_mean.txt
 BASENAME_xX_yY_zZ-RUNNUMBER-XXdB_mean.txt
-(X,Y,Zはreconstructorにおける座標と同じcmたんいで部屋の底面の中央を原点としたもの、)
+(X,Y,Zはreconstructorにおける座標と同じcmたんいで部屋の底面の中央を原点としたもの。±200程度の範囲の実数値が入ります。0が-0となっている場合があります。)
 
-３．光源は理想的には一定の光量で光りますが、実際にはわずかに光量が時間で変化します。各サブランごとの光量はフォトダイオード（PD）でモニターされており、以下のようなCSVファイルにV単位でまとめられています。
+３．光源は理想的には一定の光量で光りますが、実際にはわずかに光量が時間で変化します。各サブランごとの光量はフォトダイオード（PD）でモニターされており、以下のようなCSVファイルにV単位でまとめられています。PDvolt_meanがリファレンスの光量に対応します。RunIDの最後の部分がファイル名になっています。ここでも
+例）PD_summary20251225.CSV  ファイル名がBASENAME_xX_yY_zZ-RUNNUMBER-XXdBでないものは無視してください。
+    Attenuation_dB,Device,PDvolt_mean,PDvolt_std,ReadOutBoard,RunId,RunLength,RunMode,TimeStamp,TriggerChannel
+    15.0,digitizer,4.916,0.0052915,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-0_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:50:45.764998,4
+    20.0,digitizer,4.90833,0.00208167,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-0_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:51:01.909575,4
+    15.0,digitizer,4.94425,0.00590903,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-10_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:46:13.047736,4
+    20.0,digitizer,4.92833,0.00351188,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-10_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:46:29.193263,4
+    15.0,digitizer,4.9145,0.00822598,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-10_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T18:41:21.010769,4
+    20.0,digitizer,4.897,0.0127671,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-10_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T18:41:37.094629,4
+    15.0,digitizer,4.92325,0.00512348,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-20_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:42:03.107568,4
+    20.0,digitizer,4.92225,0.00694622,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-20_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:42:21.171273,4
+    15.0,digitizer,4.921,0.0154704,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-20_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T18:45:12.137383,4
+    20.0,digitizer,4.90867,0.0080829,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-20_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T18:45:28.290285,4
+    15.0,digitizer,4.92725,0.00596518,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-30_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:38:16.091838,4
+    20.0,digitizer,4.918,0.0113137,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-30_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:38:32.259341,4
+    15.0,digitizer,4.9305,0.00873689,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-30_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T18:48:32.448120,4
+    20.0,digitizer,4.92967,0.00680686,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-30_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T18:48:48.605185,4
+    15.0,digitizer,4.90125,0.00805709,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z107-001-15.00dB,10,HitOnly,2025-12-25T17:28:12.227631,4
+    20.0,digitizer,4.896,nan,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z107-002-20.00dB,10,HitOnly,2025-12-25T17:28:39.295883,4
+    15.0,digitizer,4.906,0.00725718,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z117-001-15.00dB,10,HitOnly,2025-12-25T17:22:41.983903,4
+    20.0,digitizer,4.8945,0.000707107,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z117-002-20.00dB,10,HitOnly,2025-12-25T17:23:03.075090,4
+    15.0,digitizer,4.89675,0.0110868,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z127-001-15.00dB,10,HitOnly,2025-12-25T17:11:52.501304,4
+    20.0,digitizer,4.8965,0.00834666,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z127-002-20.00dB,10,HitOnly,2025-12-25T17:12:11.559548,4
+    15.0,digitizer,4.90125,0.00732006,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z137-001-15.00dB,10,HitOnly,2025-12-25T17:06:33.066708,4
+    20.0,digitizer,4.89725,0.00830161,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z137-002-20.00dB,10,HitOnly,2025-12-25T17:06:51.131477,4
+    15.0,digitizer,4.91125,0.00125831,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z147-001-15.00dB,10,HitOnly,2025-12-25T17:02:08.134594,4
+    20.0,digitizer,4.892,0.00793725,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z147-002-20.00dB,10,HitOnly,2025-12-25T17:02:25.223889,4
+    15.0,digitizer,4.9025,0.0123962,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z157-001-15.00dB,10,HitOnly,2025-12-25T16:57:14.704165,4
+    20.0,digitizer,4.91525,0.00660177,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z157-002-20.00dB,10,HitOnly,2025-12-25T16:57:33.785240,4
+    15.0,digitizer,4.9005,0.006245,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z87-001-15.00dB,10,HitOnly,2025-12-25T17:39:25.502537,4
+    20.0,digitizer,4.9055,0.00636396,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z87-002-20.00dB,10,HitOnly,2025-12-25T17:39:58.561615,4
+    15.0,digitizer,4.9085,0.0117898,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z97-001-15.00dB,10,HitOnly,2025-12-25T17:33:31.415255,4
+    20.0,digitizer,4.90625,0.00684957,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-35_y35_z97-002-20.00dB,10,HitOnly,2025-12-25T17:33:54.487504,4
+    15.0,digitizer,4.92367,0.00665833,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-40_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:35:06.322537,4
+    20.0,digitizer,4.93767,0.00737111,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-40_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:35:22.472381,4
+    15.0,digitizer,4.92675,0.0112064,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-40_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T18:52:12.734541,4
+    20.0,digitizer,4.91867,0.00737111,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-40_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T18:52:28.855225,4
+    15.0,digitizer,4.9155,0.00450925,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-50_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:31:53.364502,4
+    20.0,digitizer,4.918,0.00264575,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-50_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:32:09.513132,4
+    15.0,digitizer,4.919,0.00469042,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-50_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T18:56:42.531630,4
+    20.0,digitizer,4.90567,0.00929157,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-50_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T18:56:58.653925,4
+    15.0,digitizer,4.9315,0.00353553,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-60_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:27:56.992485,4
+    20.0,digitizer,4.92075,0.00531507,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-60_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:28:13.163036,4
+    15.0,digitizer,4.9275,0.00212132,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-60_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T19:00:33.052815,4
+    20.0,digitizer,4.9355,0.00212132,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-60_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T19:00:49.196603,4
+    15.0,digitizer,4.93767,0.00680686,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-70_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:23:57.953047,4
+    20.0,digitizer,4.917,0.0115326,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-70_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:24:14.078141,4
+    15.0,digitizer,4.91725,0.00818026,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-70_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T19:05:00.402078,4
+    20.0,digitizer,4.94067,0.0011547,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-70_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T19:05:16.556769,4
+    15.0,digitizer,4.938,0.00844591,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-80_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:19:34.237610,4
+    20.0,digitizer,4.931,0.00793725,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-80_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:19:50.287266,4
+    15.0,digitizer,4.92667,0.00929157,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-80_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T19:12:47.507680,4
+    20.0,digitizer,4.92633,0.00450925,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x-80_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T19:13:03.664160,4
+    15.0,digitizer,4.91675,0.00639661,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x0_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T18:37:00.409921,4
+    20.0,digitizer,4.90333,0.00288675,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x0_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T18:37:16.556938,4
+    15.0,digitizer,4.92867,0.0102632,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x10_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:54:54.807935,4
+    20.0,digitizer,4.93275,0.0118708,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x10_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:55:11.881714,4
+    15.0,digitizer,4.909,0.0125698,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x10_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T18:31:15.295887,4
+    20.0,digitizer,4.90675,0.0116154,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x10_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T18:31:32.281225,4
+    15.0,digitizer,4.932,0.0043589,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x20_y-35_z127-001-15.00dB,10,HitOnly,2025-12-25T19:59:10.238950,4
+    20.0,digitizer,4.937,0.00424264,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x20_y-35_z127-002-20.00dB,10,HitOnly,2025-12-25T19:59:29.345726,4
+    15.0,digitizer,4.922,0.001,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x20_y-35_z162-001-15.00dB,10,HitOnly,2025-12-25T18:27:04.980843,4
+    20.0,digitizer,4.925,0.006,kc705,/home/hkpd/hkelec/DiscreteSoftware/data/20251225kishita/LDhkelec_x20_y-35_z162-002-20.00dB,10,HitOnly,2025-12-25T18:27:23.045497,4
 
-４．２，３に基づき、0dB,PDが4.4Vの際の光量を1として、相対的な実際の光源の光量(light_power)を計算できるはずです。
+４．２，３に基づき、15 dB,PDが5 V の際の光量を1として、相対的な実際の光源の光量(light_power)を計算できるはずです。
 また、２の光源位置の情報から、各PMTからの距離(r)、および天頂角(alpha)も計算できるはずです。
 現在PMTの表面の中心（±35,±35,80.5）をPMTの位置としていますが、これに加えて新しく代表的な点として、PMTを半球とした場合の中心点（±35,±35,48）を追加します。これらについても光源との距離、天頂角を計算できるはずです。
 
-以上に基づいて、あるディレクトリ内の*mean.txtのファイル名と内容から以下のようなCSVファイルを作成するコードを作成してください。
-PMT_num Charge Charge_err light_power x y z r alpha r_from_center alpha_from_center
-ただし、0000000000000000000000000000000000000
+以上に基づいて、あるディレクトリ内の*mean.txtのファイル名と内容、およびPDの電圧が記録されたCSVファイルから以下の列を持つCSVファイルを作成するコードを作成してください。
+#PMT_num Charge(pC) Charge_err(pC) light_power x y z r cos(alpha) r_from_center cos(alpha_from_center)
+
+仕様についての更なる質問や、足りない情報、あいまいな点などがあれば必ず聞いてください。
+また、アドバイスなどがあればお願いいたします。
