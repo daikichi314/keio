@@ -23,18 +23,20 @@ LDFLAGS := $(ROOTGLIBS)
 TARGET_PEDESTAL := fit_pedestal
 TARGET_MEANFINDER := meanfinder
 TARGET_PLOT := plot_summary
+TARGET_PLOT_CSV := plot_from_csv
 
 # ソースファイル名
 SRC_PEDESTAL := fit_pedestal.C
 SRC_MEANFINDER := meanfinder.C
 SRC_PLOT := plot_summary.C
+SRC_PLOT_CSV := plot_from_csv.C
 
 .PHONY: all clean
 
 # --- ルール ---
 
 # 'make all' または 'make' で全ての実行ファイルを作成
-all: $(TARGET_PEDESTAL) $(TARGET_MEANFINDER) $(TARGET_PLOT)
+all: $(TARGET_PEDESTAL) $(TARGET_MEANFINDER) $(TARGET_PLOT) $(TARGET_PLOT_CSV)
 
 # fit_pedestal
 $(TARGET_PEDESTAL): $(SRC_PEDESTAL)
@@ -48,6 +50,10 @@ $(TARGET_MEANFINDER): $(SRC_MEANFINDER)
 $(TARGET_PLOT): $(SRC_PLOT)
 	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
+# plot_from_csv
+$(TARGET_PLOT_CSV): $(SRC_PLOT_CSV)
+	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
+
 # クリーンアップ (生成された実行ファイルとオブジェクトファイルを削除)
 clean:
-	rm -f $(TARGET_PEDESTAL) $(TARGET_MEANFINDER) $(TARGET_PLOT) *.o
+	rm -f $(TARGET_PEDESTAL) $(TARGET_MEANFINDER) $(TARGET_PLOT) $(TARGET_PLOT_CSV) *.o

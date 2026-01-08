@@ -371,6 +371,15 @@ void process_directory(TString target_dir, bool save_pdf) {
             outfile << "," << f_model->GetChisquare() << "," << f_model->GetNDF() 
                     << "," << min_val << "," << min_err << "," << at_charge << std::endl;
 
+            // グラフデータのCSV出力（include_in_fitフラグ付き）
+            TString csv_graph_name = Form("%s/Charge_vs_%s_ch%02d.csv", target_dir.Data(), type.c_str(), ch);
+            std::ofstream csv_graph(csv_graph_name.Data());
+            csv_graph << "charge,charge_err," << type << "," << type << "_err,include_in_fit" << std::endl;
+            for(size_t i=0; i<g.x.size(); ++i) {
+                csv_graph << g.x[i] << "," << g.ex[i] << "," << g.y[i] << "," << g.ey[i] << ",1" << std::endl;
+            }
+            csv_graph.close();
+
             // PDF出力
             if (save_pdf) {
                 TCanvas* c = new TCanvas("c", "c", 800, 600);

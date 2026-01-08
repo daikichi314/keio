@@ -1,0 +1,9 @@
+１．あらたな電荷期待値モデルを追加します。
+mu_i(A,r_i,\alpha_i)=A*f_i(r_i)*\epsilon_i(cos(\alpha_i))
+ここで、
+f_i(r) = c0 * (1 - sqrt(1 - (32.5/(r-c1)^2)))
+\epsilon_i(cos(\alpha_i)) = c0 + c1 * cos(\alpha_i) + c2 * cos(\alpha_i)^2 + ... + c7 * cos(\alpha_i)^7
+です。
+f_i(r), \epsilon_i(cos(\alpha_i)) はPMTごとに異なる関数を用います。
+fittinginput.hhなどで、こちらで係数を書き込めるようにしてください。
+２．結果のCSVファイルの名前について頼みたいことがあります。とりあえず現在の命名規則を教えてください。

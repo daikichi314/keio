@@ -23,11 +23,10 @@ def print_usage(prog_name):
     print(" ")
     print(" [処理内容] ")
     print(" 1. 1次元分布 (X, Y, Z, t) のヒストグラムとガウスフィット")
-    print(" 2. カイ二乗 (chi2) 分布のヒストグラム")
-    print(" 3. 2次元分布 (XY, YZ, XZ) のヒストグラム")
-    print("    - 広域 (-400 ~ 400)")
-    print("    - 拡大 (フィット平均 ± 20)")
-    print(" 4. 3次元散布図 (カラー: 時間)")
+    print(" 2. 3次元距離 r のヒストグラム (X,Y,Zのフィット中心からの距離)")
+    print(" 3. カイ二乗 (chi2) 分布のヒストグラム")
+    print(" 4. 2次元分布 (XY, YZ, XZ) のヒストグラム (広域・拡大)")
+    print(" 5. 3次元散布図 (カラー: 時間)")
     print(" ")
     print(" [使い方] ")
     print(f" {prog_name} <InputPath>")
@@ -50,17 +49,18 @@ def gaussian(x, a, mu, sigma):
 # ------------------------------------------------------------------
 def process_1d_fit(df, col, label, unit, output_dir, base_name, text_lines):
     """
-    戻り値: (mean, sigma, success_flag)
+    戻り値: (center_val, fit_success_flag)
+    ※ center_val はフィット成功時はフィットMean、失敗時は算術平均を返す
     """
     plt.figure(figsize=(8, 6))
     
     data = df[col]
-    # ヒストグラムデータの作成
     counts, bin_edges = np.histogram(data, bins=50)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     
-    # 初期パラメータ推定
-    p0 = [max(counts), np.mean(data), np.std(data)]
+    # 初期パラメータ
+    arithmetic_mean = np.mean(data)
+    p0 = [max(counts), arithmetic_mean, np.std(data)]
     
     fit_success = False
     popt = [0, 0, 0]
@@ -71,23 +71,20 @@ def process_1d_fit(df, col, label, unit, output_dir, base_name, text_lines):
         perr = np.sqrt(np.diag(pcov))
         fit_success = True
     except:
-        pass # フィット失敗時はそのまま
+        pass 
 
-    # 描画
     plt.hist(data, bins=50, color='skyblue', edgecolor='white', label='Data')
     
     if fit_success:
         x_smooth = np.linspace(min(data), max(data), 200)
         plt.plot(x_smooth, gaussian(x_smooth, *popt), 'r-', lw=2, label='Fit')
         
-        # 図にパラメータ表示
         info = (f"Mean: {popt[1]:.2f} {unit}\n"
                 f"Sigma: {abs(popt[2]):.2f} {unit}")
         plt.gca().text(0.05, 0.95, info, transform=plt.gca().transAxes,
                        verticalalignment='top', 
                        bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
         
-        # テキスト結果に追加
         text_lines.append(f"[{label}]")
         text_lines.append(f"  Mean  : {popt[1]:.4f} +/- {perr[1]:.4f} {unit}")
         text_lines.append(f"  Sigma : {abs(popt[2]):.4f} +/- {perr[2]:.4f} {unit}\n")
@@ -105,9 +102,79 @@ def process_1d_fit(df, col, label, unit, output_dir, base_name, text_lines):
     plt.savefig(save_path)
     plt.close()
     
-    # 次の処理(ズーム図)のために平均値を返す
-    mean_val = popt[1] if fit_success else 0
-    return mean_val, fit_success
+    # 次の処理のために中心値を返す
+    # フィット成功ならフィットのMean、失敗なら算術平均を使う
+    center_val = popt[1] if fit_success else arithmetic_mean
+    return center_val, fit_success
+
+# ------------------------------------------------------------------
+# 3次元距離 r の分布 (ミラーリングフィット)
+# ------------------------------------------------------------------
+def process_radial_fit(df, center_pos, output_dir, base_name, text_lines):
+    """
+    center_pos: (mu_x, mu_y, mu_z) のタプル。ガウスフィットの中心を使う。
+    """
+    label = "Radial Distance r"
+    unit = "cm"
+    
+    mu_x, mu_y, mu_z = center_pos
+    
+    # 1. 指定された中心(ガウスフィット結果)からの距離 r を計算
+    r = np.sqrt( (df['fit_x'] - mu_x)**2 + 
+                 (df['fit_y'] - mu_y)**2 + 
+                 (df['fit_z'] - mu_z)**2 )
+    
+    # 2. データをミラーリング (r と -r を結合)
+    data_mirror = np.concatenate([-r, r])
+    
+    plt.figure(figsize=(8, 6))
+    
+    counts, bin_edges = np.histogram(data_mirror, bins=100)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    
+    # 初期パラメータ
+    p0 = [max(counts), 0, np.std(r)]
+    
+    fit_success = False
+    popt = [0, 0, 0]
+    perr = [0, 0, 0]
+
+    try:
+        popt, pcov = curve_fit(gaussian, bin_centers, counts, p0=p0, maxfev=5000)
+        perr = np.sqrt(np.diag(pcov))
+        fit_success = True
+    except:
+        pass
+
+    plt.hist(data_mirror, bins=100, color='lightgreen', edgecolor='white', label='Mirrored Data (-r, r)')
+    
+    if fit_success:
+        x_smooth = np.linspace(min(data_mirror), max(data_mirror), 200)
+        plt.plot(x_smooth, gaussian(x_smooth, *popt), 'r-', lw=2, label='Fit')
+        
+        info = (f"Center: {popt[1]:.2f} {unit}\n"
+                f"Sigma: {abs(popt[2]):.2f} {unit}")
+        plt.gca().text(0.05, 0.95, info, transform=plt.gca().transAxes,
+                       verticalalignment='top', 
+                       bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        text_lines.append(f"[{label} (Mirrored)]")
+        text_lines.append(f"  Center Used: ({mu_x:.2f}, {mu_y:.2f}, {mu_z:.2f})")
+        text_lines.append(f"  Sigma (Resolution): {abs(popt[2]):.4f} +/- {perr[2]:.4f} {unit}\n")
+    else:
+        text_lines.append(f"[{label}]")
+        text_lines.append("  Fit Failed\n")
+
+    plt.title(f'{label} Distribution (Mirrored)')
+    plt.xlabel(f'Distance from Fit Center [{unit}]')
+    plt.ylabel('Events')
+    plt.legend()
+    plt.grid(True, linestyle=':', alpha=0.6)
+    plt.tight_layout()
+    
+    save_path = os.path.join(output_dir, f"{base_name}_hist_radius_mirror.pdf")
+    plt.savefig(save_path)
+    plt.close()
 
 # ------------------------------------------------------------------
 # メイン処理: 1つのCSVファイルを解析
@@ -115,7 +182,6 @@ def process_1d_fit(df, col, label, unit, output_dir, base_name, text_lines):
 def process_csv_file(file_path):
     print(f"Processing: {file_path}")
 
-    # 出力ディレクトリ準備
     target_dir = os.path.dirname(file_path)
     base_name = os.path.splitext(os.path.basename(file_path))[0]
     output_dir = os.path.join(target_dir, "reconst_images")
@@ -129,23 +195,23 @@ def process_csv_file(file_path):
     try:
         df = pd.read_csv(file_path)
         
-        # 必要なカラムの存在チェック
         required = ['fit_x', 'fit_y', 'fit_z', 't_light', 'chi2']
         if not all(c in df.columns for c in required):
             print(f"Skipped {file_path}: Missing columns")
             return
 
-        # 結果テキスト保存用リスト
         fit_results_text = [f"=== Fit Results for {base_name} ===\n"]
         
-        # --- 1. 1次元ヒストグラム & ガウスフィット ---
-        # 戻り値としてフィット結果の平均値を受け取る(2次元ズーム用)
+        # 1. 1次元ヒストグラム (戻り値としてフィット中心を受け取る)
         mu_x, ok_x = process_1d_fit(df, 'fit_x', 'Position X', 'cm', output_dir, base_name, fit_results_text)
         mu_y, ok_y = process_1d_fit(df, 'fit_y', 'Position Y', 'cm', output_dir, base_name, fit_results_text)
         mu_z, ok_z = process_1d_fit(df, 'fit_z', 'Position Z', 'cm', output_dir, base_name, fit_results_text)
         mu_t, ok_t = process_1d_fit(df, 't_light', 'Time', 'ns', output_dir, base_name, fit_results_text)
 
-        # --- 2. カイ二乗分布 ---
+        # 2. 距離rのヒストグラム (X,Y,Zのフィット中心を渡す)
+        process_radial_fit(df, (mu_x, mu_y, mu_z), output_dir, base_name, fit_results_text)
+
+        # 3. カイ二乗分布
         plt.figure(figsize=(8, 6))
         plt.hist(df['chi2'], bins=50, color='orange', edgecolor='black')
         plt.title('Chi-square Distribution')
@@ -155,8 +221,7 @@ def process_csv_file(file_path):
         plt.savefig(os.path.join(output_dir, f"{base_name}_chi2.pdf"))
         plt.close()
 
-        # --- 3. 2次元ヒストグラム (3ペア × 2パターン) ---
-        # ペアの定義: (xカラム, yカラム, xラベル, yラベル, x平均, y平均, x成功, y成功)
+        # 4. 2次元ヒストグラム
         pairs = [
             ('fit_x', 'fit_y', 'X', 'Y', mu_x, mu_y, ok_x, ok_y),
             ('fit_y', 'fit_z', 'Y', 'Z', mu_y, mu_z, ok_y, ok_z),
@@ -164,7 +229,7 @@ def process_csv_file(file_path):
         ]
 
         for col1, col2, lab1, lab2, m1, m2, s1, s2 in pairs:
-            # A. 広域 (-400 ~ 400)
+            # A. 広域
             plt.figure(figsize=(8, 6))
             h = plt.hist2d(df[col1], df[col2], bins=50, 
                            range=[[-400, 400], [-400, 400]], cmap='viridis', cmin=1)
@@ -176,7 +241,7 @@ def process_csv_file(file_path):
             plt.savefig(os.path.join(output_dir, f"{base_name}_2d_{lab1}{lab2}_wide.pdf"))
             plt.close()
 
-            # B. 拡大 (平均 ± 20) - フィット成功時のみ
+            # B. 拡大 (成功時のみ)
             if s1 and s2:
                 plt.figure(figsize=(8, 6))
                 range_zoom = [[m1 - 20, m1 + 20], [m2 - 20, m2 + 20]]
@@ -190,7 +255,7 @@ def process_csv_file(file_path):
                 plt.savefig(os.path.join(output_dir, f"{base_name}_2d_{lab1}{lab2}_zoom.pdf"))
                 plt.close()
 
-        # --- 4. 3次元散布図 ---
+        # 5. 3次元散布図
         fig = plt.figure(figsize=(10, 8))
         ax = fig.add_subplot(111, projection='3d')
         sc = ax.scatter(df['fit_x'], df['fit_y'], df['fit_z'], 
@@ -204,7 +269,7 @@ def process_csv_file(file_path):
         plt.savefig(os.path.join(output_dir, f"{base_name}_3d_scatter.pdf"))
         plt.close()
 
-        # --- 結果テキストの保存 ---
+        # 結果テキスト保存
         txt_path = os.path.join(output_dir, f"{base_name}_fit_results.txt")
         with open(txt_path, "w") as f:
             f.writelines("\n".join(fit_results_text))

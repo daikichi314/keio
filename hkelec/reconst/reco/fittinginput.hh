@@ -146,3 +146,152 @@ struct FitResult {
 };
 
 #endif // FITTINGINPUT_HH
+/**
+ * @file fittinginput.hh
+ * @brief フィッティング設定・定数定義ファイル
+ *
+ * [追加 2025-01-08]
+ * - 新電荷モデル(SolidAngle)用のパラメータ配列を追加
+ * f(r)用: c0, c1
+ * epsilon(cos)用: c0~c7 (7次多項式)
+ */
+
+#ifndef FITTINGINPUT_HH
+#define FITTINGINPUT_HH
+
+#include <vector>
+#include <cmath>
+#include <string>
+
+// =========================================================
+// 物理定数・PMT補正値
+// =========================================================
+const double C_LIGHT = 29.970255; // 光速 [cm/ns] (空気中の屈折率 n=1.0003 を考慮)
+
+// PMTごとの時間補正値 (ns) : ケーブル遅延やT0オフセット
+// t_expected の計算に使用されます: t_exp = t0 + tof + TW + CORRECTION
+const double TIME_CORRECTION_VAL[4] = {200.0, 200.0, 200.0, 200.0};
+const double TIME_CORRECTION_ERR[4] = {0.0, 0.0, 0.0, 0.0};
+
+// =========================================================
+// TimeWalk (TW) および 時間分解能 (Sigma_t) のパラメータ
+// =========================================================
+// 関数形: f(q) = c0 * q^{-1/2} + c1 + c2 * q + c3 * q^2
+// 配列の並び: {c0, c1, c2, c3}
+// ※ 必要に応じて以下の数値を書き換えてください
+
+// TimeWalk補正係数 [ch][param]
+const double TW_PARAMS[4][4] = {
+    {0.0, 0.0, 0.0, 0.0},
+    {0.0, 0.0, 0.0, 0.0},
+    {0.0, 0.0, 0.0, 0.0},
+    {0.0, 0.0, 0.0, 0.0}
+};
+
+// 時間分解能 (Sigma_t) 係数 [ch][param]
+const double SIGMA_T_PARAMS[4][4] = {
+    {0.0, 1.0, 0.0, 0.0},
+    {0.0, 1.0, 0.0, 0.0},
+    {0.0, 1.0, 0.0, 0.0},
+    {0.0, 1.0, 0.0, 0.0}
+};
+
+// =========================================================
+// [New] 新電荷モデル用パラメータ
+// mu = A * f(r) * epsilon(cos_alpha)
+// =========================================================
+
+// 1. 距離依存性 f_i(r) = c0 * (1 - sqrt(1 - (32.5 / (r - c1))^2))
+// 配列: {c0, c1}
+// PMTごとに設定してください
+const double CHARGE_RADIAL_PARAMS[4][2] = {
+    {1.0, 0.0}, // CH0: c0=1.0, c1=0.0 (デフォルト)
+    {1.0, 0.0}, // CH1
+    {1.0, 0.0}, // CH2
+    {1.0, 0.0}  // CH3
+};
+
+// 2. 角度依存性 epsilon_i(cos_a) = c0 + c1*x + ... + c7*x^7
+// 配列: {c0, c1, c2, c3, c4, c5, c6, c7}
+// PMTごとに設定してください
+const double CHARGE_ANGULAR_PARAMS[4][8] = {
+    {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, // CH0: 定数1.0 (等方)
+    {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, // CH1
+    {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, // CH2
+    {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}  // CH3
+};
+
+// =========================================================
+// PMT座標・形状定義
+// =========================================================
+const double PMT_XY_POS[4][2] = {
+    {-35.0,  35.0}, { 35.0,  35.0},
+    {-35.0, -35.0}, { 35.0, -35.0}
+};
+
+const double PMT_SURFACE_Z = 80.5; 
+const double PMT_SPHERE_Z  = 48.0; 
+const double PMT_RADIUS    = 32.5; 
+
+const double PMT_DIR[3] = {0.0, 0.0, 1.0}; 
+
+// 旧互換用
+const double PMT_POSITIONS[4][3] = {
+    {-35.0,  35.0, PMT_SURFACE_Z},
+    { 35.0,  35.0, PMT_SURFACE_Z},
+    {-35.0, -35.0, PMT_SURFACE_Z},
+    { 35.0, -35.0, PMT_SURFACE_Z}
+};
+
+// =========================================================
+// データ構造体・Enum
+// =========================================================
+
+struct PMTData {
+    int eventID;
+    int ch;
+    double time;
+    double charge;
+    double x, y, z; 
+    double dir_x, dir_y, dir_z;
+    bool isHit;
+};
+
+struct PedestalData {
+    double hgain_mean;
+    double lgain_mean;
+};
+
+enum class ChargeChi2Type { Gaussian, BakerCousins, None };
+
+enum class ChargeModelType {
+    Standard,       // mu = A/r^2 + B
+    ZeroIntercept,  // mu = A/r^2 (B=0)
+    Cosine,         // mu = (A * sigmoid(cos))/r^2 + B
+    SolidAngle      // [New] mu = A * f(r) * poly(cos) + B
+};
+
+enum class TimeChi2Type { Gaussian, EMG, Goodness, None };
+
+struct FitConfig {
+    ChargeChi2Type chargeType = ChargeChi2Type::Gaussian;
+    ChargeModelType chargeModel = ChargeModelType::SolidAngle; // 新モデルをデフォルト推奨にするかはお任せ
+    TimeChi2Type timeType = TimeChi2Type::Gaussian;
+    bool useUnhit = false;
+};
+
+struct FitResult {
+    double x, y, z, t;
+    double err_x, err_y, err_z, err_t;
+    double A, B;
+    double chi2;
+    int ndf;
+    int status;
+};
+
+// 関数プロトタイプ
+double CalcParametricValue(int ch, double charge, const double params[4][4]);
+double GetEMG_Sigma(int ch, double charge);
+double GetEMG_Tau(int ch, double charge);
+
+#endif // FITTINGINPUT_HH

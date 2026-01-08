@@ -1,0 +1,11 @@
+１．作成されるtxtの例を出してください。
+
+２．作成されるテキストファイルの名前はどうなりますか?
+
+３．作成されるテキストファイルの名前が再構成に用いたrootファイルの名前を引き継いでいると仮定して話を進めます。
+ディレクトリを指定して、その中の結果のtxtファイルを読み込み、ファイル名（BASENAME_xX_yY_zZ-RUNNUMBER-XXdB～.txt）から本来の光源の位置、を読み取り、
+以下のヘッダーを持つCSVファイルを作成するコードを作成してください。
+x_true, y_true, z_true, x_res, x_sigma, y_res, y_sigma, z_res, z_sigma, t, t_sigma, r_sigma, d, x_diff, y_diff, z_diff
+ただし、x_true, y_true, z_trueは光源の本来の位置、x_res, y_res, z_resは再構成された位置（ガウスフィットの平均値）、x_sigma, y_sigma, z_sigmaは再構成された位置の不確かさ（ガウスフィットのσ）、tは再構成された時間、t_sigmaは再構成された時間の不確かさ、r_sigmaは再構成された位置の不確かさ（3次元）、dは実際の位置と再構成された位置の距離です。x_diff, y_diff, z_diffはそれぞれx_true - x_res, y_true - y_res, z_true - z_resです。
+
+４．これにより作成されたCSVファイルを読み込み、様々な画像を作るジュピターファイルを作成します。x軸に様々な軸にそった位置、y軸に、r_sigma, d などをとった散布図を作成したいと考えています。
