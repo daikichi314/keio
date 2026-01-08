@@ -25,6 +25,9 @@
 #include <TString.h>
 #include <TStyle.h>
 #include <TMath.h>
+#include <TFitResult.h>
+#include <TFitResultPtr.h>
+#include <TMatrixDSym.h>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -32,6 +35,36 @@
 #include <sstream>
 #include <map>
 #include <algorithm>
+#include <functional>
+
+// 誤差伝播: 派生量 (例: 最小値) の不確かさを数値微分で推定
+Double_t GetDerivedError(TF1 *f, const TMatrixDSym &cov, std::function<Double_t(TF1*)> func)
+{
+    int nPar = f->GetNpar();
+    std::vector<Double_t> params(nPar);
+    for(int i=0; i<nPar; ++i) params[i] = f->GetParameter(i);
+
+    Double_t epsilon = 1e-4;
+    std::vector<Double_t> grad(nPar);
+
+    for (int i = 0; i < nPar; ++i) {
+        Double_t original_val = params[i];
+        f->SetParameter(i, original_val + epsilon);
+        Double_t val_plus = func(f);
+        f->SetParameter(i, original_val - epsilon);
+        Double_t val_minus = func(f);
+        grad[i] = (val_plus - val_minus) / (2.0 * epsilon);
+        f->SetParameter(i, original_val);
+    }
+
+    Double_t variance = 0.0;
+    for (int i = 0; i < nPar; ++i) {
+        for (int j = 0; j < nPar; ++j) {
+            variance += grad[i] * grad[j] * cov(i, j);
+        }
+    }
+    return (variance > 0) ? TMath::Sqrt(variance) : 0.0;
+}
 
 // 2. データ構造体の定義
 struct ChargeData {
@@ -190,8 +223,8 @@ void process_directory(TString target_dir, bool save_pdf) {
 
     TString out_txt_path = target_dir + "/fit_results_summary.txt";
     std::ofstream outfile(out_txt_path.Data());
-    // ヘッダーに min_val, at_charge を追加（パラメータは p0*x^{-1/2} + p1 + p2*x + p3*x^2）
-    outfile << "# ch,graph_type,p0,p0_err,p1,p1_err,p2,p2_err,p3,p3_err,chi2,ndf,min_val,at_charge" << std::endl;
+    // ヘッダーに min_val, min_err, at_charge を追加（パラメータは p0*x^{-1/2} + p1 + p2*x + p3*x^2）
+    outfile << "# ch,graph_type,p0,p0_err,p1,p1_err,p2,p2_err,p3,p3_err,chi2,ndf,min_val,min_err,at_charge" << std::endl;
 
     // 5-3. チャンネルごとの処理ループ
     for (int ch = 0; ch < 12; ++ch) {
@@ -306,8 +339,8 @@ void process_directory(TString target_dir, bool save_pdf) {
             TF1* f_model = new TF1("f_model", "[0]*pow(x,-0.5) + [1] + [2]*x + [3]*x*x", range_min, range_max);
             f_model->SetLineColor(kRed);
             
-            // 1回目のフィット
-            gr->Fit(f_model, "Q", "", range_min, range_max);
+            // 1回目のフィット (結果を取得)
+            TFitResultPtr r1 = gr->Fit(f_model, "QS", "", range_min, range_max);
             
             // 1回目の結果を初期値として2回目のフィット
             double p0_init = f_model->GetParameter(0);
@@ -315,20 +348,28 @@ void process_directory(TString target_dir, bool save_pdf) {
             double p2_init = f_model->GetParameter(2);
             double p3_init = f_model->GetParameter(3);
             f_model->SetParameters(p0_init, p1_init, p2_init, p3_init);
-            gr->Fit(f_model, "", "APE", range_min, range_max);
+            TFitResultPtr r2 = gr->Fit(f_model, "S", "APE", range_min, range_max);
 
             // 最小値の算出 (fit範囲内で)
             double min_val = f_model->GetMinimum(range_min, range_max);
             double at_charge = f_model->GetMinimumX(range_min, range_max);
+
+            // 最小値の誤差 (パラメータ共分散による誤差伝播)
+            TMatrixDSym cov = r2->GetCovarianceMatrix();
+            auto min_value_func = [&](TF1* func) -> Double_t {
+                double xm = func->GetMinimumX(range_min, range_max);
+                return func->Eval(xm);
+            };
+            double min_err = GetDerivedError(f_model, cov, min_value_func);
 
             // パラメータ出力
             outfile << ch << "," << type;
             for(int i=0; i<4; ++i) {
                 outfile << "," << f_model->GetParameter(i) << "," << f_model->GetParError(i);
             }
-            // 最後の列に最小値情報を追加
+            // 最後の列に最小値情報を追加 (min_val, min_err, at_charge)
             outfile << "," << f_model->GetChisquare() << "," << f_model->GetNDF() 
-                    << "," << min_val << "," << at_charge << std::endl;
+                    << "," << min_val << "," << min_err << "," << at_charge << std::endl;
 
             // PDF出力
             if (save_pdf) {
