@@ -190,8 +190,8 @@ void process_directory(TString target_dir, bool save_pdf) {
 
     TString out_txt_path = target_dir + "/fit_results_summary.txt";
     std::ofstream outfile(out_txt_path.Data());
-    // ヘッダーに min_val, at_charge を追加
-    outfile << "# ch,graph_type,p0,p0_err,p1,p1_err,p2,p2_err,p3,p3_err,p4,p4_err,p5,p5_err,p6,p6_err,p7,p7_err,chi2,ndf,min_val,at_charge" << std::endl;
+    // ヘッダーに min_val, at_charge を追加（パラメータは p0*x^{-1/2} + p1 + p2*x + p3*x^2）
+    outfile << "# ch,graph_type,p0,p0_err,p1,p1_err,p2,p2_err,p3,p3_err,chi2,ndf,min_val,at_charge" << std::endl;
 
     // 5-3. チャンネルごとの処理ループ
     for (int ch = 0; ch < 12; ++ch) {
@@ -286,7 +286,10 @@ void process_directory(TString target_dir, bool save_pdf) {
             // 2. 描画・フィット範囲の決定 (マージン10%程度)
             double range_min = (x_min_data < 0) ? x_min_data * 1.1 : 0.0;
             double range_max = (x_max_data > 0) ? x_max_data * 1.1 : 100.0;
+            // x^{-1/2} を含むため 0 を跨がないように下限を微小正数へシフト
+            if (range_min <= 0) range_min = 1e-6;
 
+            // 3. TGraphErrorsの作成
             TGraphErrors* gr = new TGraphErrors(g.x.size(), g.x.data(), g.y.data(), g.ex.data(), g.ey.data());
             
             // 軸ラベル設定
@@ -297,22 +300,34 @@ void process_directory(TString target_dir, bool save_pdf) {
             gr->SetMarkerStyle(20);
             gr->SetMarkerSize(0.8);
 
-            // 7次関数フィッティング (動的範囲)
-            TF1* f7 = new TF1("f7", "pol7", range_min, range_max); 
-            f7->SetLineColor(kRed);
-            gr->Fit(f7, "Q", "", range_min, range_max);
+            // モデル: p0*x^{-1/2} + p1 + p2*x + p3*x^2
+            // 3パラメータ版に戻す場合は下記をコメントアウト解除
+            // TF1* f_model = new TF1("f_model", "[0]*pow(x,-0.5) + [1] + [2]*x", range_min, range_max);
+            TF1* f_model = new TF1("f_model", "[0]*pow(x,-0.5) + [1] + [2]*x + [3]*x*x", range_min, range_max);
+            f_model->SetLineColor(kRed);
+            
+            // 1回目のフィット
+            gr->Fit(f_model, "Q", "", range_min, range_max);
+            
+            // 1回目の結果を初期値として2回目のフィット
+            double p0_init = f_model->GetParameter(0);
+            double p1_init = f_model->GetParameter(1);
+            double p2_init = f_model->GetParameter(2);
+            double p3_init = f_model->GetParameter(3);
+            f_model->SetParameters(p0_init, p1_init, p2_init, p3_init);
+            gr->Fit(f_model, "", "APE", range_min, range_max);
 
             // 最小値の算出 (fit範囲内で)
-            double min_val = f7->GetMinimum(range_min, range_max);
-            double at_charge = f7->GetMinimumX(range_min, range_max);
+            double min_val = f_model->GetMinimum(range_min, range_max);
+            double at_charge = f_model->GetMinimumX(range_min, range_max);
 
             // パラメータ出力
             outfile << ch << "," << type;
-            for(int i=0; i<8; ++i) {
-                outfile << "," << f7->GetParameter(i) << "," << f7->GetParError(i);
+            for(int i=0; i<4; ++i) {
+                outfile << "," << f_model->GetParameter(i) << "," << f_model->GetParError(i);
             }
             // 最後の列に最小値情報を追加
-            outfile << "," << f7->GetChisquare() << "," << f7->GetNDF() 
+            outfile << "," << f_model->GetChisquare() << "," << f_model->GetNDF() 
                     << "," << min_val << "," << at_charge << std::endl;
 
             // PDF出力
@@ -321,13 +336,13 @@ void process_directory(TString target_dir, bool save_pdf) {
                 c->SetGrid();
                 gr->GetXaxis()->SetLimits(range_min, range_max);
                 gr->Draw("APE"); // エラーバー付きで描画
-                f7->Draw("same"); // フィット曲線を上書き
+                f_model->Draw("same"); // フィット曲線を上書き
                 
                 TString pdf_name = Form("%s/Charge_vs_%s_ch%02d.pdf", target_dir.Data(), type.c_str(), ch);
                 c->SaveAs(pdf_name);
                 delete c;
             }
-            delete f7;
+            delete f_model;
             delete gr;
         }
     }

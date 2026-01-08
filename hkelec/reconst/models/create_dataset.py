@@ -226,8 +226,7 @@ def process_data(mean_files_dir, pd_summary_csv, output_csv):
         run_key, src_x, src_y, src_z, db = parse_filename(f)
         
         if run_key is None:
-            # パースできないファイルはスキップ（警告はうるさいので出さないか、必要なら出す）
-            # print(f"警告: ファイル名解析スキップ - {os.path.basename(f)}")
+            # パースできないファイルはスキップ
             continue
             
         # PDデータとのマッチング
@@ -235,8 +234,7 @@ def process_data(mean_files_dir, pd_summary_csv, output_csv):
             pd_volt = pd_map[run_key]
             light_power = calculate_light_power(pd_volt, db)
         else:
-            # PDデータが見つからない場合はスキップ（光量が計算できないため）
-            # print(f"警告: PDデータ不一致 - {run_key}")
+            # PDデータが見つからない場合はスキップ
             continue
 
         # ファイル内容読み込み
@@ -277,12 +275,15 @@ def process_data(mean_files_dir, pd_summary_csv, output_csv):
                 # 結果リストに追加
                 # ch (0~3) を PMT_num (1~4) に変換
                 pmt_num = ch + 1
-
+                
+                # 列名 light_power(基準状態(15dB, 5V)を1とした時の相対光量) に対応
                 output_rows.append({
                     '#PMT_num': pmt_num,
                     'Charge(pC)': charge,
                     'Charge_err(pC)': charge_err,
-                    'light_power': light_power,
+                    'light_power(def:(15dB, 5V)=1)': light_power,
+                    'attenuation_db': db,
+                    'pd_volt': pd_volt,
                     'x': src_x,
                     'y': src_y,
                     'z': src_z,
@@ -301,8 +302,10 @@ def process_data(mean_files_dir, pd_summary_csv, output_csv):
     if output_rows:
         df_out = pd.DataFrame(output_rows)
         
-        # カラム順序の指定
-        cols = ['#PMT_num', 'Charge(pC)', 'Charge_err(pC)', 'light_power', 
+        # カラム順序の指定 (指定の並び順に変更)
+        cols = ['#PMT_num', 'Charge(pC)', 'Charge_err(pC)', 
+                'light_power(基準状態(15dB, 5V)を1とした時の相対光量)', 
+                'attenuation_db', 'pd_volt',
                 'x', 'y', 'z', 'r', 'cos(alpha)', 
                 'r_from_center', 'cos(alpha_from_center)']
         

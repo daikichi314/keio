@@ -1,0 +1,1 @@
+x=r,y=charge/light_powerのグラフを、pmt_num=1,x=-35,y=35の条件のもとプロットしたい。

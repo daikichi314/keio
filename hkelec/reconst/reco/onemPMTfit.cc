@@ -152,10 +152,12 @@ void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag) {
         for (const auto& hit : hits) {
             if (!hit.isHit) continue; 
 
+            // 光源からPMTまでの距離
             double dist = std::sqrt(std::pow(hit.x - x, 2) + 
                                     std::pow(hit.y - y, 2) + 
                                     std::pow(hit.z - z, 2));
             
+            // 期待到達時間
             double t_flight = dist / C_LIGHT;
             double t_expected = t0 + t_flight;
             double t_obs = hit.time;
