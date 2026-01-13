@@ -3,7 +3,7 @@
 # id: run_reconstruction_batch.sh
 # Place: /home/daiki/keio/hkelec/reconst/reco/
 # Author: Gemini (Modified based on user request)
-# Last Edit: 2025-12-14
+# Last Edit: 2025-01-08
 #
 # 概要:
 # 指定ディレクトリ内の *eventhist.root ファイルに対して
@@ -11,7 +11,7 @@
 #
 # [重要]
 # 出力ファイル名はC++プログラム側で、指定されたオプション(-m, -q, -tなど)
-# に基づいて自動的に決定されます（例: run01_reconst_3hits_bc_zeroB_goodness.root）。
+# に基づいて自動的に決定されます（例: run01_reconst_3hits_bc_solid_goodness.root）。
 # これにより、条件違いでの結果の上書きを防ぎます。
 
 # --- スクリプトの使い方を表示する関数 ---
@@ -30,7 +30,8 @@ usage() {
     echo " [Options...]      : reconstructor にそのまま渡されるオプション群"
     echo ""
     echo "   -u <0/1>        : 0=4本必須(default), 1=3本許容(Unhit補完)"
-    echo "   -m <model>      : standard=通常(default), zeroB=B固定, cos=角度依存(推奨)"
+    echo "   -m <model>      : standard=通常, zeroB=B固定"
+    echo "                     cos=角度依存(sigmoid), solid=新モデル(立体角+多項式)"
     echo "   -q <model>      : gaus=ガウス(default), bc=Baker-Cousins"
     echo "                     none=電荷情報を使用しない (時間のみでフィット)"
     echo "   -t <model>      : gaus=ガウス(default), emg=EMG, goodness=SK Goodness"
@@ -40,8 +41,8 @@ usage() {
     echo " 1. デフォルト設定 (4本, Standard, Gaussian):"
     echo "    $0 ./data"
     echo ""
-    echo " 2. 3本ヒット許容、B固定、Baker-Cousins、Goodness:"
-    echo "    $0 ./data -u 1 -m zeroB -q bc -t goodness"
+    echo " 2. 3本ヒット許容、新電荷モデル(SolidAngle)、Baker-Cousins、Goodness:"
+    echo "    $0 ./data -u 1 -m solid -q bc -t goodness"
     echo ""
     echo " 3. 時間情報のみを使ってフィット (電荷不使用):"
     echo "    $0 ./data -q none"

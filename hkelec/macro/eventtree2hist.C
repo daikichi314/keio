@@ -99,10 +99,10 @@
         double time_peak = h_time_prescan->GetXaxis()->GetBinCenter(peak_bin);
 
         // ピーク値からカット範囲を決定 (ピーク ± 50 ns)
-        // double time_cut_low  = time_peak - 50.0e-9;
-        // double time_cut_high = time_peak + 50.0e-9;
-        double time_cut_low  = time_peak - 10.0e-9;
-        double time_cut_high = time_peak + 10.0e-9;
+        double time_cut_low  = time_peak - 50.0e-9;
+        double time_cut_high = time_peak + 50.0e-9;
+        // double time_cut_low  = time_peak - 10.0e-9;
+        // double time_cut_high = time_peak + 10.0e-9;
         
         std::cout << "Time peak found at: " << time_peak * 1e9 << " ns" << std::endl;
         std::cout << "Applying new time window: " << time_cut_low * 1e9 << " ns to " << time_cut_high * 1e9 << " ns" << std::endl;

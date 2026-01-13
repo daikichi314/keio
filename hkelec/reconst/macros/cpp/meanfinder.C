@@ -325,7 +325,7 @@ void fit_time(TString input_filename, bool save_pdf) {
             << "g_amp,g_amp_err,g_mu,g_mu_err,g_sigma,g_sigma_err,g_chi2,g_ndf" << std::endl;
 
     if (save_pdf) {
-        gStyle->SetOptStat(0);
+        gStyle->SetOptStat(1111);
         gStyle->SetOptFit(0); // 複数のフィット線を描くため、統計ボックスは一旦消す
     }
 
@@ -380,7 +380,7 @@ void fit_time(TString input_filename, bool save_pdf) {
                 fgaus->SetParameter(1, h_mean); // 初期値: ヒストグラムMean
                 fgaus->SetParameter(2, h_rms);  // 初期値: ヒストグラムRMS
                 
-                TFitResultPtr g_res = hist->Fit(fgaus, "SQR", "", fit_min, fit_max);
+                TFitResultPtr g_res = hist->Fit(fgaus, "SQR", "", fit_min, fit_max);///////////////
                 
                 if (g_res.Get() && g_res->IsValid()) {
                     g_amp = fgaus->GetParameter(0); g_amp_err = fgaus->GetParError(0);
@@ -416,7 +416,8 @@ void fit_time(TString input_filename, bool save_pdf) {
                 femg->SetParLimits(3, 0.001, 1000);
 
                 // "+" オプションでフィット関数リストに追加 (ガウスを消さないため)
-                TFitResultPtr e_res = hist->Fit(femg, "SQR+", "", full_min, full_max);
+                TFitResultPtr e_res = hist->Fit(femg, "SQR0+", "", full_min, full_max);/////////////////////
+                // TFitResultPtr e_res = hist->Fit(femg, "SQR+", "", full_min, full_max);
 
                 if (e_res.Get() && e_res->IsValid() && e_res->Ndf() > 0) {
                     TMatrixDSym cov = e_res->GetCovarianceMatrix();
@@ -462,7 +463,7 @@ void fit_time(TString input_filename, bool save_pdf) {
                 
                 hist->Draw();
                 if (fgaus) fgaus->Draw("same"); // 青
-                if (femg) femg->Draw("same");   // 赤
+                //if (femg) femg->Draw("same");   // 赤///////////////
                 
                 TString pdf_name = input_filename;
                 pdf_name.ReplaceAll("_eventhist.root", Form("_%s_fit.pdf", hist_name.Data()));

@@ -214,3 +214,5 @@ memo
 /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251222kishita/LDhkelec_x-35_y-35_z157 -l 10 --trgch 4 --switch 2 --trgch-Vth 5 --dBlist 15 20 15 20
 
 /home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20251226kishita/LDhkelec_x35_y50_z127 -l 12 --trgch 4 --switch 2 --trgch-Vth 5 --dBlist 15 20
+
+/home/hkpd/hkelec/pmt-scan/scripts/ScanManager.py -i /home/hkpd/hkelec/DiscreteSoftware/data/20260109kishita/no3/LDhkelec_0pt_no3 -l 20 --trgch 4 --trgch-Vth 5 --dBlist 58 50 46 42 39 36 34 32 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14.5 14 13.5 13
