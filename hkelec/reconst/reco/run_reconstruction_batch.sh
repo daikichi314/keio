@@ -11,8 +11,30 @@
 #
 # [重要]
 # 出力ファイル名はC++プログラム側で、指定されたオプション(-m, -q, -tなど)
-# に基づいて自動的に決定されます（例: run01_reconst_3hits_bc_solid_goodness.root）。
+# に基づいて自動的に決定されます（例: run01_reconst_3hits_bc_func_f_goodness.root）。
 # これにより、条件違いでの結果の上書きを防ぎます。
+#
+# 使い方:
+# $ ./run_reconstruction_batch.sh <TargetDirectory> [Options...]
+# 例:
+# $ ./run_reconstruction_batch.sh ./data -u 1 -m func_g -q bc -t goodness
+#
+# 引数:
+# <TargetDirectory> : 処理対象のディレクトリパス (必須)
+#                     この中にROOTファイルとペデスタルファイルが必要です。
+# [Options...]      : reconstructor にそのまま渡されるオプション群
+#                     -u <0/1>        : 0=4本必須(default), 1=3本許容(Unhit補完)
+#                     -m <model>      : func_f=半径28.5cmモデル(default)
+#                                      func_g=半径23.5cmモデル(1/r^2)
+#                     -q <model>      : gaus=ガウス(default), bc=Baker-Cousins
+#                                      none=電荷情報を使用しない (時間のみでフィット)
+#                     -t <model>      : gaus=ガウス(default), emg=EMG, goodness=SK Goodness
+#                                      none=時間情報を使用しない (電荷のみでフィット)
+#
+# 前提条件:
+# 1. 指定ディレクトリに 'hkelec_pedestal_hithist_means.txt' が存在すること
+# 2. このスクリプトと同じディレクトリに 'reconstructor' 実行ファイルが存在すること
+
 
 # --- スクリプトの使い方を表示する関数 ---
 usage() {
@@ -30,19 +52,19 @@ usage() {
     echo " [Options...]      : reconstructor にそのまま渡されるオプション群"
     echo ""
     echo "   -u <0/1>        : 0=4本必須(default), 1=3本許容(Unhit補完)"
-    echo "   -m <model>      : standard=通常, zeroB=B固定"
-    echo "                     cos=角度依存(sigmoid), solid=新モデル(立体角+多項式)"
+    echo "   -m <model>      : func_f=半径28.5cmモデル(default)"
+    echo "                     func_g=半径23.5cmモデル(1/r^2)"
     echo "   -q <model>      : gaus=ガウス(default), bc=Baker-Cousins"
     echo "                     none=電荷情報を使用しない (時間のみでフィット)"
     echo "   -t <model>      : gaus=ガウス(default), emg=EMG, goodness=SK Goodness"
     echo "                     none=時間情報を使用しない (電荷のみでフィット)"
     echo ""
     echo " [実行例]"
-    echo " 1. デフォルト設定 (4本, Standard, Gaussian):"
+    echo " 1. デフォルト設定 (4本, FuncF, Gaussian):"
     echo "    $0 ./data"
     echo ""
-    echo " 2. 3本ヒット許容、新電荷モデル(SolidAngle)、Baker-Cousins、Goodness:"
-    echo "    $0 ./data -u 1 -m solid -q bc -t goodness"
+    echo " 2. 3本ヒット許容、モデルG、Baker-Cousins、Goodness:"
+    echo "    $0 ./data -u 1 -m func_g -q bc -t goodness"
     echo ""
     echo " 3. 時間情報のみを使ってフィット (電荷不使用):"
     echo "    $0 ./data -q none"

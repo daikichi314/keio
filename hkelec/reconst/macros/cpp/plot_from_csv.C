@@ -61,12 +61,13 @@ Double_t GetDerivedError(TF1 *f, const TMatrixDSym &cov, std::function<Double_t(
     return (variance > 0) ? TMath::Sqrt(variance) : 0.0;
 }
 
-// CSVファイルからデータを読み込む
+// CSVファイルからデータを読み込むための構造体
 struct GraphData {
     std::vector<double> x, ex, y, ey;
     std::vector<int> include_in_fit;
 };
 
+// CSV読み込み関数
 bool ReadCSV(const std::string& filename, GraphData& data) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -177,10 +178,10 @@ void ProcessCSVDirectory(const std::string& csv_dir, bool save_pdf = true) {
             double y_min_data = *std::min_element(gdata.y.begin(), gdata.y.end());
             double y_max_data = *std::max_element(gdata.y.begin(), gdata.y.end());
 
-            // フィット範囲決定
-            double range_min = (x_min_data < 0) ? x_min_data * 1.1 : 0.0;
-            double range_max = (x_max_data > 0) ? x_max_data * 1.1 : 100.0;
-            if (range_min <= 0) range_min = 1e-6;
+            // x方向の描画範囲（全データの範囲）
+            double display_min = (x_min_data < 0) ? x_min_data * 1.1 : 0.0;
+            double display_max = (x_max_data > 0) ? x_max_data * 1.1 : 100.0;
+            if (display_min <= 0) display_min = 1e-6;
 
             // y方向の描画範囲（外れ値も含めてマージンを確保）
             double y_span = y_max_data - y_min_data;
@@ -199,6 +200,13 @@ void ProcessCSVDirectory(const std::string& csv_dir, bool save_pdf = true) {
                 }
             }
 
+            // フィット範囲決定（フィットに使う点だけで計算）
+            double x_min_fit = *std::min_element(x_fit.begin(), x_fit.end());
+            double x_max_fit = *std::max_element(x_fit.begin(), x_fit.end());
+            double range_min = (x_min_fit < 0) ? x_min_fit * 1.1 : x_min_fit * 0.9;
+            double range_max = x_max_fit * 1.1;
+            if (range_min <= 0) range_min = 1e-6;
+
             // フィッティング用グラフ
             TGraphErrors* gr_fit = new TGraphErrors(x_fit.size(), x_fit.data(), y_fit.data(), 
                                                      ex_fit.data(), ey_fit.data());
@@ -215,6 +223,20 @@ void ProcessCSVDirectory(const std::string& csv_dir, bool save_pdf = true) {
             // フィットモデル
             TF1* f_model = new TF1("f_model", "[0]*pow(x,-0.5) + [1] + [2]*x + [3]*x*x", range_min, range_max);
             f_model->SetLineColor(kRed);
+
+            // 初期パラメータを設定（1段階目のフィット前）
+            // y_min_data に基づいて初期パラメータを切り替え
+            if (y_min_data >= 100.0) {
+                f_model->SetParameter(0, 18.66);   // p0の初期値
+                f_model->SetParameter(1, 247.0);  // p1の初期値
+                f_model->SetParameter(2, -0.005);    // p2の初期値
+                f_model->SetParameter(3, 0.0);    // p3の初期値
+            } else {
+                f_model->SetParameter(0, 3.5);   // p0の初期値
+                f_model->SetParameter(1, 0.0);   // p1の初期値
+                f_model->SetParameter(2, 0.0);    // p2の初期値
+                f_model->SetParameter(3, 0.0);    // p3の初期値
+            }
 
             // フィットに使える点が足りない場合はスキップ
             if (x_fit.size() < 4) {
@@ -240,7 +262,7 @@ void ProcessCSVDirectory(const std::string& csv_dir, bool save_pdf = true) {
                     gr_included->SetMarkerStyle(20);
                     gr_included->SetMarkerColor(kBlack);
                     gr_included->SetMarkerSize(0.8);
-                    gr_included->GetXaxis()->SetLimits(range_min, range_max);
+                    gr_included->GetXaxis()->SetLimits(display_min, display_max);
                     gr_included->GetYaxis()->SetRangeUser(y_min_plot, y_max_plot);
 
                     gr_excluded->SetMarkerStyle(5);
@@ -302,7 +324,7 @@ void ProcessCSVDirectory(const std::string& csv_dir, bool save_pdf = true) {
             if (save_pdf) {
                 TCanvas* c = new TCanvas("c", "c", 800, 600);
                 c->SetGrid();
-                gr_all->GetXaxis()->SetLimits(range_min, range_max);
+                gr_all->GetXaxis()->SetLimits(display_min, display_max);
                 
                 // グラフを別々に描画
                 // include_in_fit=1 のデータ（黒、マーカー●）
@@ -325,7 +347,7 @@ void ProcessCSVDirectory(const std::string& csv_dir, bool save_pdf = true) {
                 gr_included->SetMarkerStyle(20);  // ●
                 gr_included->SetMarkerColor(kBlack);
                 gr_included->SetMarkerSize(0.8);
-                gr_included->GetXaxis()->SetLimits(range_min, range_max);
+                gr_included->GetXaxis()->SetLimits(display_min, display_max);
                 gr_included->GetYaxis()->SetRangeUser(y_min_plot, y_max_plot);
                 
                 // excluded グラフ設定

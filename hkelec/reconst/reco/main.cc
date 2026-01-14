@@ -5,7 +5,6 @@
  * このプログラムは、ROOT形式の実験データを読み込み、4つのPMTの電荷・時間情報を用いて
  * 光源の位置(x,y,z)と発光時刻(t)を再構成します。
  * Minuitを使用して、観測値とモデル期待値のChi2（または尤度）を最小化します。
- * 複数の物理モデルを選択して比較検証することが可能です。
  *
  * @usage ./reconstructor <InputRootFile> [Options]
  *
@@ -43,12 +42,10 @@ void PrintUsage(const char* progName) {
     std::cout << "  -u <0/1>   : 3本ヒット救済モード (デフォルト: 0=OFF)" << std::endl;
     std::cout << "      1 : 3本ヒット時、残り1本を電荷0のヒットとして扱い4本分で計算" << std::endl;
 
-    std::cout << "  -m <model> : 電荷期待値モデル (デフォルト: solid)" << std::endl;
-    std::cout << "      standard : mu = A/r^2 + B (等方発光)" << std::endl;
-    std::cout << "      zeroB    : mu = A/r^2     (B=0固定)" << std::endl;
-    std::cout << "      cos      : mu = (A * sigmoid(cos))/r^2 + B (角度依存あり)" << std::endl;
-    std::cout << "      solid    : mu = A * f(r) * poly(cos) (新モデル: 立体角+多項式, Bなし)" << std::endl;
-    std::cout << "               ※ 係数は fittinginput.hh で設定してください。" << std::endl;
+    std::cout << "  -m <model> : 電荷期待値モデル (デフォルト: func_f)" << std::endl;
+    std::cout << "      func_f : r=28.5cm, mu = A * c0 * (1 - sqrt(1 - (28.5/r)^2)) * eps" << std::endl;
+    std::cout << "      func_g : r=23.5cm, mu = A * c0 / r^2 * eps" << std::endl;
+    std::cout << "               ※ 係数c0, eps(角度依存)は fittinginput.hh で設定" << std::endl;
 
     std::cout << "  -q <model> : 電荷Chi2定義 (デフォルト: gaus)" << std::endl;
     std::cout << "      gaus : Gaussian" << std::endl;
@@ -63,7 +60,7 @@ void PrintUsage(const char* progName) {
     
     std::cout << "\n[出力]" << std::endl;
     std::cout << "  入力ファイル名にオプションに応じたサフィックスを付与して出力します。" << std::endl;
-    std::cout << "  例: run01_reconst_3hits_bc_solid_goodness.root" << std::endl;
+    std::cout << "  例: run01_reconst_3hits_bc_func_f_goodness.root" << std::endl;
     std::cout << "  CSV出力列: fit_x,fit_y,fit_z,t_light,err_x,err_y,err_z,err_t,chi2,ndf,A,B,status" << std::endl;
     std::cout << "  ※計算に使用しなかったパラメータは -9999 が出力されます。" << std::endl;
     
@@ -82,10 +79,8 @@ int main(int argc, char** argv) {
         switch (opt) {
             case 'u': config.useUnhit = (std::stoi(optarg) == 1); break;
             case 'm':
-                if (std::string(optarg) == "zeroB") config.chargeModel = ChargeModelType::ZeroIntercept;
-                else if (std::string(optarg) == "cos") config.chargeModel = ChargeModelType::Cosine;
-                else if (std::string(optarg) == "solid") config.chargeModel = ChargeModelType::SolidAngle;
-                else config.chargeModel = ChargeModelType::Standard;
+                if (std::string(optarg) == "func_g") config.chargeModel = ChargeModelType::FuncG;
+                else config.chargeModel = ChargeModelType::FuncF;
                 break;
             case 'q':
                 if (std::string(optarg) == "bc") config.chargeType = ChargeChi2Type::BakerCousins;
@@ -132,17 +127,18 @@ int main(int argc, char** argv) {
     ss << "_reconst";
     if (config.useUnhit) ss << "_3hits"; else ss << "_4hits";
     
+    // 電荷Chi2 Suffix
     if (config.chargeType == ChargeChi2Type::BakerCousins) ss << "_bc";
     else if (config.chargeType == ChargeChi2Type::None) ss << "_noQ";
     else ss << "_gausQ";
 
+    // 電荷モデル Suffix
     if (config.chargeType != ChargeChi2Type::None) {
-        if (config.chargeModel == ChargeModelType::ZeroIntercept) ss << "_zeroB";
-        else if (config.chargeModel == ChargeModelType::Cosine) ss << "_cos";
-        else if (config.chargeModel == ChargeModelType::SolidAngle) ss << "_solid";
-        else ss << "_stdB";
+        if (config.chargeModel == ChargeModelType::FuncG) ss << "_func_g";
+        else ss << "_func_f";
     }
 
+    // 時間Chi2 Suffix
     if (config.timeType == TimeChi2Type::EMG) ss << "_emg";
     else if (config.timeType == TimeChi2Type::Goodness) ss << "_goodness";
     else if (config.timeType == TimeChi2Type::None) ss << "_noT";
@@ -185,7 +181,6 @@ int main(int argc, char** argv) {
     tOut->Branch("status", &res.status, "status/I");
 
     std::ofstream ofs(outputCsvFile.c_str());
-    // ヘッダー修正: すべての列を網羅
     ofs << "fit_x,fit_y,fit_z,t_light,err_x,err_y,err_z,err_t,chi2,ndf,A,B,status\n";
 
     LightSourceFitter fitter;
@@ -201,6 +196,7 @@ int main(int argc, char** argv) {
         if (config.useUnhit) {
             if (eventHits.size() < 3) continue;
             if (eventHits.size() == 3) {
+                // 欠損CHをUnhit(0)として追加
                 bool hitFlags[4] = {false, false, false, false};
                 int eventID = eventHits[0].eventID;
                 for (const auto& hit : eventHits) hitFlags[hit.ch] = true;
@@ -226,33 +222,20 @@ int main(int argc, char** argv) {
 
         if (fitter.FitEvent(eventHits, res)) {
             // 未計算値のマスク処理 (-9999)
-            // 1. 電荷フィットをしない場合
             if (config.chargeType == ChargeChi2Type::None) {
                 res.A = -9999;
                 res.B = -9999;
+            } else {
+                // ChargeFit有効時: Bは今回のモデルで存在しないため -9999 に設定
+                if (config.chargeModel == ChargeModelType::FuncF || config.chargeModel == ChargeModelType::FuncG) {
+                    res.B = -9999;
+                }
             }
-            // 2. 時間フィットをしない場合
+            
             if (config.timeType == TimeChi2Type::None) {
                 res.t = -9999;
                 res.err_t = -9999;
             }
-            // 3. モデルの定義上存在しないパラメータ (B)
-            // SolidAngle または ZeroIntercept の場合、Bは固定(0)されているが
-            // 「値がない」という意味合いで -9999 にしたい場合はここで上書き可能。
-            // しかし、Minuit上では 0 で収束（固定）しているので、0 のまま出力する方が
-            // 「そのモデルでのBの値」としては正しいです。
-            // ただし、もし「Bという概念がない」ことを強調したいなら -9999 にします。
-            // 今回はユーザー指示「計算していない値の欄は-9999」に従い、
-            // 「電荷フィット自体はしたが、Bは変数として扱わなかった」ケースも考慮します。
-            // が、0で固定して計算した＝0という値を使った、とも言えるので、
-            // ここでは ChargeType=None の場合のみ -9999 とするのが自然です。
-            // もし SolidAngle モデルでも B=-9999 にしたい場合はコメントアウトを外してください。
-            
-            if (config.chargeModel == ChargeModelType::SolidAngle || 
-                config.chargeModel == ChargeModelType::ZeroIntercept) {
-                res.B = -9999;
-            }
-            
 
             tOut->Fill();
             ofs << res.x << "," << res.y << "," << res.z << "," << res.t << ","

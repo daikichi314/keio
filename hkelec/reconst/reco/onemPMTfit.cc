@@ -4,15 +4,21 @@
  *
  * TMinuitのFCN関数を用いて、観測データとモデルの残差(Chi2)を最小化します。
  *
- * [主な変更点 2025-01-08]
- * 1. 新しい電荷期待値モデル (SolidAngle) を実装しました。
- * mu = A * f_i(r) * epsilon_i(cos_alpha)
- * ※ Bパラメータはこのモデルでは使用せず 0 に固定されます。
- * 2. 時間期待値計算に TimeWalk (TW) と TimeCorrection の項を追加・復帰させました。
- * 3. TWと時間分解能(Sigma)を電荷の関数として実装しました。
- * f(q) = c0*q^-0.5 + c1 + c2*q + c3*q^2
- * 4. 距離計算(dist)について、時間計算では「半球表面距離」、
- * 電荷計算(SolidAngleモデル)では「半球中心距離」を使用するなど定義を明確化しました。
+ * [ロジックの概要]
+ * 1. フィッティングパラメータ: 光源位置(x,y,z)、発光時刻(t0)、光量パラメータ(A,B)
+ * 2. フィッティング関数(FCN):
+ *   - 各PMTヒットに対して、期待される到達時間と電荷を計算
+ *  - 計算には、選択された電荷モデル(FuncF/FuncG)とChi2計算モデルを使用
+ *  - 観測値との残差を基にChi2を計算
+ * 3. Minuitを用いてChi2を最小化し、最適なパラメータを探索
+ * 4. フィッティング結果をFitResult構造体に格納して返す
+ * 
+ * [主な変更点 2025-01-08 v3]
+ * 1. 電荷モデル FuncF / FuncG の分離を完全化。
+ * それぞれのモデルで異なる距離依存係数(c0)と角度依存係数(epsilon params)を使用します。
+ * 2. 時間フィットにおいても、選択した電荷モデルに対応する PMT半径(r_pmt) を使用。
+ * これにより、中心位置(Z = 80.5 - r_pmt)がモデルごとに変化します。
+ * 3. パラメータ B は常に 0 に固定されます。
  *
  * @author Gemini (Modified based on user request)
  */
@@ -31,9 +37,8 @@ LightSourceFitter* gFitter = nullptr;
 // f(q) = c0 * q^{-1/2} + c1 + c2 * q + c3 * q^2
 // =========================================================
 double CalcParametricValue(int ch, double charge, const double params[4][4]) {
-    if (ch < 0 || ch >= 4) return 1.0; // エラーガード
+    if (ch < 0 || ch >= 4) return 1.0; 
     
-    // 電荷が0以下の場合の保護（平方根計算のため）
     double q = (charge > 1e-3) ? charge : 1e-3;
 
     double c0 = params[ch][0];
@@ -45,10 +50,8 @@ double CalcParametricValue(int ch, double charge, const double params[4][4]) {
     return val;
 }
 
-// EMG用 (今回は使用しないが互換性のため残す)
 double GetEMG_Sigma(int ch, double charge) { return 1.0; }
 double GetEMG_Tau(int ch, double charge)   { return 1.0; }
-
 
 // =========================================================
 // ヘルパー関数: ベクトルのなす角(cos)を計算
@@ -90,23 +93,51 @@ void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag) {
     double z = par[2]; // 光源位置
     double t0 = par[3]; // 発光時刻
     double A = par[4];  // 光量パラメータ
-    double B = par[5];  // バックグラウンド等
+    // B = par[5] は使用せず (0固定)
 
     const auto& hits = gFitter->GetData();
     const auto& config = gFitter->GetConfig();
 
+    // -------------------------------------------------------------
+    // 1. モデルに基づく定数・パラメータ配列の選択
+    // -------------------------------------------------------------
+    double r_pmt_eff = 0.0;
+    const double (*charge_c0_params)[4] = nullptr;   // 距離係数配列へのポインタ (便宜上配列として扱う)
+    const double (*ang_params)[8] = nullptr; // 角度係数配列へのポインタ
+
+    // モデルに応じた選択
+    if (config.chargeModel == ChargeModelType::FuncG) {
+        // --- FuncG ---
+        r_pmt_eff = PMT_RADIUS_G; // 23.5 cm
+        // キャストしてポインタを合わせる
+        // 本来は構造体などでまとめるべきですが、既存コードの延長でポインタ操作で対応
+        // CHARGE_RADIAL_PARAMS_FUNC_G は 1次元配列ですが、アドレスを渡してアクセスします
+        // (ここでは個別アクセスするので単に配列を指すようにします)
+        
+        // 角度パラメータ
+        ang_params = CHARGE_ANGULAR_PARAMS_FUNC_G;
+        
+    } else {
+        // --- FuncF (Default) ---
+        r_pmt_eff = PMT_RADIUS_F; // 28.5 cm
+        ang_params = CHARGE_ANGULAR_PARAMS_FUNC_F;
+    }
+
+    // PMT球の中心Z座標 = 表面(80.5) - 半径
+    double pmt_center_z = PMT_SURFACE_Z - r_pmt_eff;
+
     double chi2_total = 0.0;
 
     // -------------------------------------------------------------------
-    // 1. 電荷 (Charge) に関する Chi2
+    // 2. 電荷 (Charge) に関する Chi2
     // -------------------------------------------------------------------
     if (config.chargeType != ChargeChi2Type::None) {
         for (const auto& hit : hits) {
             
-            // PMT半球中心座標 (Z=48.0)
+            // PMT球中心座標
             double pmt_cx = PMT_XY_POS[hit.ch][0];
             double pmt_cy = PMT_XY_POS[hit.ch][1];
-            double pmt_cz = PMT_SPHERE_Z;
+            double pmt_cz = pmt_center_z;
 
             // 光源からPMT中心へのベクトル
             double vec_x = pmt_cx - x;
@@ -115,85 +146,58 @@ void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag) {
             double dist_center2 = vec_x*vec_x + vec_y*vec_y + vec_z*vec_z;
             double dist_center = std::sqrt(dist_center2);
 
-            double mu = 0.0;
+            // 角度計算 cos(alpha)
+            double cos_alpha = CalculateCosAngle(vec_x, vec_y, vec_z, 
+                                                 hit.dir_x, hit.dir_y, hit.dir_z);
             
-            // --- モデル計算分岐 ---
-            if (config.chargeModel == ChargeModelType::SolidAngle) {
-                // [New] SolidAngle Model
-                // mu = A * f_i(r) * epsilon_i(cos_alpha)  (Bなし)
+            // 角度依存項 epsilon (モデルごとに選択された配列を使用)
+            const double* c_ang = ang_params[hit.ch];
+            double epsilon = c_ang[0] + cos_alpha * (c_ang[1] + cos_alpha * (c_ang[2] + cos_alpha * (c_ang[3] + 
+                             cos_alpha * (c_ang[4] + cos_alpha * (c_ang[5] + cos_alpha * (c_ang[6] + cos_alpha * c_ang[7]))))));
+                            
+            if (epsilon < 0) epsilon = 0.0;
+
+            double mu = 0.0;
+            double f_r = 0.0;
+
+            // --- モデル式計算 ---
+            if (config.chargeModel == ChargeModelType::FuncF) {
+                // [FuncF] r_pmt=28.5
+                // f(r) = c0 * (1 - sqrt(1 - (r_pmt/r)^2))
+                double c0 = CHARGE_RADIAL_PARAMS_FUNC_F[hit.ch];
                 
-                // ---------------------------------------------
-                // 1. 距離依存項 f_i(r)
-                // f(r) = c0 * (1 - sqrt(1 - (32.5 / (r - c1))^2))
-                // ---------------------------------------------
-                double c0_r = CHARGE_RADIAL_PARAMS[hit.ch][0];
-                double c1_r = CHARGE_RADIAL_PARAMS[hit.ch][1];
-                
-                double r_eff = dist_center - c1_r;
-                double f_r = 0.0;
-                
-                // r_eff が 半径(32.5) より小さいとルート内が負になるため保護
-                if (r_eff > PMT_RADIUS + 0.001) {
-                    double ratio = PMT_RADIUS / r_eff;
-                    f_r = c0_r * (1.0 - std::sqrt(1.0 - ratio * ratio));
+                // ルート内保護
+                if (dist_center > r_pmt_eff + 0.001) {
+                    double ratio = r_pmt_eff / dist_center;
+                    f_r = c0 * (1.0 - std::sqrt(1.0 - ratio * ratio));
                 } else {
-                    // 光源がPMTに非常に近い、あるいはめり込んでいる場合
-                    // 立体角は最大 2pi (半球全体) -> (1 - 0) * c0 = c0
-                    f_r = c0_r; 
+                    f_r = c0; 
                 }
-
-                // ---------------------------------------------
-                // 2. 角度依存項 epsilon_i(cos) (7次多項式)
-                // ---------------------------------------------
-                // ベクトルのなす角 cos(alpha)
-                double cos_alpha = CalculateCosAngle(vec_x, vec_y, vec_z, 
-                                                     hit.dir_x, hit.dir_y, hit.dir_z);
                 
-                // 多項式計算 (Horner's method)
-                const double* c = CHARGE_ANGULAR_PARAMS[hit.ch];
-                double epsilon = c[0] + cos_alpha * (c[1] + cos_alpha * (c[2] + cos_alpha * (c[3] + 
-                                 cos_alpha * (c[4] + cos_alpha * (c[5] + cos_alpha * (c[6] + cos_alpha * c[7]))))));
-                
-                // 負の感度は物理的にあり得ないので0にする
-                if (epsilon < 0) epsilon = 0.0;
-
-                // 最終的な期待値 (Bを含まない)
                 mu = A * f_r * epsilon;
 
-            } else {
-                // --- 従来モデル (Standard / ZeroIntercept / Cosine) ---
-                // 表面までの距離 (中心距離 - 半径)
-                double dist_surface = dist_center - PMT_RADIUS;
-                if (dist_surface < 1.0) dist_surface = 1.0;
-                double dist_surface2 = dist_surface * dist_surface;
-
-                if (config.chargeModel == ChargeModelType::Cosine) {
-                    // Cosine (Sigmoid) Model
-                    double cos_alpha = CalculateCosAngle(vec_x, vec_y, vec_z, 
-                                                         hit.dir_x, hit.dir_y, hit.dir_z);
-                    double ang_factor = 1.0 / (1.0 + std::exp(-6.0 * (cos_alpha - 1.0)));
-                    
-                    mu = (A * ang_factor) / dist_surface2 + B;
-
-                } else {
-                    // Standard (A/r^2 + B)
-                    mu = A / dist_surface2 + B;
-                }
+            } else if (config.chargeModel == ChargeModelType::FuncG) {
+                // [FuncG] r_pmt=23.5
+                // f(r) = c0 / r^2
+                double c0 = CHARGE_RADIAL_PARAMS_FUNC_G[hit.ch];
+                
+                // ゼロ除算防止
+                if (dist_center2 < 1.0) dist_center2 = 1.0;
+                
+                f_r = c0 / dist_center2;
+                mu = A * f_r * epsilon;
             }
             
             if (mu < 1e-9) mu = 1e-9; 
 
-            // --- Chi2 計算 ---
+            // --- Chi2 加算 ---
             double n = hit.charge;
-
             if (config.chargeType == ChargeChi2Type::BakerCousins) {
-                // Baker-Cousins
                 double term = 0.0;
                 if (n > 1e-9) term = mu - n + n * std::log(n / mu);
                 else term = mu; 
                 chi2_total += 2.0 * term;
             } else {
-                // Gaussian
                 double sigma_q = 1.0; 
                 chi2_total += std::pow(n - mu, 2) / (sigma_q * sigma_q);
             }
@@ -201,7 +205,7 @@ void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag) {
     }
 
     // -------------------------------------------------------------------
-    // 2. 時間 (Time) に関する Chi2
+    // 3. 時間 (Time) に関する Chi2
     // -------------------------------------------------------------------
     if (config.timeType != TimeChi2Type::None) {
         double goodness_sum = 0.0;
@@ -209,30 +213,28 @@ void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag) {
         for (const auto& hit : hits) {
             if (!hit.isHit) continue; 
 
-            // PMT半球中心座標
+            // PMT球中心座標 (共通設定された pmt_center_z を使用)
             double pmt_cx = PMT_XY_POS[hit.ch][0];
             double pmt_cy = PMT_XY_POS[hit.ch][1];
-            double pmt_cz = PMT_SPHERE_Z;
+            double pmt_cz = pmt_center_z;
 
-            // 光源(x,y,z) と PMT半球中心間の距離
+            // 光源(x,y,z) と PMT球中心間の距離
             double dx = x - pmt_cx;
             double dy = y - pmt_cy;
             double dz = z - pmt_cz;
             double dist_center = std::sqrt(dx*dx + dy*dy + dz*dz);
             
-            // 時間フィットには「表面までの距離」を使用 (中心距離 - 半径)
-            double dist_surface = dist_center - PMT_RADIUS;
+            // 時間フィット用の飛行距離 = 中心距離 - 半径
+            double dist_surface = dist_center - r_pmt_eff;
+            
+            // 物理的にあり得ない近距離の保護
             if (dist_surface < 0.1) dist_surface = 0.1;
 
             // 飛行時間
             double t_flight = dist_surface / C_LIGHT;
             
-            // 期待時刻: t_expected = t0 + t_flight + TW(q) + Correction
-            
-            // TimeWalk補正値
+            // 期待時刻
             double tw_val = CalcParametricValue(hit.ch, hit.charge, TW_PARAMS);
-            
-            // 固定補正値
             double t_corr_val = TIME_CORRECTION_VAL[hit.ch];
             
             double t_expected = t0 + t_flight + tw_val + t_corr_val;
@@ -244,12 +246,10 @@ void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag) {
 
             // Chi2加算
             if (config.timeType == TimeChi2Type::Goodness) {
-                // Goodness (APFit)
                 double res2 = std::pow(t_obs - t_expected, 2);
                 goodness_sum += std::exp( -res2 / (2.0 * sigma_t * sigma_t) );
 
             } else if (config.timeType == TimeChi2Type::EMG) {
-                // EMG
                 double sigma = sigma_t; 
                 double tau = 1.0; 
                 chi2_total += CalcEMG_NLL(t_obs, t_expected, sigma, tau);
@@ -360,14 +360,8 @@ void LightSourceFitter::InitializeParameters(const std::vector<PMTData>& hits) {
         fMinuit->DefineParameter(4, "A", 10000.0, 100.0, 0, 1000000);
         fMinuit->Release(4);
         
-        // Bの固定: ZeroIntercept または SolidAngle モデルの時は 0 に固定
-        if (fConfig.chargeModel == ChargeModelType::ZeroIntercept || 
-            fConfig.chargeModel == ChargeModelType::SolidAngle) {
-            fMinuit->DefineParameter(5, "B", 0.0, 0.0, 0.0, 0.0);
-            fMinuit->FixParameter(5);
-        } else {
-            fMinuit->DefineParameter(5, "B", 0.0, 0.1, 0, 1000);
-            fMinuit->Release(5);
-        }
+        // Bの固定: 今回のモデル(FuncF, FuncG)では常に0に固定
+        fMinuit->DefineParameter(5, "B", 0.0, 0.0, 0.0, 0.0);
+        fMinuit->FixParameter(5);
     }
 }
