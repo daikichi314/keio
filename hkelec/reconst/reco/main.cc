@@ -61,6 +61,7 @@ void PrintUsage(const char* progName) {
     std::cout << "\n[出力]" << std::endl;
     std::cout << "  入力ファイル名にオプションに応じたサフィックスを付与して出力します。" << std::endl;
     std::cout << "  例: run01_reconst_3hits_bc_func_f_goodness.root" << std::endl;
+    std::cout << "  run01_reconst_3hits_bc_func_f_goodness.csv" << std::endl;
     std::cout << "  CSV出力列: fit_x,fit_y,fit_z,t_light,err_x,err_y,err_z,err_t,chi2,ndf,A,B,status" << std::endl;
     std::cout << "  ※計算に使用しなかったパラメータは -9999 が出力されます。" << std::endl;
     
