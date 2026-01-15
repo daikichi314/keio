@@ -45,6 +45,7 @@ void PrintUsage(const char* progName) {
     std::cout << "  -m <model> : 電荷期待値モデル (デフォルト: func_f)" << std::endl;
     std::cout << "      func_f : r=28.5cm, mu = A * c0 * (1 - sqrt(1 - (28.5/r)^2)) * eps" << std::endl;
     std::cout << "      func_g : r=23.5cm, mu = A * c0 / r^2 * eps" << std::endl;
+    std::cout << "      all    : func_f と func_g の両方で解析を実行（2回解析）" << std::endl;
     std::cout << "               ※ 係数c0, eps(角度依存)は fittinginput.hh で設定" << std::endl;
 
     std::cout << "  -q <model> : 電荷Chi2定義 (デフォルト: gaus)" << std::endl;
@@ -80,14 +81,21 @@ int main(int argc, char** argv) {
     FitConfig config;
     int opt;
     std::string inputBinFile;
+    bool useAllModels = false;  // allオプション用フラグ
     
     // オプション解析
     while ((opt = getopt(argc, argv, "u:m:q:t:h")) != -1) {
         switch (opt) {
             case 'u': config.useUnhit = (std::stoi(optarg) == 1); break;
             case 'm':
-                if (std::string(optarg) == "func_g") config.chargeModel = ChargeModelType::FuncG;
-                else config.chargeModel = ChargeModelType::FuncF;
+                if (std::string(optarg) == "all") {
+                    useAllModels = true;
+                    config.chargeModel = ChargeModelType::FuncF;  // 初期値をFuncFに設定
+                } else if (std::string(optarg) == "func_g") {
+                    config.chargeModel = ChargeModelType::FuncG;
+                } else {
+                    config.chargeModel = ChargeModelType::FuncF;
+                }
                 break;
             case 'q':
                 if (std::string(optarg) == "bc") config.chargeType = ChargeChi2Type::BakerCousins;
@@ -116,6 +124,20 @@ int main(int argc, char** argv) {
     }
     inputBinFile = argv[optind];
 
+    // 処理対象のモデルリストを生成
+    std::vector<FitConfig> configList;
+    if (useAllModels) {
+        FitConfig config_f = config;
+        config_f.chargeModel = ChargeModelType::FuncF;
+        configList.push_back(config_f);
+        
+        FitConfig config_g = config;
+        config_g.chargeModel = ChargeModelType::FuncG;
+        configList.push_back(config_g);
+    } else {
+        configList.push_back(config);
+    }
+
     // ファイル名生成ロジック
     std::string dirPath = "./";
     std::string baseName = inputBinFile;
@@ -130,41 +152,6 @@ int main(int argc, char** argv) {
     size_t pos = baseName.find(suffixToRemove);
     if (pos != std::string::npos) baseName.replace(pos, suffixToRemove.length(), "");
 
-    // サフィックス生成
-    std::stringstream ss;
-    ss << "_reconst";
-    if (config.useUnhit) ss << "_3hits"; else ss << "_4hits";
-    
-    // 電荷Chi2 Suffix
-    if (config.chargeType == ChargeChi2Type::BakerCousins) ss << "_bc";
-    else if (config.chargeType == ChargeChi2Type::None) ss << "_noQ";
-    else ss << "_gausQ";
-
-    // 電荷モデル Suffix
-    if (config.chargeType != ChargeChi2Type::None) {
-        if (config.chargeModel == ChargeModelType::FuncG) ss << "_func_g";
-        else ss << "_func_f";
-    }
-
-    // 時間Chi2 Suffix
-    if (config.timeType == TimeChi2Type::EMG) ss << "_emg";
-    else if (config.timeType == TimeChi2Type::Goodness) ss << "_goodness";
-    else if (config.timeType == TimeChi2Type::None) ss << "_noT";
-    else ss << "_gausT";
-
-    // 出力ファイル名生成
-    std::string outputRootFile = dirPath + baseName + ss.str() + ".root";
-    std::string outputCsvFile = dirPath + baseName + ss.str() + ".csv";
-
-    // 実行開始表示
-    std::cout << "------------------------------------------------" << std::endl;
-    std::cout << "解析を開始します: " << inputBinFile << std::endl;
-    std::cout << "出力ファイル: " << outputRootFile << std::endl;
-    std::cout << "モデル設定: Charge=" << (int)config.chargeType 
-              << ", Model=" << (int)config.chargeModel 
-              << ", Time=" << (int)config.timeType << std::endl;
-    std::cout << "------------------------------------------------" << std::endl;
-
     // ペデスタル読み込み
     std::string pedestalFile = dirPath + "hkelec_pedestal_hithist_means.txt";
     std::map<int, PedestalData> pedMap;
@@ -173,99 +160,140 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // データリーダー初期化
-    DataReader reader(inputBinFile, pedMap);
-    
-    // 出力ファイル初期化
-    TFile *fOut = new TFile(outputRootFile.c_str(), "RECREATE");
-    TTree *tOut = new TTree("fit_results", "Fit Results");
-    FitResult res;
-    
-    // ブランチ設定
-    tOut->Branch("fit_x", &res.x, "fit_x/D");
-    tOut->Branch("fit_y", &res.y, "fit_y/D");
-    tOut->Branch("fit_z", &res.z, "fit_z/D");
-    tOut->Branch("t_light", &res.t, "t_light/D");
-    tOut->Branch("chi2", &res.chi2, "chi2/D");
-    tOut->Branch("ndf", &res.ndf, "ndf/I");
-    tOut->Branch("A", &res.A, "A/D");
-    tOut->Branch("B", &res.B, "B/D");
-    tOut->Branch("status", &res.status, "status/I");
+    // ========================================================
+    // 各設定ごとに処理を実行
+    // ========================================================
+    for (const auto& currentConfig : configList) {
+        // サフィックス生成
+        std::stringstream ss;
+        ss << "_reconst";
+        if (currentConfig.useUnhit) ss << "_3hits"; else ss << "_4hits";
+        
+        // 電荷Chi2 Suffix
+        if (currentConfig.chargeType == ChargeChi2Type::BakerCousins) ss << "_bc";
+        else if (currentConfig.chargeType == ChargeChi2Type::None) ss << "_noQ";
+        else ss << "_gausQ";
 
-    std::ofstream ofs(outputCsvFile.c_str());
-    ofs << "fit_x,fit_y,fit_z,t_light,err_x,err_y,err_z,err_t,chi2,ndf,A,B,status\n";
+        // 電荷モデル Suffix
+        if (currentConfig.chargeType != ChargeChi2Type::None) {
+            if (currentConfig.chargeModel == ChargeModelType::FuncG) ss << "_func_g";
+            else ss << "_func_f";
+        }
 
-    // フィッター初期化
-    LightSourceFitter fitter;
-    fitter.SetConfig(config);
+        // 時間Chi2 Suffix
+        if (currentConfig.timeType == TimeChi2Type::EMG) ss << "_emg";
+        else if (currentConfig.timeType == TimeChi2Type::Goodness) ss << "_goodness";
+        else if (currentConfig.timeType == TimeChi2Type::None) ss << "_noT";
+        else ss << "_gausT";
 
-    // データループ
-    std::vector<PMTData> eventHits;
-    int n_total = 0;
-    int n_success = 0;
+        // 出力ファイル名生成
+        std::string outputRootFile = dirPath + baseName + ss.str() + ".root";
+        std::string outputCsvFile = dirPath + baseName + ss.str() + ".csv";
 
-    while (reader.nextEvent(eventHits)) {
-        n_total++;
+        // 実行開始表示
+        std::cout << "------------------------------------------------" << std::endl;
+        std::cout << "解析を開始します: " << inputBinFile << std::endl;
+        std::cout << "出力ファイル: " << outputRootFile << std::endl;
+        std::cout << "モデル設定: Charge=" << (int)currentConfig.chargeType 
+                  << ", Model=" << (int)currentConfig.chargeModel 
+                  << ", Time=" << (int)currentConfig.timeType << std::endl;
+        std::cout << "------------------------------------------------" << std::endl;
 
-        if (config.useUnhit) {
-            if (eventHits.size() < 3) continue;
-            if (eventHits.size() == 3) {
-                // 欠損CHをUnhit(0)として追加
-                bool hitFlags[4] = {false, false, false, false};
-                int eventID = eventHits[0].eventID;
-                for (const auto& hit : eventHits) hitFlags[hit.ch] = true;
-                for (int ch = 0; ch < 4; ++ch) {
-                    if (!hitFlags[ch]) {
-                        PMTData unhitData;
-                        unhitData.eventID = eventID;
-                        unhitData.ch = ch;
-                        unhitData.charge = 0.0;
-                        unhitData.time = -9999.0;
-                        unhitData.isHit = false;
-                        unhitData.x = PMT_POSITIONS[ch][0]; 
-                        unhitData.y = PMT_POSITIONS[ch][1];
-                        unhitData.z = PMT_POSITIONS[ch][2];
-                        eventHits.push_back(unhitData);
-                        break;
+        // データリーダー初期化
+        DataReader reader(inputBinFile, pedMap);
+        
+        // 出力ファイル初期化
+        TFile *fOut = new TFile(outputRootFile.c_str(), "RECREATE");
+        TTree *tOut = new TTree("fit_results", "Fit Results");
+        FitResult res;
+        
+        // ブランチ設定
+        tOut->Branch("fit_x", &res.x, "fit_x/D");
+        tOut->Branch("fit_y", &res.y, "fit_y/D");
+        tOut->Branch("fit_z", &res.z, "fit_z/D");
+        tOut->Branch("t_light", &res.t, "t_light/D");
+        tOut->Branch("chi2", &res.chi2, "chi2/D");
+        tOut->Branch("ndf", &res.ndf, "ndf/I");
+        tOut->Branch("A", &res.A, "A/D");
+        tOut->Branch("B", &res.B, "B/D");
+        tOut->Branch("status", &res.status, "status/I");
+
+        std::ofstream ofs(outputCsvFile.c_str());
+        ofs << "fit_x,fit_y,fit_z,t_light,err_x,err_y,err_z,err_t,chi2,ndf,A,B,status\n";
+
+        // フィッター初期化
+        LightSourceFitter fitter;
+        fitter.SetConfig(currentConfig);
+
+        // データループ
+        std::vector<PMTData> eventHits;
+        int n_total = 0;
+        int n_success = 0;
+
+        while (reader.nextEvent(eventHits)) {
+            n_total++;
+
+            if (currentConfig.useUnhit) {
+                if (eventHits.size() < 3) continue;
+                if (eventHits.size() == 3) {
+                    // 欠損CHをUnhit(0)として追加
+                    bool hitFlags[4] = {false, false, false, false};
+                    int eventID = eventHits[0].eventID;
+                    for (const auto& hit : eventHits) hitFlags[hit.ch] = true;
+                    for (int ch = 0; ch < 4; ++ch) {
+                        if (!hitFlags[ch]) {
+                            PMTData unhitData;
+                            unhitData.eventID = eventID;
+                            unhitData.ch = ch;
+                            unhitData.charge = 0.0;
+                            unhitData.time = -9999.0;
+                            unhitData.isHit = false;
+                            unhitData.x = PMT_POSITIONS[ch][0]; 
+                            unhitData.y = PMT_POSITIONS[ch][1];
+                            unhitData.z = PMT_POSITIONS[ch][2];
+                            eventHits.push_back(unhitData);
+                            break;
+                        }
                     }
                 }
-            }
-        } else {
-            if (eventHits.size() < 4) continue;
-        }
-
-        if (fitter.FitEvent(eventHits, res)) {
-            // 未計算値のマスク処理 (-9999)
-            if (config.chargeType == ChargeChi2Type::None) {
-                res.A = -9999;
-                res.B = -9999;
             } else {
-                // ChargeFit有効時: Bは今回のモデルで存在しないため -9999 に設定
-                if (config.chargeModel == ChargeModelType::FuncF || config.chargeModel == ChargeModelType::FuncG) {
+                if (eventHits.size() < 4) continue;
+            }
+
+            if (fitter.FitEvent(eventHits, res)) {
+                // 未計算値のマスク処理 (-9999)
+                if (currentConfig.chargeType == ChargeChi2Type::None) {
+                    res.A = -9999;
                     res.B = -9999;
+                } else {
+                    // ChargeFit有効時: Bは今回のモデルで存在しないため -9999 に設定
+                    if (currentConfig.chargeModel == ChargeModelType::FuncF || currentConfig.chargeModel == ChargeModelType::FuncG) {
+                        res.B = -9999;
+                    }
                 }
+                
+                if (currentConfig.timeType == TimeChi2Type::None) {
+                    res.t = -9999;
+                    res.err_t = -9999;
+                }
+
+                tOut->Fill();
+                ofs << res.x << "," << res.y << "," << res.z << "," << res.t << ","
+                    << res.err_x << "," << res.err_y << "," << res.err_z << "," << res.err_t << ","
+                    << res.chi2 << "," << res.ndf << "," << res.A << "," << res.B << "," << res.status << "\n";
+                n_success++;
             }
             
-            if (config.timeType == TimeChi2Type::None) {
-                res.t = -9999;
-                res.err_t = -9999;
-            }
-
-            tOut->Fill();
-            ofs << res.x << "," << res.y << "," << res.z << "," << res.t << ","
-                << res.err_x << "," << res.err_y << "," << res.err_z << "," << res.err_t << ","
-                << res.chi2 << "," << res.ndf << "," << res.A << "," << res.B << "," << res.status << "\n";
-            n_success++;
+            if (n_total % 1000 == 0) std::cout << "処理中... " << n_total << " events" << std::endl;
         }
-        
-        if (n_total % 1000 == 0) std::cout << "処理中... " << n_total << " events" << std::endl;
-    }
 
-    tOut->Write();
-    fOut->Close();
-    ofs.close();
-    
-    std::cout << "完了: 全" << n_total << "イベント中、" << n_success << "イベントが収束しました。" << std::endl;
+        tOut->Write();
+        fOut->Close();
+        ofs.close();
+        
+        std::cout << "完了: 全" << n_total << "イベント中、" << n_success << "イベントが収束しました。" << std::endl;
+        std::cout << std::endl;
+    }
 
     return 0;
 }
