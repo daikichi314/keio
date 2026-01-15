@@ -22,7 +22,8 @@ def print_usage(prog_name):
     print(" 再構成結果CSVファイルから詳細な解析画像とフィット結果を出力するスクリプト")
     print(" ")
     print(" [処理内容] ")
-    print(" 1. 1次元分布 (X, Y, Z, t) のヒストグラムとガウスフィット")
+    print(" 1. 1次元分布 (X, Y, Z, t, A) のヒストグラムとガウスフィット")
+    print("    ※ Aが計算されていない(-9999)場合はスキップします")
     print(" 2. 3次元距離 r のヒストグラム (X,Y,Zのフィット中心からの距離)")
     print(" 3. カイ二乗 (chi2) 分布のヒストグラム")
     print(" 4. 2次元分布 (XY, YZ, XZ) のヒストグラム (広域・拡大)")
@@ -36,6 +37,7 @@ def print_usage(prog_name):
     print(" ")
     print(" [出力] ")
     print(" 入力ディレクトリ直下の 'reconst_images/' に画像(.pdf)と結果(.txt)を保存")
+    print(" 具体的には、各CSVファイル 'basename.csv' に対し、'basename_hist_X.pdf' などの画像と 'basename_results.txt' などの結果ファイルを作成します。")
     print("======================================================================")
 
 # ------------------------------------------------------------------
@@ -52,15 +54,29 @@ def process_1d_fit(df, col, label, unit, output_dir, base_name, text_lines):
     戻り値: (center_val, fit_success_flag)
     ※ center_val はフィット成功時はフィットMean、失敗時は算術平均を返す
     """
+    # データが存在しない、または全て-9999(計算除外)の場合はスキップ
+    if col not in df.columns:
+        text_lines.append(f"[{label}]")
+        text_lines.append("  Not Found in CSV\n")
+        return 0, False
+
+    data = df[col]
+    # -9990以下は計算されていない値とみなす
+    valid_data = data[data > -9990]
+
+    if len(valid_data) == 0:
+        text_lines.append(f"[{label}]")
+        text_lines.append("  Not Calculated (-9999)\n")
+        return 0, False
+
     plt.figure(figsize=(8, 6))
     
-    data = df[col]
-    counts, bin_edges = np.histogram(data, bins=50)
+    counts, bin_edges = np.histogram(valid_data, bins=50)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     
     # 初期パラメータ
-    arithmetic_mean = np.mean(data)
-    p0 = [max(counts), arithmetic_mean, np.std(data)]
+    arithmetic_mean = np.mean(valid_data)
+    p0 = [max(counts), arithmetic_mean, np.std(valid_data)]
     
     fit_success = False
     popt = [0, 0, 0]
@@ -73,10 +89,10 @@ def process_1d_fit(df, col, label, unit, output_dir, base_name, text_lines):
     except:
         pass 
 
-    plt.hist(data, bins=50, color='skyblue', edgecolor='white', label='Data')
+    plt.hist(valid_data, bins=50, color='skyblue', edgecolor='white', label='Data')
     
     if fit_success:
-        x_smooth = np.linspace(min(data), max(data), 200)
+        x_smooth = np.linspace(min(valid_data), max(valid_data), 200)
         plt.plot(x_smooth, gaussian(x_smooth, *popt), 'r-', lw=2, label='Fit')
         
         info = (f"Mean: {popt[1]:.2f} {unit}\n"
@@ -103,7 +119,6 @@ def process_1d_fit(df, col, label, unit, output_dir, base_name, text_lines):
     plt.close()
     
     # 次の処理のために中心値を返す
-    # フィット成功ならフィットのMean、失敗なら算術平均を使う
     center_val = popt[1] if fit_success else arithmetic_mean
     return center_val, fit_success
 
@@ -119,10 +134,18 @@ def process_radial_fit(df, center_pos, output_dir, base_name, text_lines):
     
     mu_x, mu_y, mu_z = center_pos
     
+    # -9999を含まないデータのみ使用（念のためフィルタ）
+    df_valid = df[(df['fit_x'] > -9990) & (df['fit_y'] > -9990) & (df['fit_z'] > -9990)]
+    
+    if len(df_valid) == 0:
+        text_lines.append(f"[{label} (Mirrored)]")
+        text_lines.append("  Not Calculated (No valid XYZ)\n")
+        return
+
     # 1. 指定された中心(ガウスフィット結果)からの距離 r を計算
-    r = np.sqrt( (df['fit_x'] - mu_x)**2 + 
-                 (df['fit_y'] - mu_y)**2 + 
-                 (df['fit_z'] - mu_z)**2 )
+    r = np.sqrt( (df_valid['fit_x'] - mu_x)**2 + 
+                 (df_valid['fit_y'] - mu_y)**2 + 
+                 (df_valid['fit_z'] - mu_z)**2 )
     
     # 2. データをミラーリング (r と -r を結合)
     data_mirror = np.concatenate([-r, r])
@@ -195,6 +218,7 @@ def process_csv_file(file_path):
     try:
         df = pd.read_csv(file_path)
         
+        # 最低限必要なカラムチェック
         required = ['fit_x', 'fit_y', 'fit_z', 't_light', 'chi2']
         if not all(c in df.columns for c in required):
             print(f"Skipped {file_path}: Missing columns")
@@ -207,6 +231,14 @@ def process_csv_file(file_path):
         mu_y, ok_y = process_1d_fit(df, 'fit_y', 'Position Y', 'cm', output_dir, base_name, fit_results_text)
         mu_z, ok_z = process_1d_fit(df, 'fit_z', 'Position Z', 'cm', output_dir, base_name, fit_results_text)
         mu_t, ok_t = process_1d_fit(df, 't_light', 'Time', 'ns', output_dir, base_name, fit_results_text)
+        
+        # [追加] 振幅A (カラムが存在し、かつ有効な値がある場合のみフィット)
+        # 'A' がCSVにあるか確認
+        if 'A' in df.columns:
+            mu_A, ok_A = process_1d_fit(df, 'A', 'Amplitude A', 'arb.', output_dir, base_name, fit_results_text)
+        else:
+            fit_results_text.append("[Amplitude A]")
+            fit_results_text.append("  Column 'A' not found\n")
 
         # 2. 距離rのヒストグラム (X,Y,Zのフィット中心を渡す)
         process_radial_fit(df, (mu_x, mu_y, mu_z), output_dir, base_name, fit_results_text)
@@ -229,9 +261,13 @@ def process_csv_file(file_path):
         ]
 
         for col1, col2, lab1, lab2, m1, m2, s1, s2 in pairs:
+            # -9999のデータを除外してプロット
+            df_2d = df[(df[col1] > -9990) & (df[col2] > -9990)]
+            if len(df_2d) == 0: continue
+
             # A. 広域
             plt.figure(figsize=(8, 6))
-            h = plt.hist2d(df[col1], df[col2], bins=50, 
+            h = plt.hist2d(df_2d[col1], df_2d[col2], bins=50, 
                            range=[[-400, 400], [-400, 400]], cmap='viridis', cmin=1)
             plt.title(f'{lab1}-{lab2} Distribution (Wide)')
             plt.xlabel(f'{lab1} [cm]')
@@ -241,11 +277,11 @@ def process_csv_file(file_path):
             plt.savefig(os.path.join(output_dir, f"{base_name}_2d_{lab1}{lab2}_wide.pdf"))
             plt.close()
 
-            # B. 拡大 (成功時のみ)
+            # B. 拡大 (フィット成功時のみ)
             if s1 and s2:
                 plt.figure(figsize=(8, 6))
                 range_zoom = [[m1 - 20, m1 + 20], [m2 - 20, m2 + 20]]
-                h = plt.hist2d(df[col1], df[col2], bins=50, 
+                h = plt.hist2d(df_2d[col1], df_2d[col2], bins=50, 
                                range=range_zoom, cmap='viridis', cmin=1)
                 plt.title(f'{lab1}-{lab2} Distribution (Zoom: Mean +/- 20)')
                 plt.xlabel(f'{lab1} [cm]')
@@ -256,18 +292,20 @@ def process_csv_file(file_path):
                 plt.close()
 
         # 5. 3次元散布図
-        fig = plt.figure(figsize=(10, 8))
-        ax = fig.add_subplot(111, projection='3d')
-        sc = ax.scatter(df['fit_x'], df['fit_y'], df['fit_z'], 
-                        c=df['t_light'], cmap='plasma', s=10, alpha=0.6)
-        ax.set_title('3D Reconstruction Position')
-        ax.set_xlabel('X [cm]')
-        ax.set_ylabel('Y [cm]')
-        ax.set_zlabel('Z [cm]')
-        cbar = fig.colorbar(sc, ax=ax, shrink=0.6)
-        cbar.set_label('Time [ns]')
-        plt.savefig(os.path.join(output_dir, f"{base_name}_3d_scatter.pdf"))
-        plt.close()
+        df_3d = df[(df['fit_x'] > -9990) & (df['fit_y'] > -9990) & (df['fit_z'] > -9990)]
+        if len(df_3d) > 0:
+            fig = plt.figure(figsize=(10, 8))
+            ax = fig.add_subplot(111, projection='3d')
+            sc = ax.scatter(df_3d['fit_x'], df_3d['fit_y'], df_3d['fit_z'], 
+                            c=df_3d['t_light'], cmap='plasma', s=10, alpha=0.6)
+            ax.set_title('3D Reconstruction Position')
+            ax.set_xlabel('X [cm]')
+            ax.set_ylabel('Y [cm]')
+            ax.set_zlabel('Z [cm]')
+            cbar = fig.colorbar(sc, ax=ax, shrink=0.6)
+            cbar.set_label('Time [ns]')
+            plt.savefig(os.path.join(output_dir, f"{base_name}_3d_scatter.pdf"))
+            plt.close()
 
         # 結果テキスト保存
         txt_path = os.path.join(output_dir, f"{base_name}_fit_results.txt")

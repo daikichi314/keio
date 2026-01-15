@@ -27,14 +27,43 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <regex>
 #include <TMath.h> 
 
 // グローバルポインタ
 LightSourceFitter* gFitter = nullptr;
 
 // =========================================================
+// ファイル名パース関数の実装
+// =========================================================
+FilenameParams ParseFilename(const std::string& filename) {
+    FilenameParams params;
+    params.valid = false;
+    
+    // 正規表現で数値を抽出 (負の数、小数に対応)
+    // パターン: x(数値)_y(数値)_z(数値)-(ラン番号)-(数値)dB
+    std::regex pattern(R"(x([\d\.-]+)_y([\d\.-]+)_z([\d\.-]+)-(\d+)-([\d\.]+)dB)");
+    std::smatch match;
+    
+    if (std::regex_search(filename, match, pattern)) {
+        try {
+            params.x = std::stod(match[1].str());
+            params.y = std::stod(match[2].str());
+            params.z = std::stod(match[3].str());
+            params.db = std::stod(match[5].str());
+            params.valid = true;
+        } catch (const std::exception& e) {
+            params.valid = false;
+        }
+    }
+    
+    return params;
+}
+
+// =========================================================
 // パラメータ計算用関数
 // f(q) = c0 * q^{-1/2} + c1 + c2 * q + c3 * q^2
+// TW_PARAMS用の場合、上限値チェックが適用されます
 // =========================================================
 double CalcParametricValue(int ch, double charge, const double params[4][4]) {
     if (ch < 0 || ch >= 4) return 1.0; 
@@ -47,6 +76,15 @@ double CalcParametricValue(int ch, double charge, const double params[4][4]) {
     double c3 = params[ch][3];
 
     double val = c0 / std::sqrt(q) + c1 + c2 * q + c3 * q * q;
+    
+    // TW_PARAMSの場合のみ上限値チェックを適用
+    // (paramsのアドレスがTW_PARAMSと一致するか確認)
+    if (params == TW_PARAMS) {
+        if (val > TW_MAX_VALUES[ch]) {
+            val = TW_MAX_VALUES[ch];
+        }
+    }
+    
     return val;
 }
 
@@ -133,6 +171,8 @@ void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag) {
     // -------------------------------------------------------------------
     if (config.chargeType != ChargeChi2Type::None) {
         for (const auto& hit : hits) {
+            // ★追加: チャンネル番号の安全確認
+            if (hit.ch < 0 || hit.ch >= 4) continue;
             
             // PMT球中心座標
             double pmt_cx = PMT_XY_POS[hit.ch][0];
@@ -165,7 +205,7 @@ void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag) {
                 // [FuncF] r_pmt=28.5
                 // f(r) = c0 * (1 - sqrt(1 - (r_pmt/r)^2))
                 double c0 = CHARGE_RADIAL_PARAMS_FUNC_F[hit.ch];
-                
+
                 // ルート内保護
                 if (dist_center > r_pmt_eff + 0.001) {
                     double ratio = r_pmt_eff / dist_center;
@@ -212,6 +252,9 @@ void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag) {
         
         for (const auto& hit : hits) {
             if (!hit.isHit) continue; 
+
+            // ★追加: チャンネル番号の安全確認
+            if (hit.ch < 0 || hit.ch >= 4) continue;
 
             // PMT球中心座標 (共通設定された pmt_center_z を使用)
             double pmt_cx = PMT_XY_POS[hit.ch][0];
@@ -273,6 +316,7 @@ void fcn_wrapper(int& npar, double* gin, double& f, double* par, int iflag) {
 LightSourceFitter::LightSourceFitter() {
     fMinuit = new TMinuit(6);
     fMinuit->SetFCN(fcn_wrapper);
+    fMinuit->SetPrintLevel(-1);  // 全ての出力を抑制（エラーは別途検出）
     gFitter = this;
 }
 
@@ -284,6 +328,10 @@ void LightSourceFitter::SetConfig(const FitConfig& config) {
     fConfig = config;
 }
 
+void LightSourceFitter::SetDataFilename(const std::string& filename) {
+    fDataFilename = filename;
+}
+
 bool LightSourceFitter::FitEvent(const std::vector<PMTData>& eventHits, FitResult& res) {
     fCurrentHits = eventHits;
     InitializeParameters(eventHits);
@@ -291,7 +339,7 @@ bool LightSourceFitter::FitEvent(const std::vector<PMTData>& eventHits, FitResul
     // 最小化実行
     double arglist[10];
     int ierflg = 0;
-    arglist[0] = 5000;
+    arglist[0] = 100000;
     arglist[1] = 0.1;
     fMinuit->mnexcm("MIGRAD", arglist, 2, ierflg);
 
@@ -319,34 +367,60 @@ bool LightSourceFitter::FitEvent(const std::vector<PMTData>& eventHits, FitResul
     res.ndf = nDataPoints - nFreeParams;
     res.status = istat;
 
+    // // 収束失敗時にエラーメッセージを出力
+    // if (istat != 3) {
+    //     std::cerr << "WARNING: Fit did not converge for event. Status=" << istat 
+    //               << " Chi2=" << fmin << " EDM=" << fedm << std::endl;
+    // }
+
+    // 変更前: 完全収束(3)のみ許可
     return (istat == 3);
+
+    // 変更案1: 多少の近似や補正があっても、最小値が見つかっていればOKとする (推奨)
+    // "Not pos-def" (2) や "Approximate" (1) も合格にする
+    // return (istat >= 1);
 }
 
 void LightSourceFitter::InitializeParameters(const std::vector<PMTData>& hits) {
-    // 重心計算
-    double sumQ = 0, sumX = 0, sumY = 0, sumZ = 0;
-    for (const auto& hit : hits) {
-        if(hit.isHit) {
-            sumQ += hit.charge;
-            sumX += hit.x * hit.charge;
-            sumY += hit.y * hit.charge;
-            sumZ += hit.z * hit.charge;
+    // ファイル名から初期値を取得（設定されている場合）
+    FilenameParams fnParams = ParseFilename(fDataFilename);
+    
+    double iniX, iniY, iniZ, iniA;
+    
+    if (fnParams.valid) {
+        // ファイル名から取得した値を使用
+        iniX = fnParams.x;
+        iniY = fnParams.y;
+        iniZ = fnParams.z;
+        // A初期値: 15dBを基準 (15dBの時A=1.0)
+        iniA = std::pow(10.0, (15.0 - fnParams.db) / 10.0);
+    } else {
+        // ファイル名がパースできない場合は重心計算にフォールバック
+        double sumQ = 0, sumX = 0, sumY = 0, sumZ = 0;
+        for (const auto& hit : hits) {
+            if(hit.isHit) {
+                sumQ += hit.charge;
+                sumX += hit.x * hit.charge;
+                sumY += hit.y * hit.charge;
+                sumZ += hit.z * hit.charge;
+            }
         }
+        iniX = (sumQ > 0) ? sumX/sumQ : 0;
+        iniY = (sumQ > 0) ? sumY/sumQ : 0;
+        iniZ = 100.0;
+        iniA = 1.0;
     }
-    double iniX = (sumQ > 0) ? sumX/sumQ : 0;
-    double iniY = (sumQ > 0) ? sumY/sumQ : 0;
-    double iniZ = 50.0;
 
     fMinuit->DefineParameter(0, "x", iniX, 1.0, -200, 200);
     fMinuit->DefineParameter(1, "y", iniY, 1.0, -200, 200);
-    fMinuit->DefineParameter(2, "z", iniZ, 1.0, 0, 200);
+    fMinuit->DefineParameter(2, "z", iniZ, 1.0, 0, 300);
     
     // 時間パラメータ
     if (fConfig.timeType == TimeChi2Type::None) {
         fMinuit->DefineParameter(3, "t", 0.0, 0.0, 0.0, 0.0);
         fMinuit->FixParameter(3);
     } else {
-        fMinuit->DefineParameter(3, "t", 0.0, 1.0, -100, 100);
+        fMinuit->DefineParameter(3, "t", 0.0, 0.1, -300, 300);
         fMinuit->Release(3);
     }
 
@@ -357,7 +431,7 @@ void LightSourceFitter::InitializeParameters(const std::vector<PMTData>& hits) {
         fMinuit->DefineParameter(5, "B", 0.0, 0.0, 0.0, 0.0);
         fMinuit->FixParameter(5);
     } else {
-        fMinuit->DefineParameter(4, "A", 10000.0, 100.0, 0, 1000000);
+        fMinuit->DefineParameter(4, "A", iniA, 0.05, 0, 20);
         fMinuit->Release(4);
         
         // Bの固定: 今回のモデル(FuncF, FuncG)では常に0に固定

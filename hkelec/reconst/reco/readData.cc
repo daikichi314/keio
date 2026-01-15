@@ -1,119 +1,115 @@
-/**
- * @file readData.cc
- * @brief ROOTファイル読み込みクラスの実装
+/*
+ * id: readData.cc
+ * Place: /home/daiki/keio/hkelec/reconst/reco/
+ * Author: Gemini 3 Pro
+ * Last Edit: 2025-12-06
  *
- * @author Gemini (Modified based on user request)
- * @date 2025-12-14
+ * 概要:
+ * データ読み込みとペデスタル補正の実装ファイル
+ * ROOT ファイルの processed_hits TTree からヒットデータを読み込み、
+ * ペデスタル補正を行って ADC 値を pC 単位の電荷に変換します。
+ * イベント単位での逐次読み込み機能を提供します。
+ *
+ * 主な機能:
+ * - ペデスタルファイル読み込み (CSV形式)
+ * - ADC → pC 変換 (High Gain 飽和検出、Low Gain 使用切替)
+ * - イベント単位でのヒットデータグルーピング
  */
 
 #include "readData.hh"
-#include <iostream>
-#include <fstream>
-#include <sstream>
 
-// ---------------------------------------------------------
-// ペデスタル読み込み関数
-// ---------------------------------------------------------
-int readPedestals(const std::string& filename, std::map<int, PedestalData>& pedMap) {
-    std::ifstream ifs(filename);
-    if (!ifs.is_open()) return 1;
+// ADC -> pC 変換係数
+const double K_HGAIN = 0.073; 
+const double K_LGAIN = 0.599; 
+const double SATURATION_THRESHOLD = 4000.0; // lgainに切り替える閾値
+
+// ペデスタル読み込み
+int readPedestals(const std::string &filename, std::map<int, PedestalData> &pedestalMap) {
+    std::ifstream infile(filename);
+    if (!infile) {
+        std::cerr << "Error: Cannot open pedestal file " << filename << std::endl;
+        return 1;
+    }
 
     std::string line;
-    while (std::getline(ifs, line)) {
+    while (std::getline(infile, line)) {
         if (line.empty() || line[0] == '#') continue;
-        std::stringstream ss(line);
+        for (char &c : line) if (c == ',') c = ' '; // CSVパース用
+        
+        std::istringstream iss(line);
         int ch;
-        double meanH, meanL; // HitHistのMeanなどを想定
-        // ファイル形式に合わせて読み込み (例: ch mean)
-        // ここでは以前のコードの文脈に合わせて実装します
-        if (ss >> ch >> meanH) { 
-             PedestalData data;
-             data.hgain_mean = meanH;
-             data.lgain_mean = 0.0; // 必要なら読み込む
-             pedMap[ch] = data;
-        }
+        std::string type;
+        double mean, err;
+        
+        if (!(iss >> ch >> type >> mean >> err)) continue;
+
+        if (type == "hgain") pedestalMap[ch].hgain_mean = mean;
+        else if (type == "lgain") pedestalMap[ch].lgain_mean = mean;
     }
     return 0;
 }
 
-// ---------------------------------------------------------
-// DataReader クラス実装
-// ---------------------------------------------------------
-DataReader::DataReader(const std::string& filename, const std::map<int, PedestalData>& pedMap)
-    : fFile(nullptr), fTree(nullptr), fPedMap(pedMap), fCurrentEntry(0), fTotalEntries(0) 
-{
-    fFile = TFile::Open(filename.c_str());
-    if (!fFile || fFile->IsZombie()) {
-        std::cerr << "Error: Cannot open file " << filename << std::endl;
+// コンストラクタ
+DataReader::DataReader(const std::string &filename, const std::map<int, PedestalData> &pedMap) 
+    : pedestalMap(pedMap), currentEntry(0), hasBufferedHit(false) {
+    
+    file = TFile::Open(filename.c_str());
+    if (!file || file->IsZombie()) {
+        std::cerr << "Error: Cannot open ROOT file " << filename << std::endl;
+        tree = nullptr;
+        nEntries = 0;
         return;
     }
 
-    // Tree名は実際のデータに合わせて変更してください (例: "tree", "event_tree")
-    // ここでは hit情報をフラットに持っているTreeか、イベントごとのTreeかを想定
-    // 元のコードに合わせて "hithist" や "eventtree" などを指定します
-    fTree = (TTree*)fFile->Get("hithist"); // 仮の名前
-    if (!fTree) fTree = (TTree*)fFile->Get("tree"); // 別名の可能性
-
-    if (fTree) {
-        fTotalEntries = fTree->GetEntries();
-        // Branchアドレス設定 (変数名は元のコードに合わせてください)
-        fTree->SetBranchAddress("eventID", &b_eventID);
-        fTree->SetBranchAddress("ch", &b_ch);
-        fTree->SetBranchAddress("val", &b_charge); // hit_charge or ADC
-        fTree->SetBranchAddress("t", &b_time_diff); // time
-    } else {
-        std::cerr << "Error: TTree not found in " << filename << std::endl;
+    tree = dynamic_cast<TTree*>(file->Get("processed_hits"));
+    if (!tree) {
+        std::cerr << "Error: Cannot find 'processed_hits' tree" << std::endl;
+        nEntries = 0;
+        return;
     }
+
+    tree->SetBranchAddress("eventID", &b_eventID);
+    tree->SetBranchAddress("ch", &b_ch);
+    tree->SetBranchAddress("hgain", &b_hgain);
+    tree->SetBranchAddress("lgain", &b_lgain);
+    tree->SetBranchAddress("tot", &b_tot);
+    tree->SetBranchAddress("time_diff", &b_time_diff);
+
+    nEntries = tree->GetEntries();
 }
 
 DataReader::~DataReader() {
-    if (fFile) {
-        fFile->Close();
-        delete fFile;
-    }
+    if (file) file->Close();
 }
 
-bool DataReader::nextEvent(std::vector<PMTData>& hits) {
-    hits.clear();
-    if (!fTree || fCurrentEntry >= fTotalEntries) return false;
-
-    // フラットなTree (1エントリ=1ヒット) の場合、同じイベントIDが続く限り読み込む
-    // というロジックが必要ですが、ここでは
-    // 「1エントリ = 1イベント（配列でヒットを持つ）」または
-    // 「外部でループを回してイベントごとにまとめる」など構造に依存します。
-    
-    // ※今回は簡易的に「1エントリ呼び出して、それがイベント終了まで続く」ロジックを想定せず、
-    // ユーザー提供の元の readData.cc のロジックをそのまま使うべき場所です。
-    // 以下は、あくまでコンパイルを通すためのテンプレートです。
-    // ★重要: 元の readData.cc のロジックが手元にあれば、createPMTData() の中身だけ
-    // 以下のように isHit = true を追加するように書き換えてください。
-
-    // --- 仮実装 (1エントリ読み込み) ---
-    fTree->GetEntry(fCurrentEntry);
-    fCurrentEntry++;
-    
-    // データ変換
-    PMTData hit = createPMTData();
-    hits.push_back(hit);
-    
-    // (実際には同じイベントIDのヒットを全て取得するループが必要かもしれません)
-    
-    return true; 
-}
-
+// データ変換ロジック
 PMTData DataReader::createPMTData() {
     PMTData data;
     data.eventID = b_eventID;
     data.ch = b_ch;
     data.time = b_time_diff;
-    data.isHit = true; // ★ここが重要: 読み込んだデータはHitとしてマーク
-
-    // 電荷計算 (Pedestal引き算)
-    double ped = 0.0;
-    if (fPedMap.count(b_ch)) {
-        ped = fPedMap[b_ch].hgain_mean;
+    if (data.charge <= 0) {
+        data.charge = 0;
+        data.isHit = false; // 電荷がなければHitとみなさない
+    } else {
+        data.isHit = true;
     }
-    data.charge = b_charge - ped;
+
+    // ペデスタル取得
+    double ped_h = 0, ped_l = 0;
+    auto it = pedestalMap.find(b_ch);
+    if (it != pedestalMap.end()) {
+        ped_h = it->second.hgain_mean;
+        ped_l = it->second.lgain_mean;
+    }
+
+    // 電荷計算 (サチュレーション考慮)
+    if (b_hgain >= SATURATION_THRESHOLD) {
+        data.charge = (b_lgain - ped_l) * K_LGAIN;
+    } else {
+        data.charge = (b_hgain - ped_h) * K_HGAIN;
+    }
+    if (data.charge < 0) data.charge = 0;
 
     // 座標セット
     if (b_ch >= 0 && b_ch < 4) {
@@ -124,8 +120,100 @@ PMTData DataReader::createPMTData() {
         data.dir_y = PMT_DIR[1];
         data.dir_z = PMT_DIR[2];
     } else {
+        // 無効なチャンネルの場合
         data.x = 0; data.y = 0; data.z = 0;
     }
 
     return data;
+}
+
+// 次のイベント読み出し
+bool DataReader::nextEvent(std::vector<PMTData> &eventHits) {
+    eventHits.clear();
+    if (!tree) return false;
+
+    // バッファ分を処理
+    if (hasBufferedHit) {
+        b_eventID = buf_eventID;
+        b_ch = buf_ch;
+        b_hgain = buf_hgain;
+        b_lgain = buf_lgain;
+        b_tot = buf_tot;
+        b_time_diff = buf_time_diff;
+        
+        // 【修正】有効なチャンネル(0-3)のみ追加
+        if (b_ch >= 0 && b_ch < 4) {
+            eventHits.push_back(createPMTData());
+        }
+        hasBufferedHit = false;
+    }
+
+    int currentEventID = -1;
+    if (!eventHits.empty()) currentEventID = eventHits[0].eventID;
+
+    while (currentEntry < nEntries) {
+        tree->GetEntry(currentEntry);
+        currentEntry++;
+
+        // まだヒットリストが空なら、現在のIDをイベントIDとする
+        if (eventHits.empty()) currentEventID = b_eventID;
+
+        // IDが変わったらバッファしてリターン
+        if (b_eventID != currentEventID) {
+            hasBufferedHit = true;
+            buf_eventID = b_eventID;
+            buf_ch = b_ch;
+            buf_hgain = b_hgain;
+            buf_lgain = b_lgain;
+            buf_tot = b_tot;
+            buf_time_diff = b_time_diff;
+            return true;
+        }
+
+        // 【修正】有効なチャンネル(0-3)のみ追加
+        if (b_ch >= 0 && b_ch < 4) {
+            eventHits.push_back(createPMTData());
+        }
+    }
+
+    // --- ここから追加 ---
+    
+    // イベントIDが確定し、ヒットデータの収集が終わった段階でチェック
+    if (!eventHits.empty()) {
+        int currentID = eventHits[0].eventID;
+
+        // 1. どのチャンネルがHitしたかを記録するフラグを用意
+        bool hasHit[4] = {false, false, false, false};
+        for (const auto& hit : eventHits) {
+            if (hit.ch >= 0 && hit.ch < 4) {
+                hasHit[hit.ch] = true;
+            }
+        }
+
+        // 2. Hitしていないチャンネルについて、空データ(Unhit)を作成して追加
+        for (int ch = 0; ch < 4; ++ch) {
+            if (!hasHit[ch]) {
+                PMTData unhitData;
+                unhitData.eventID = currentID;
+                unhitData.ch = ch;
+                unhitData.time = 0.0;     // 時間は無意味なので0
+                unhitData.charge = 0.0;   // 電荷0 (Unhitの証)
+                unhitData.isHit = false;  // フラグもfalseに
+                
+                // 座標情報のセット (PMT_POSITIONS等はreadData.hhにある前提)
+                unhitData.x = PMT_POSITIONS[ch][0];
+                unhitData.y = PMT_POSITIONS[ch][1];
+                unhitData.z = PMT_POSITIONS[ch][2];
+                unhitData.dir_x = PMT_DIR[0];
+                unhitData.dir_y = PMT_DIR[1];
+                unhitData.dir_z = PMT_DIR[2];
+
+                eventHits.push_back(unhitData);
+            }
+        }
+    }
+    
+    // --- ここまで追加 ---
+
+    return !eventHits.empty();
 }

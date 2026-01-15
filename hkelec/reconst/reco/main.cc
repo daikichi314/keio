@@ -67,6 +67,12 @@ void PrintUsage(const char* progName) {
     
     std::cout << "\n[設定]" << std::endl;
     std::cout << "  TimeWalk係数やSigma係数、ジオメトリ等は 'fittinginput.hh' で定義されています。" << std::endl;
+   
+    std::cout << "\n[必要なもの]" << std::endl;
+    std::cout << "  - ROOT形式の入力データファイル" << std::endl;
+    std::cout << "  - ペデスタル平均値ファイル 'hkelec_pedestal_hithist_means.txt' が同じディレクトリに必要です。" << std::endl;
+    std::cout << "    （入力ROOTファイルと同じディレクトリを指します）" << std::endl;
+
     std::cout << "======================================================================" << std::endl;
 }
 
@@ -124,6 +130,7 @@ int main(int argc, char** argv) {
     size_t pos = baseName.find(suffixToRemove);
     if (pos != std::string::npos) baseName.replace(pos, suffixToRemove.length(), "");
 
+    // サフィックス生成
     std::stringstream ss;
     ss << "_reconst";
     if (config.useUnhit) ss << "_3hits"; else ss << "_4hits";
@@ -145,6 +152,7 @@ int main(int argc, char** argv) {
     else if (config.timeType == TimeChi2Type::None) ss << "_noT";
     else ss << "_gausT";
 
+    // 出力ファイル名生成
     std::string outputRootFile = dirPath + baseName + ss.str() + ".root";
     std::string outputCsvFile = dirPath + baseName + ss.str() + ".csv";
 
@@ -165,12 +173,15 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // データリーダー初期化
     DataReader reader(inputBinFile, pedMap);
     
+    // 出力ファイル初期化
     TFile *fOut = new TFile(outputRootFile.c_str(), "RECREATE");
     TTree *tOut = new TTree("fit_results", "Fit Results");
     FitResult res;
     
+    // ブランチ設定
     tOut->Branch("fit_x", &res.x, "fit_x/D");
     tOut->Branch("fit_y", &res.y, "fit_y/D");
     tOut->Branch("fit_z", &res.z, "fit_z/D");
@@ -184,9 +195,11 @@ int main(int argc, char** argv) {
     std::ofstream ofs(outputCsvFile.c_str());
     ofs << "fit_x,fit_y,fit_z,t_light,err_x,err_y,err_z,err_t,chi2,ndf,A,B,status\n";
 
+    // フィッター初期化
     LightSourceFitter fitter;
     fitter.SetConfig(config);
 
+    // データループ
     std::vector<PMTData> eventHits;
     int n_total = 0;
     int n_success = 0;

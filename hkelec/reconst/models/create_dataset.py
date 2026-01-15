@@ -276,7 +276,7 @@ def process_data(mean_files_dir, pd_summary_csv, output_csv):
                 # ch (0~3) を PMT_num (1~4) に変換
                 pmt_num = ch + 1
                 
-                # 列名 light_power(基準状態(15dB, 5V)を1とした時の相対光量) に対応
+                # 列名 light_power(def:(15dB, 5V)=1) に対応
                 output_rows.append({
                     '#PMT_num': pmt_num,
                     'Charge(pC)': charge,
@@ -304,7 +304,7 @@ def process_data(mean_files_dir, pd_summary_csv, output_csv):
         
         # カラム順序の指定 (指定の並び順に変更)
         cols = ['#PMT_num', 'Charge(pC)', 'Charge_err(pC)', 
-                'light_power(基準状態(15dB, 5V)を1とした時の相対光量)', 
+                'light_power(def:(15dB, 5V)=1)', 
                 'attenuation_db', 'pd_volt',
                 'x', 'y', 'z', 'r', 'cos(alpha)', 
                 'r_from_center', 'cos(alpha_from_center)']

@@ -16,10 +16,33 @@
 
 #include "fittinginput.hh"
 #include <vector>
+#include <string>
 #include <TMinuit.h>
 
 // MinuitのFCN関数からアクセスするためのグローバルポインタ
 class LightSourceFitter;
+
+/**
+ * @brief ファイル名から光源位置と減衰量を抽出する構造体
+ */
+struct FilenameParams {
+    double x;
+    double y;
+    double z;
+    double db;
+    bool valid;
+};
+
+/**
+ * @brief ファイル名から実験パラメータを抽出する関数
+ * 
+ * 期待する形式: BASENAME_xX_yY_zZ-RUNNUMBER-XXdB
+ * 例: LDhkelec_x-35_y-35_z147-003-15.00dB
+ * 
+ * @param filename ファイルパス（または文字列）
+ * @return FilenameParams 抽出されたパラメータ（失敗時はvalid=false）
+ */
+FilenameParams ParseFilename(const std::string& filename);
 
 class LightSourceFitter {
 public:
@@ -31,6 +54,12 @@ public:
      * @param config 設定構造体
      */
     void SetConfig(const FitConfig& config);
+
+    /**
+     * @brief データファイル名を設定する（初期値計算に使用）
+     * @param filename データファイル名またはパス
+     */
+    void SetDataFilename(const std::string& filename);
 
     /**
      * @brief 1イベント分のフィッティングを実行する
@@ -49,7 +78,8 @@ public:
 private:
     TMinuit* fMinuit;
     std::vector<PMTData> fCurrentHits;
-    FitConfig fConfig; 
+    FitConfig fConfig;
+    std::string fDataFilename; // ファイル名から初期値を取得するために使用 
 
     /**
      * @brief パラメータの初期値と範囲を設定する
